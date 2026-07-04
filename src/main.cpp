@@ -6,7 +6,7 @@
 /*   By: schabboe <schabboe@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/07/02 14:58:38 by ksoedama          #+#    #+#             */
-/*   Updated: 2026/07/04 18:40:38 by schabboe         ###   ########.fr       */
+/*   Updated: 2026/07/04 18:59:19 by schabboe         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,41 +44,50 @@ int	main(int ac, char **av)
 
 	// ai_protocol gaat op basis van socktype.
 	// What kind of socket you want:
+	struct addrinfo *ptr;
+	int sockfd = 0;
 
-	int sockfd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
-	if (sockfd == -1){
-		std::cout << "socket failure\n";
-		freeaddrinfo(result);
-		return 1;
+	for (ptr = result; ptr != NULL; ptr = ptr->ai_next)
+	{
+		sockfd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+		if (sockfd == -1){
+			std::cout << "socket failure\n";
+			// freeaddrinfo(result);
+			return 1;
+		}
+		// if (setsockopt())
+		// Binding the socket to the host (server side).
+		// Server says: I will listen on this port.
+		std::cout << "connected to the host!\n";
+		if (bind(sockfd, result->ai_addr, result->ai_addrlen) == -1){
+			std::cout << "bind failure\n";
+			// freeaddrinfo(result);
+			return 1;
+		}
+		break ;
 	}
 	
-	// Binding the socket to the host (server side).
-	// Server says: I will listen on this port.
-	if (bind(sockfd, result->ai_addr, result->ai_addrlen) == -1){
-		std::cout << "bind failure\n";
-		freeaddrinfo(result);
-		return 1;
-	}
-	
+	freeaddrinfo(result);
 	if (listen(sockfd, QUEUE) != 0){
 		std::cout << "listen failure\n";
-		freeaddrinfo(result);
 		return 1;
 	}
-	
 	// Accept incoming connections.
-	struct sockaddr_storage client_address;
-	socklen_t address_size;
-	address_size = sizeof(client_address);
-	int new_fd = accept(sockfd, (struct sockaddr *)&client_address, &address_size);
-	if (new_fd == -1){
-		std::cout << "accept failure\n";
-		freeaddrinfo(result);
-		return 1;
+	while (1)
+	{
+		struct sockaddr_storage client_address;
+		socklen_t address_size;
+		address_size = sizeof(client_address);
+		std::cout << "LOOP\n";
+		int new_fd = accept(sockfd, (struct sockaddr *)&client_address, &address_size);
+		if (new_fd == -1){
+			std::cout << "accept failure\n";
+			continue;
+		}
 	}
 
 	// Alleen result free-en met freeaddrinfo(res), info is alleen input.
-	// freeaddrinfo(result);
+
 	
 
 
