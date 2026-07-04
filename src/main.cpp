@@ -6,7 +6,7 @@
 /*   By: schabboe <schabboe@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/07/02 14:58:38 by ksoedama          #+#    #+#             */
-/*   Updated: 2026/07/04 16:58:16 by schabboe         ###   ########.fr       */
+/*   Updated: 2026/07/04 18:40:38 by schabboe         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,9 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <string.h>
+
+#define QUEUE 10 // how many incoming connections can be in queue for listen. 
+// Incoming connections are going to wait in this queue until you accept them.
 
 int	main(int ac, char **av)
 {
@@ -26,7 +29,8 @@ int	main(int ac, char **av)
 	}
 
 	struct addrinfo *result;
-	struct addrinfo info = {0};
+	struct addrinfo info;
+	memset(&info, 0, sizeof(info));
 	info.ai_family = AF_INET; // IPV4
 	// info.ai_flags = AI_PASSIVE; // Choose IP for me
 	info.ai_socktype = SOCK_STREAM; // TCP communication style
@@ -40,8 +44,9 @@ int	main(int ac, char **av)
 
 	// ai_protocol gaat op basis van socktype.
 	// What kind of socket you want:
+
 	int sockfd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
-	if (sockfd != 0){
+	if (sockfd == -1){
 		std::cout << "socket failure\n";
 		freeaddrinfo(result);
 		return 1;
@@ -49,17 +54,31 @@ int	main(int ac, char **av)
 	
 	// Binding the socket to the host (server side).
 	// Server says: I will listen on this port.
-	if (bind(sockfd, result->ai_addr, result->ai_addrlen) != 0){
+	if (bind(sockfd, result->ai_addr, result->ai_addrlen) == -1){
 		std::cout << "bind failure\n";
 		freeaddrinfo(result);
 		return 1;
 	}
 	
-
-
+	if (listen(sockfd, QUEUE) != 0){
+		std::cout << "listen failure\n";
+		freeaddrinfo(result);
+		return 1;
+	}
+	
+	// Accept incoming connections.
+	struct sockaddr_storage client_address;
+	socklen_t address_size;
+	address_size = sizeof(client_address);
+	int new_fd = accept(sockfd, (struct sockaddr *)&client_address, &address_size);
+	if (new_fd == -1){
+		std::cout << "accept failure\n";
+		freeaddrinfo(result);
+		return 1;
+	}
 
 	// Alleen result free-en met freeaddrinfo(res), info is alleen input.
-	freeaddrinfo(result);
+	// freeaddrinfo(result);
 	
 
 
