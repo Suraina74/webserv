@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   main.cpp                                           :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: schabboe <schabboe@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/07/02 14:58:38 by ksoedama          #+#    #+#             */
-/*   Updated: 2026/07/04 18:59:19 by schabboe         ###   ########.fr       */
+/*                                                        ::::::::            */
+/*   main.cpp                                           :+:    :+:            */
+/*                                                     +:+                    */
+/*   By: schabboe <schabboe@student.42.fr>            +#+                     */
+/*                                                   +#+                      */
+/*   Created: 2026/07/02 14:58:38 by ksoedama      #+#    #+#                 */
+/*   Updated: 2026/07/07 14:26:39 by ksoedama      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,7 +72,8 @@ int	main(int ac, char **av)
 		std::cout << "listen failure\n";
 		return 1;
 	}
-	// Accept incoming connections.
+	//epoll loop -> epoll checks read/write epollin epollout
+	// Accept incoming connections. 
 	while (1)
 	{
 		struct sockaddr_storage client_address;
