@@ -1,7 +1,18 @@
 *This project has been created as part of the 42 curriculum by ksoedama, schabboe*
 
 # Description
-We made a webserver with custom webpages
+Webserve project builds a basic HTTP web server from scratch in C++. It is a recreation of a simplified version of servers like Nginx or Apache. 
+A general order of client-server communication process:
+
+HTTP request from a client ─ ─ > TCP socket ─ ─ > Server
+         ꓥ                                          |
+         |                                          |
+         |                                          V
+Send back to client                        Process HTTP request
+         |                                          |
+         |                                          |
+         |                                          V
+         ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ Parse into configs
 
 # Instructions
 ```
@@ -11,6 +22,10 @@ make
 
 # Resources
 [NGINX](https://nginx.org/en/docs/beginners_guide.html)
-[]()
+[Beej's Guide to Network Programming](https://beej.us/guide/bgnet/html/#system-calls-or-bust)
+[The Linux Programming inTerface](https://broman.dev/download/The%20Linux%20Programming%20Interface.pdf)
+[rfc9110](https://datatracker.ietf.org/doc/html/rfc9110)
+[rfc9112](https://datatracker.ietf.org/doc/html/rfc9112)
+[HTTP:The Definitive Guide](https://github.com/oxidation99/MyBooks-1/blob/master/HTTP%20The%20%20Definitive%20Guide.pdf)
 
 How AI was used
