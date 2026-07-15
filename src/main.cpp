@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
-/*                                                        ::::::::            */
-/*   main.cpp                                           :+:    :+:            */
-/*                                                     +:+                    */
-/*   By: schabboe <schabboe@student.42.fr>            +#+                     */
-/*                                                   +#+                      */
-/*   Created: 2026/07/02 14:58:38 by ksoedama      #+#    #+#                 */
-/*   Updated: 2026/07/07 14:26:39 by ksoedama      ########   odam.nl         */
+/*                                                        :::      ::::::::   */
+/*   main.cpp                                           :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: schabboe <schabboe@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/07/02 14:58:38 by ksoedama          #+#    #+#             */
+/*   Updated: 2026/07/15 15:38:53 by schabboe         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,9 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <fstream>
 
 #define QUEUE 10 // how many incoming connections can be in queue for listen. 
 // Incoming connections are going to wait in this queue until you accept them.
@@ -72,8 +75,7 @@ int	main(int ac, char **av)
 		std::cout << "listen failure\n";
 		return 1;
 	}
-	//epoll loop -> epoll checks read/write epollin epollout
-	// Accept incoming connections. 
+	// Accept incoming connections.
 	while (1)
 	{
 		struct sockaddr_storage client_address;
@@ -85,13 +87,23 @@ int	main(int ac, char **av)
 			std::cout << "accept failure\n";
 			continue;
 		}
+		// show index.html
+		// char buffer[1024];
+		// ssize_t n = recv(new_fd, buffer, sizeof(buffer), 0);
+		// buffer[n] = '\0';
+		// std::cout << buffer;
+		
+		int open_index = open("public/index.html", O_RDONLY);
+		char index_page_txt[2048];	
+		ssize_t n = read(open_index, index_page_txt, 2048);
+		index_page_txt[n] = '\0';
+		std::cout << index_page_txt << std::endl;
+		
+		send(new_fd, index_page_txt, 2048, 0);
+
 	}
 
 	// Alleen result free-en met freeaddrinfo(res), info is alleen input.
-
-	
-
-
 
 
 	return (0);
