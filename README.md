@@ -1,9 +1,9 @@
-*This project has been created as part of the 42 curriculum by ksoedama, schabboe*
+*This project has been created as part of the 42 curriculum by ksoedama, schabboe, wxi*
 
 # Description
 Webserve project builds a basic HTTP web server from scratch in C++. It is a recreation of a simplified version of servers like Nginx or Apache. 
 A general order of client-server communication process:
-
+```
 HTTP request from a client ─ ─ > TCP socket ─ ─ > Server
          ꓥ                                          |
          |                                          |
@@ -13,7 +13,7 @@ Send back to client                        Process HTTP request
          |                                          |
          |                                          V
          ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ Parse into configs
-
+```
 # Instructions
 ```
 make
