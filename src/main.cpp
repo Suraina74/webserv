@@ -6,7 +6,7 @@
 /*   By: schabboe <schabboe@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/07/02 14:58:38 by ksoedama          #+#    #+#             */
-/*   Updated: 2026/07/15 15:38:53 by schabboe         ###   ########.fr       */
+/*   Updated: 2026/07/15 18:47:12 by schabboe         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,9 +17,10 @@
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/epoll.h>
 #include <fstream>
 
-#define QUEUE 10 // how many incoming connections can be in queue for listen. 
+#define QUEUE 1 // how many incoming connections can be in queue for listen. 
 // Incoming connections are going to wait in this queue until you accept them.
 
 int	main(int ac, char **av)
@@ -58,7 +59,12 @@ int	main(int ac, char **av)
 			// freeaddrinfo(result);
 			return 1;
 		}
-		// if (setsockopt())
+		int on = true;
+		if ((setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on))) == -1)
+		{
+			std::cout << "socket option failure\n";
+			return 1;
+		}
 		// Binding the socket to the host (server side).
 		// Server says: I will listen on this port.
 		std::cout << "connected to the host!\n";
@@ -76,8 +82,14 @@ int	main(int ac, char **av)
 		return 1;
 	}
 	// Accept incoming connections.
+	int epfd = epoll_create1(0);
+	struct epoll_event ev;
+	ev.events = EPOLLIN;
+
+	epoll_ctl(epfd, EPOLL_CTL_ADD, ev.data.fd, &ev);
 	while (1)
 	{
+		epoll_wait(epfd, &ev, QUEUE, 0);
 		struct sockaddr_storage client_address;
 		socklen_t address_size;
 		address_size = sizeof(client_address);
