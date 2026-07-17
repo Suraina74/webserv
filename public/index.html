@@ -1,6 +1,6 @@
 HTTP/1.1 200 OK
 Content-Type: text/html
-Content-Length: 419
+Content-Length: 1256
 
 <!DOCTYPE html>
 <html lang="en">
@@ -11,17 +11,75 @@ Content-Length: 419
 	<link rel="stylesheet" href="style.css">
 </head>
 <body>
-	<ul>
-		<li>
-			<a href="getpost.html">uploads</a>
-		</li>
-		<li>
-			<a href="delete.html">delete uploads</a>
-		</li>
-		<li>
-			<a href="#">kat</a>
-		</li>
-	</ul>
-	<h1>Index pagina</h1>
+
+	<main>
+		<h1>Home pagina</h1>
+		<table>
+			<tr>
+				<td>Uploads</td>
+				<td><a href="uploads.html">Click here to go to the uploads page</a></td>
+			</tr>
+			<tr>
+				<td>Delete Uploads</td>
+				<td><a href="delete.html">Click here to go to delete uploads page</a></td>
+			</tr>
+			<tr>
+				<td>Gadse</td>
+				<td><a href="gaia.html">Gaia foto</a></td>
+			</tr>
+		</table>
+		
+	</main>
 </body>
 </html>
+
+<style>
+	body {
+		box-sizing: border-box;
+		margin: 0;
+		font-family: Arial, Helvetica, sans-serif;
+		background-color: rgb(255, 233, 244);
+		color: hotpink;
+	}
+
+	main {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-direction: column;
+	}
+
+	h1 {
+		font-size: 7em;
+		margin: 0;
+		padding: 50px 10px;
+	}
+
+	h2 {
+		font-size: 3em;
+	}
+
+	p {
+		font-size: 20px;
+	}
+
+	label {
+		display: block;
+		padding: 10px 0;
+	}
+
+	input {
+		padding: 10px;
+	}
+
+	ul li {
+		list-style-type: none;
+	}
+
+	table, th, td {
+		border-collapse: collapse;
+  		border: 1.5px solid hotpink;
+		padding: 10px;
+		border-radius: 10px;
+	}
+</style>
