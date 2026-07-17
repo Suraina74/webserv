@@ -1,26 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Response.hpp                                       :+:      :+:    :+:   */
+/*   http_parser.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: schabboe <schabboe@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/07/16 18:55:05 by ksoedama          #+#    #+#             */
-/*   Updated: 2026/07/17 13:34:13 by schabboe         ###   ########.fr       */
+/*   Created: 2026/07/16 13:55:08 by schabboe          #+#    #+#             */
+/*   Updated: 2026/07/16 13:55:09 by schabboe         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#pragma once 
-#include <ostream>
-
-class Response {
-	private:
-		std::string	status_line;
-		std::string	*body;
-		//hashtable var voor headers
-	public:
-		Response();
-		Response(const Response& other);
-		Response operator=(const Response& other);
-		~Response();
-};

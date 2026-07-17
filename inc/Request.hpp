@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
-/*                                                        ::::::::            */
-/*   Request.hpp                                        :+:    :+:            */
-/*                                                     +:+                    */
-/*   By: ksoedama <ksoedama@student.codam.nl>         +#+                     */
-/*                                                   +#+                      */
-/*   Created: 2026/07/16 18:12:41 by ksoedama      #+#    #+#                 */
-/*   Updated: 2026/07/16 18:56:29 by ksoedama      ########   odam.nl         */
+/*                                                        :::      ::::::::   */
+/*   Request.hpp                                        :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: schabboe <schabboe@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/07/16 18:12:41 by ksoedama          #+#    #+#             */
+/*   Updated: 2026/07/17 13:35:47 by schabboe         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,5 +19,8 @@ class Request {
 		std::string	*body;
 		//hashtable var voor headers
 	public:
-		//canon form
+		Request();
+		Request(const Request& other);
+		Request& operator=(const Request& other);
+		~Request();
 };

@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
-/*                                                        ::::::::            */
-/*   Poll.hpp                                           :+:    :+:            */
-/*                                                     +:+                    */
-/*   By: ksoedama <ksoedama@student.codam.nl>         +#+                     */
-/*                                                   +#+                      */
-/*   Created: 2026/07/16 17:59:03 by ksoedama      #+#    #+#                 */
-/*   Updated: 2026/07/16 18:57:06 by ksoedama      ########   odam.nl         */
+/*                                                        :::      ::::::::   */
+/*   Poll.hpp                                           :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: schabboe <schabboe@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/07/16 17:59:03 by ksoedama          #+#    #+#             */
+/*   Updated: 2026/07/17 13:34:17 by schabboe         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,6 @@ class Poll {
 	public:
 		Poll();
 		Poll(const Poll&);
-		Poll&	operator=(const Poll&);
+		Poll& operator=(const Poll&);
 		~Poll();
 };
