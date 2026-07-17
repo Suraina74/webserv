@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   main.cpp                                           :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: schabboe <schabboe@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/07/02 14:58:38 by ksoedama          #+#    #+#             */
-/*   Updated: 2026/07/15 18:47:12 by schabboe         ###   ########.fr       */
+/*                                                        ::::::::            */
+/*   main.cpp                                           :+:    :+:            */
+/*                                                     +:+                    */
+/*   By: schabboe <schabboe@student.42.fr>            +#+                     */
+/*                                                   +#+                      */
+/*   Created: 2026/07/02 14:58:38 by ksoedama      #+#    #+#                 */
+/*   Updated: 2026/07/17 14:16:30 by ksoedama      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -82,14 +82,14 @@ int	main(int ac, char **av)
 		return 1;
 	}
 	// Accept incoming connections.
-	int epfd = epoll_create1(0);
-	struct epoll_event ev;
-	ev.events = EPOLLIN;
+	// int epfd = epoll_create1(0);
+	// struct epoll_event ev;
+	// ev.events = EPOLLIN;
 
-	epoll_ctl(epfd, EPOLL_CTL_ADD, ev.data.fd, &ev);
+	// epoll_ctl(epfd, EPOLL_CTL_ADD, ev.data.fd, &ev);
 	while (1)
 	{
-		epoll_wait(epfd, &ev, QUEUE, 0);
+		// epoll_wait(epfd, &ev, QUEUE, 0);
 		struct sockaddr_storage client_address;
 		socklen_t address_size;
 		address_size = sizeof(client_address);
@@ -105,7 +105,7 @@ int	main(int ac, char **av)
 		// buffer[n] = '\0';
 		// std::cout << buffer;
 		
-		int open_index = open("public/index.html", O_RDONLY);
+		int open_index = open("www/index.html", O_RDONLY);
 		char index_page_txt[2048];	
 		ssize_t n = read(open_index, index_page_txt, 2048);
 		index_page_txt[n] = '\0';
