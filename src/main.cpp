@@ -6,7 +6,7 @@
 /*   By: schabboe <schabboe@student.42.fr>            +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2026/07/02 14:58:38 by ksoedama      #+#    #+#                 */
-/*   Updated: 2026/07/17 14:16:30 by ksoedama      ########   odam.nl         */
+/*   Updated: 2026/07/20 15:34:27 by ksoedama      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include <sys/epoll.h>
 #include <fstream>
+#include <poll.h>
 
 #define QUEUE 1 // how many incoming connections can be in queue for listen. 
 // Incoming connections are going to wait in this queue until you accept them.
@@ -82,14 +83,16 @@ int	main(int ac, char **av)
 		return 1;
 	}
 	// Accept incoming connections.
-	// int epfd = epoll_create1(0);
-	// struct epoll_event ev;
-	// ev.events = EPOLLIN;
 
-	// epoll_ctl(epfd, EPOLL_CTL_ADD, ev.data.fd, &ev);
+	struct pollfd mypoll;
+
+	memset(&mypoll, 0, sizeof(mypoll));
+	mypoll.fd = 0;
+	mypoll.events = POLLIN;
+	
 	while (1)
 	{
-		// epoll_wait(epfd, &ev, QUEUE, 0);
+		//first you have to accept a connection
 		struct sockaddr_storage client_address;
 		socklen_t address_size;
 		address_size = sizeof(client_address);
@@ -99,19 +102,27 @@ int	main(int ac, char **av)
 			std::cout << "accept failure\n";
 			continue;
 		}
+
+		//then we read or write data over a network socket
+		poll(&mypoll, 1, 100);
+		char index_page_txt[2048];	
+		// if (mypoll.revents & POLLIN)
+		// {
+			int open_index = open("www/index.html", O_RDONLY);
+			ssize_t n = read(open_index, index_page_txt, 2048);
+			index_page_txt[n] = '\0';
+			std::cout << index_page_txt << std::endl;
+		// }
+		// else if (mypoll.revents & POLLOUT) {
+			send(new_fd, index_page_txt, 2048, 0);
+		// }
+		
 		// show index.html
 		// char buffer[1024];
 		// ssize_t n = recv(new_fd, buffer, sizeof(buffer), 0);
 		// buffer[n] = '\0';
 		// std::cout << buffer;
-		
-		int open_index = open("www/index.html", O_RDONLY);
-		char index_page_txt[2048];	
-		ssize_t n = read(open_index, index_page_txt, 2048);
-		index_page_txt[n] = '\0';
-		std::cout << index_page_txt << std::endl;
-		
-		send(new_fd, index_page_txt, 2048, 0);
+	
 
 	}
 
