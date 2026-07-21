@@ -1,28 +1,4 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        ::::::::            */
-/*   main.cpp                                           :+:    :+:            */
-/*                                                     +:+                    */
-/*   By: schabboe <schabboe@student.42.fr>            +#+                     */
-/*                                                   +#+                      */
-/*   Created: 2026/07/02 14:58:38 by ksoedama      #+#    #+#                 */
-/*   Updated: 2026/07/20 15:34:27 by ksoedama      ########   odam.nl         */
-/*                                                                            */
-/* ************************************************************************** */
-
-#include <iostream>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <string.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/epoll.h>
-#include <fstream>
-#include <poll.h>
-
-#define QUEUE 1 // how many incoming connections can be in queue for listen. 
-// Incoming connections are going to wait in this queue until you accept them.
+#include "../inc/Server.hpp"
 
 int	main(int ac, char **av)
 {
@@ -78,7 +54,7 @@ int	main(int ac, char **av)
 	}
 	
 	freeaddrinfo(result);
-	if (listen(sockfd, QUEUE) != 0){
+	if (listen(sockfd, 10) != 0){
 		std::cout << "listen failure\n";
 		return 1;
 	}

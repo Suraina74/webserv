@@ -1,15 +1,15 @@
 #pragma once 
 #include "Server.hpp"
 
-class Response 
+class Router 
 {
 	private:
 		std::string	status_line;
 		std::string	*body;
 		//hashtable var voor headers
 	public:
-		Response();
-		Response(const Response& other);
-		Response operator=(const Response& other);
-		~Response();
+		Router();
+		Router(const Router& other);
+		Router operator=(const Router& other);
+		~Router();
 };

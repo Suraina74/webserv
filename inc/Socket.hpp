@@ -1,15 +1,15 @@
 #pragma once 
 #include "Server.hpp"
 
-class Response 
+class Socket 
 {
 	private:
 		std::string	status_line;
 		std::string	*body;
 		//hashtable var voor headers
 	public:
-		Response();
-		Response(const Response& other);
-		Response operator=(const Response& other);
-		~Response();
+		Socket();
+		Socket(const Socket& other);
+		Socket operator=(const Socket& other);
+		~Socket();
 };

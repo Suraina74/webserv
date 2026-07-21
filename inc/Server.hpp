@@ -1,18 +1,16 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Server.hpp                                         :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: schabboe <schabboe@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/07/16 18:12:41 by ksoedama          #+#    #+#             */
-/*   Updated: 2026/07/17 13:37:43 by schabboe         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #pragma once 
+#include <iostream>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <fstream>
+#include <poll.h>
 
-class Server {
+class Server 
+{
 	private:
 		//serv socket
 	public:
