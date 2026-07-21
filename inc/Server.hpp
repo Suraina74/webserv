@@ -8,14 +8,35 @@
 #include <unistd.h>
 #include <fstream>
 #include <poll.h>
+#include <vector>
+#include <map>
+#include <set>
+
+using std::cout;
+using std::cerr;
+using std::cin;
+
+using std::endl;
+using std::string;
+
+using std::vector;
+using std::map;
+using std::set;
+
+using std::ifstream;
+using std::ofstream;
+using std::stringstream;
+
 
 class Server 
 {
 	private:
-		//serv socket
+		int _listenFd;
+
 	public:
 		Server();
-		Server(const Server& other);
-		Server& operator=(const Server& other);
 		~Server();
+
+		void start();
+		void stop();
 };
