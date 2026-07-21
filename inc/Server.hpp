@@ -19,3 +19,7 @@ class Server
 		Server& operator=(const Server& other);
 		~Server();
 };
+
+int server();
+int	eventLoop(int *sockfd);
+int	createSockAddr(int *sockfd, struct addrinfo *result);
