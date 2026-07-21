@@ -1,6 +1,49 @@
 #include "../inc/Server.hpp"
 #include "../inc/EventLoop.hpp"
 
+// int eventLoop(int sockfd)
+// {
+// 	EventLoop poll_fds;
+
+// 	memset(&poll_fds.fds, 0, sizeof(poll_fds.fds));
+// 	while (1)
+// 	{
+// 		struct sockaddr_storage client_address;
+// 		socklen_t address_size;
+// 		address_size = sizeof(client_address);
+// 		std::cout << "LOOP\n";
+// 		int new_fd = accept(sockfd, (struct sockaddr *)&client_address, &address_size);
+// 		if (new_fd == -1){
+// 			std::cout << "accept failure\n";
+// 			continue;
+// 		}
+
+// 		poll(&poll_fds.fds, 1, 100);
+// 		char index_page_txt[2048];	
+// 		// if (mypoll.revents & POLLIN)
+// 		// {
+// 			int open_index = open("www/index.html", O_RDONLY);
+// 			ssize_t n = read(open_index, index_page_txt, 2048);
+// 			index_page_txt[n] = '\0';
+// 			std::cout << index_page_txt << std::endl;
+// 		// }
+// 		// else if (mypoll.revents & POLLOUT) {
+// 			send(new_fd, index_page_txt, 2048, 0);
+// 		// }
+		
+// 		// show index.html
+// 		// char buffer[1024];
+// 		// ssize_t n = recv(new_fd, buffer, sizeof(buffer), 0);
+// 		// buffer[n] = '\0';
+// 		// std::cout << buffer;
+	
+
+// 	}
+
+// 	// Alleen result free-en met freeaddrinfo(res), info is alleen input.
+
+// }
+
 int	main(int ac, char **av)
 {
 	(void)av;
@@ -53,25 +96,17 @@ int	main(int ac, char **av)
 		}
 		break ;
 	}
-	
 	freeaddrinfo(result);
 	if (listen(sockfd, 10) != 0){
 		std::cout << "listen failure\n";
 		return 1;
 	}
-	// Accept incoming connections.
-
-	// struct pollfd mypoll;
 
 	EventLoop poll_fds;
 
-	memset(poll_fds.fds, 0, sizeof(poll_fds.fds));
-	// mypoll.fd = 0;
-	// mypoll.events = POLLIN;
-
+	memset(&poll_fds.fds, 0, sizeof(poll_fds.fds));
 	while (1)
 	{
-		//first you have to accept a connection
 		struct sockaddr_storage client_address;
 		socklen_t address_size;
 		address_size = sizeof(client_address);
@@ -82,8 +117,7 @@ int	main(int ac, char **av)
 			continue;
 		}
 
-		//then we read or write data over a network socket
-		poll(poll_fds.fds, 1, 100);
+		poll(&poll_fds.fds, 1, 100);
 		char index_page_txt[2048];	
 		// if (mypoll.revents & POLLIN)
 		// {
@@ -107,6 +141,6 @@ int	main(int ac, char **av)
 
 	// Alleen result free-en met freeaddrinfo(res), info is alleen input.
 
-
+	// eventLoop(sockfd);
 	return (0);
 }
