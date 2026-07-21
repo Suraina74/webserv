@@ -1,4 +1,5 @@
 #include "../inc/Server.hpp"
+#include "../inc/EventLoop.hpp"
 
 int	main(int ac, char **av)
 {
@@ -60,12 +61,14 @@ int	main(int ac, char **av)
 	}
 	// Accept incoming connections.
 
-	struct pollfd mypoll;
+	// struct pollfd mypoll;
 
-	memset(&mypoll, 0, sizeof(mypoll));
-	mypoll.fd = 0;
-	mypoll.events = POLLIN;
-	
+	EventLoop poll_fds;
+
+	memset(poll_fds.fds, 0, sizeof(poll_fds.fds));
+	// mypoll.fd = 0;
+	// mypoll.events = POLLIN;
+
 	while (1)
 	{
 		//first you have to accept a connection
@@ -80,7 +83,7 @@ int	main(int ac, char **av)
 		}
 
 		//then we read or write data over a network socket
-		poll(&mypoll, 1, 100);
+		poll(poll_fds.fds, 1, 100);
 		char index_page_txt[2048];	
 		// if (mypoll.revents & POLLIN)
 		// {
