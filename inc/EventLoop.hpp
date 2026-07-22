@@ -7,4 +7,7 @@ class EventLoop
 		struct pollfd	fds;
 		nfds_t			nfds;
 		int				timeout;
+
+		int	eventLoop(int *sockfd);
+		int	createSockAddr(int *sockfd, struct addrinfo *result);
 };
