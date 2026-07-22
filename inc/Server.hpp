@@ -13,9 +13,6 @@
 #include <set>
 #include "ServerConfig.hpp"
 
-
-
-
 class Server 
 {
 	private:
