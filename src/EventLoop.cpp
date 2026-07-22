@@ -5,30 +5,31 @@ int	eventLoop(int *sockfd)
 	EventLoop	poll_fds;
 	char		index_page_txt[2048];
 
+	char config_path[] = "www/index.html";
+
 	memset(&poll_fds.fds, 0, sizeof(poll_fds.fds));
+	poll_fds.fds.fd = *sockfd;
+	poll_fds.fds.events = POLLIN;
 	while (1)
 	{
-		struct sockaddr_storage	client_address;
-		socklen_t				address_size;
-	
-		address_size = sizeof(client_address);
-		int new_fd = accept(*sockfd, (struct sockaddr *)&client_address, &address_size);
-		if (new_fd == -1)
+		int ready = poll(&poll_fds.fds, 1, 100);
+		if (ready > 0 && (poll_fds.fds.revents & POLLIN))
 		{
-			perror("accept");
-			return (1);
-		}
-		poll(&poll_fds.fds, 1, 100);
-		// if (poll_fds.fds.revents & POLLIN)
-		{
-			int open_index = open("www/index.html", O_RDONLY);
-			ssize_t n = read(open_index, index_page_txt, 2048);
-			index_page_txt[n] = '\0';
-			std::cout << index_page_txt << std::endl;
-		}
-		// else if (poll_fds.fds.revents & POLLOUT)
-		{
-			send(new_fd, index_page_txt, 2048, 0);
+			int new_fd = accept(*sockfd, NULL, NULL);
+			if (new_fd >= 0)
+			{
+				int open_index = open(config_path, O_RDONLY);
+				if (open_index >= 0)
+				{
+					ssize_t n = read(open_index, index_page_txt, sizeof(index_page_txt) - 1);
+					if (n > 0)
+					{
+						index_page_txt[n] = '\0';
+						send(new_fd, index_page_txt, n, 0);
+					}
+					close(open_index);
+				}
+			}
 		}
 	}
 	return (0);
