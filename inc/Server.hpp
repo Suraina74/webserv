@@ -11,27 +11,16 @@
 #include <vector>
 #include <map>
 #include <set>
+#include "ServerConfig.hpp"
 
-using std::cout;
-using std::cerr;
-using std::cin;
 
-using std::endl;
-using std::string;
-
-using std::vector;
-using std::map;
-using std::set;
-
-using std::ifstream;
-using std::ofstream;
-using std::stringstream;
 
 
 class Server 
 {
 	private:
-		int _listenFd;
+		int				_listenFd;
+		ServerConfig	_server;
 
 	public:
 		Server();

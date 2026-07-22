@@ -4,10 +4,8 @@
 class Config 
 {
 	private:
-		// struct Configfd pfds;
+		vector<ServerConfig> _servers;
 	public:
 		Config();
-		Config(const Config&);
-		Config& operator=(const Config&);
 		~Config();
 };

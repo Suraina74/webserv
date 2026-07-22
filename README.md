@@ -15,10 +15,20 @@ Send back to client                        Process HTTP request
          ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ Parse into configs
 ```
 # Instructions
-```
+
+To start the program: send terminal input
+______________________
 make
-./webserv file.config
-```
+./webserv filename.config
+______________________
+
+# What is filename.config
+
+# Understanding different functions
+socket()  →  outlet installed, no wiring yet
+bind()    →  wiring given a specific address
+listen()  →  outlet is "live" and waiting for a plug
+accept()  →  something plugs in, connection now active
 
 # Resources
 [NGINX](https://nginx.org/en/docs/beginners_guide.html)
@@ -28,4 +38,4 @@ make
 [rfc9112](https://datatracker.ietf.org/doc/html/rfc9112)
 [HTTP:The Definitive Guide](https://github.com/oxidation99/MyBooks-1/blob/master/HTTP%20The%20%20Definitive%20Guide.pdf)
 
-How AI was used
+# How is AI used
