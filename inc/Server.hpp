@@ -25,7 +25,9 @@ class Server
 
 		void start();
 		void stop();
-		int server();
-		int	eventLoop(int *sockfd);
-		int	createSockAddr(int *sockfd, struct addrinfo *result);
+
 };
+
+int server();
+int	eventLoop(int *sockfd);
+int	createSockAddr(int *sockfd, struct addrinfo *result);

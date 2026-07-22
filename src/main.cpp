@@ -1,5 +1,19 @@
 #include "../inc/Server.hpp"
 #include "../inc/EventLoop.hpp"
+
+int	main(int ac, char **av)
+{
+	(void)av;
+	if (ac != 2)
+	{
+		cout << "usage: ./webserv config" << endl;
+		return (1);
+	}
+	if (server())
+		return (1);
+	return (0);
+}
+
 // int	main(int ac, char **av)
 // {
 // 	(void)av;
@@ -31,8 +45,7 @@
 // 	struct addrinfo *ptr;
 // 	int sockfd = 0;
 
-// 	//this for loop runs through the linked list returned by getaddrinfo until it
-// 	//finds one that successfully bind with the sockfd
+// 	
 // 	for (ptr = result; ptr != NULL; ptr = ptr->ai_next)
 // 	{
 // 		sockfd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
@@ -42,8 +55,7 @@
 // 			// freeaddrinfo(result);
 // 			continue;
 // 		}
-// 		//setsockopt is a flag that bypasses the default cooling down time of your 
-// 		//operating system when you restart your server to avoid error.
+// 		
 // 		int on = true;
 // 		if ((setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on))) == -1)
 // 		{
@@ -123,15 +135,3 @@
 // 	return (0);
 // }
 
-int	main(int ac, char **av)
-{
-	(void)av;
-	if (ac != 2)
-	{
-		std::cout << "usage: ./webserv config" << std::endl;
-		return (1);
-	}
-	if (server())
-		return (1);
-	return (0);
-}

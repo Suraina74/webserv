@@ -43,30 +43,37 @@ int	createSockAddr(int *sockfd, struct addrinfo *result)
 	memset(&info, 0, sizeof(info));
 	info.ai_family = AF_INET;
 	info.ai_socktype = SOCK_STREAM;
+	//getaddrinfo sets result to a linked list that 
+ 	//includes as many candidate addresses as match 
+	//the ai_family and ai_socktype you set value to
 	if (getaddrinfo("127.0.0.1", "8080", &info, &result) != 0)
 	{
 		std::cout << "getaddrinfo failed\n";
-		return (1);
+		return 1;
 	}
+	//this for loop runs through the linked list returned by getaddrinfo until it
+ 	//finds one that successfully bind with the sockfd
 	for (ptr = result; ptr != NULL; ptr = ptr->ai_next)
 	{
 		*sockfd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
 		if (*sockfd == -1)
 		{
 			std::cout << "socket failure\n";
-			return (1);
+			continue;
 		}
+		//setsockopt is a flag that bypasses the default cooling down time of your 
+ 		//operating system when you restart your server to avoid error.
 		int on = true;
 		if ((setsockopt(*sockfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on))) == -1)
 		{
 			perror("setsockopt");
-			return (1);
+			continue;
 		}
 		std::cout << "connected to the host!\n";
 		if (bind(*sockfd, result->ai_addr, result->ai_addrlen) == -1)
 		{
 			perror("bind");
-			return (1);
+			continue;
 		}
 		break ;
 	}
