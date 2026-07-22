@@ -12,8 +12,8 @@ int	eventLoop(int *sockfd)
 	poll_fds.fds.events = POLLIN;
 	while (1)
 	{
-		int ready = poll(&poll_fds.fds, 1, 100);
-		if (ready > 0 && (poll_fds.fds.revents & POLLIN))
+		poll(&poll_fds.fds, 1, 100);
+		// if (ready > 0 && (poll_fds.fds.revents & POLLIN))
 		{
 			int new_fd = accept(*sockfd, NULL, NULL);
 			if (new_fd >= 0)
