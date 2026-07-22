@@ -3,11 +3,8 @@
 
 class EventLoop 
 {
-	private:
-		// struct EventLoopfd pfds;
 	public:
-		EventLoop();
-		EventLoop(const EventLoop&);
-		EventLoop& operator=(const EventLoop&);
-		~EventLoop();
+		struct pollfd	fds;
+		nfds_t			nfds;
+		int				timeout;
 };
