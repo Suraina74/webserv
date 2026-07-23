@@ -6,7 +6,7 @@ OBJ = $(SRC:.cpp=.o)
 
 all: $(NAME)
 
-$(NAME) : $(OBJ)
+$(NAME) : $(OBJ) inc/Request.hpp
 	$(CC) $(FLAGS) $(OBJ) -o $(NAME)
 
 %.o: %.cpp

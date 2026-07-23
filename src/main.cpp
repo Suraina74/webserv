@@ -1,5 +1,6 @@
 #include "../inc/Server.hpp"
 #include "../inc/EventLoop.hpp"
+#include "../inc/Request.hpp"
 
 int	main(int ac, char **av)
 {
@@ -9,6 +10,12 @@ int	main(int ac, char **av)
 		cout << "usage: ./webserv config" << endl;
 		return (1);
 	}
+	
+
+	// char string[10] = "hello";
+	std::string string = "hello";
+	Request request(string);
+
 	if (server())
 		return (1);
 	return (0);
