@@ -7,11 +7,12 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <fstream>
+#include <sstream>
 #include <poll.h>
 #include <vector>
 #include <map>
 #include <set>
-#include "ServerConfig.hpp"
+#include "Config.hpp"
 
 class Server 
 {
