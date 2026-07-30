@@ -63,7 +63,7 @@ void Config::parsePort(string& val, ServerConfig& server, int lineNum)
 {
 	//pop_back() removes the last element
 	if (val.empty())
-			throw runtime_error("Line " + std::to_string(lineNum) + ": empty value.");
+		throw runtime_error("Line " + std::to_string(lineNum) + ": empty value.");
 	if (val.back() != ';')
     	throw runtime_error("Line " + std::to_string(lineNum) + ": Missing ';'");
 	val.pop_back();
