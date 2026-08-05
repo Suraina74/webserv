@@ -1,15 +1,23 @@
 #pragma once 
-#include "Server.hpp"
+#include <iostream>
+#include <string>
 
-class Request 
-{
+class Request {
 	private:
-		std::string	request_line;
-		std::string	*body;
+		std::string Input;
+		std::string	requestLine;
+		std::string Method;
+		std::string Path;
+		// std::string	*body;
 		//hashtable var voor headers
 	public:
-		Request();
-		Request(const Request& other);
-		Request& operator=(const Request& other);
-		~Request();
+		Request(std::string input) : Input(input){}
+		// Request(const Request& other);
+		// Request& operator=(const Request& other);
+		~Request(){}
+
+		// Read request into string
+		void extractReqLine();
+		// Extract headers -> extractHeaders()
+		// Extract body -> extractBody()
 };
