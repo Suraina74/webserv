@@ -17,29 +17,34 @@ int	eventLoop(int *sockfd)
 	memset(&poll_fds.fds, 0, sizeof(poll_fds.fds));
 	while (1)
 	{
-		//first you have to accept a connection
-		//then we read or write data over a network socket
 		poll(poll_fds.fds.data(), poll_fds.fds.size(), 100);
-		// if (ready > 0 && (poll_fds.fds.revents.data() & POLLIN))
+		// for (unsigned long i = 0; i < poll_fds.fds.size(); i++)
 		{
-			//accept() is the function that takes an incoming connection 
-			//from your listening socket and creates a new socket for that specific client.
-			int new_fd = accept(*sockfd, NULL, NULL);
-			if (new_fd >= 0)
+			// if (ready > 0 && (poll_fds.fds[i].revents & POLLIN))
 			{
-				int open_index = open(index_path, O_RDONLY);
-				if (open_index >= 0)
+				//accept() is the function that takes an incoming connection 
+				//from your listening socket and creates a new socket for that specific client.
+				int new_fd = accept(*sockfd, NULL, NULL);
+				if (new_fd >= 0)
 				{
-					ssize_t n = read(open_index, index_page_txt, sizeof(index_page_txt) - 1);
-					if (n > 0)
+					int open_index = open(index_path, O_RDONLY);
+					if (open_index >= 0)
 					{
-						index_page_txt[n] = '\0';
-						send(new_fd, index_page_txt, n, 0);
+						ssize_t n = read(open_index, index_page_txt, sizeof(index_page_txt) - 1);
+						if (n > 0)
+						{
+							index_page_txt[n] = '\0';
+							send(new_fd, index_page_txt, n, 0);
+						}
+						close(open_index);
 					}
-					close(open_index);
 				}
 			}
 		}
+		// if (POLLOUT)
+		// {
+		// 	recv();
+		// }
 	}
 	return (0);
 }

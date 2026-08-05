@@ -5,6 +5,6 @@ class EventLoop
 {
 	public:
 		vector<pollfd>	fds;
-		nfds_t			nfds;
+		// nfds_t			nfds;
 		int				timeout;
 };
