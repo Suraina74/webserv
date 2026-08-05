@@ -2,19 +2,25 @@
 
 int	eventLoop(int *sockfd)
 {
-	EventLoop	poll_fds;
-	char		index_page_txt[2048];
 
-	char index_path[] = "www/index.html";
+	char	index_page_txt[2048];
+	char	index_path[] = "www/index.html";
+
+	EventLoop	poll_fds;
+	pollfd		pfd;
+
+	pfd.fd = *sockfd;
+	pfd.events = POLLIN;
+	pfd.revents = 0;
+	poll_fds.fds.push_back(pfd);
+
 	memset(&poll_fds.fds, 0, sizeof(poll_fds.fds));
-	poll_fds.fds.fd = *sockfd; //this is the fd to read from
-	poll_fds.fds.events = POLLIN; //the events we are intereted in
 	while (1)
 	{
 		//first you have to accept a connection
 		//then we read or write data over a network socket
-		poll(&poll_fds.fds, poll_fds.nfds, 100);
-		// if (ready > 0 && (poll_fds.fds.revents & POLLIN))
+		poll(poll_fds.fds.data(), poll_fds.fds.size(), 100);
+		// if (ready > 0 && (poll_fds.fds.revents.data() & POLLIN))
 		{
 			//accept() is the function that takes an incoming connection 
 			//from your listening socket and creates a new socket for that specific client.

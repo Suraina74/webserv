@@ -18,11 +18,11 @@ class Server
 {
 	private:
 		int				_listenFd;
-		ServerConfig	_server;
+		// ServerConfig	_server;
 
 	public:
-		Server();
-		~Server();
+		// Server();
+		// ~Server();
 
 		void start();
 		void stop();
