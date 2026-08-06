@@ -18,7 +18,7 @@ class Server
 {
 	private:
 		int				_listenFd;
-		ServerConfig	_server;
+		// ServerConfig	_server;
 
 	public:
 		Server();

@@ -3,19 +3,20 @@
 
 int	main(int ac, char **av)
 {
+	(void)av;
 	if (ac != 2)
 	{
-		cout << "usage: ./webserv config" << endl;
+		std::cout << "usage: ./webserv config" << std::endl;
 		return (1);
 	}
-	// if (server())
-	// {
-	// 	cout << "Server creation failed." << endl;
-	// 	return (1);
-	// }
+	if (server())
+	{
+		std::cout << "Server creation failed." << std::endl;
+		return (1);
+	}
 
-	Config config;
-	config.parse(av[1]);
+	// Config config;
+	// config.parse(av[1]);
 
 	return (0);
 }

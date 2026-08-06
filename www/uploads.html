@@ -1,6 +1,6 @@
 HTTP/1.1 200 OK
 Content-Type: text/html
-Content-Length: 1321
+Content-Length: 1207
 
 <!DOCTYPE html>
 <html lang="en">
@@ -8,31 +8,25 @@ Content-Length: 1321
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>form page test</title>
-	<link rel="stylesheet" href="style.css">
 </head>
 <body>
 	<main>
 		<a href="index.html">go back home</a>
-		<h1>GET/POST</h1>
+		<h1>GIB CAT FILE</h1>
 		<p>This is where you can upload your files</p>
-		<form action="delete.html" method="POST">
-			<label for="imgupload">
-				Enter a file/img
-			</label>
-			<input id="imgupload" type="text">
+		<form action="delete.html" method="POST" enctype="multipart/form-data">
 <pre>
  /\_/\
 ( o.o )
  > ^ <
 </pre>
-			 <label for="myFile">Or select a file</label>
-			   <input type="file" id="myFile" name="filename">
+			<label for="myFile">Select a file</label>
+			<input type="file" id="myFile" name="filename">
 			<input type="submit" value="send">
 		</form>
 	</main>
 </body>
 </html>
-
 
 <style>
 	body {

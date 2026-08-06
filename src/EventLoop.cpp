@@ -1,11 +1,12 @@
 #include "../inc/EventLoop.hpp"
+#include "../inc/Request.hpp"
 
 int	eventLoop(int *sockfd)
 {
 	EventLoop	poll_fds;
 	char		index_page_txt[2048];
 
-	char index_path[] = "www/index.html";
+	char index_path[] = "www/uploads.html";
 	memset(&poll_fds.fds, 0, sizeof(poll_fds.fds));
 	poll_fds.fds.fd = *sockfd; //this is the fd to read from
 	poll_fds.fds.events = POLLIN; //the events we are intereted in
@@ -33,6 +34,34 @@ int	eventLoop(int *sockfd)
 					close(open_index);
 				}
 			}
+			char buffer[2048];
+			ssize_t n = recv(new_fd, buffer, sizeof(buffer), 0);
+			ssize_t bytesRead = n;
+			std::string partRead(buffer, n); // "Create a new std::string containing the first n characters/bytes starting at the first byte of buffer."
+			while (partRead.find("\r\n\r\n") == std::string::npos){
+				ssize_t n = recv(new_fd, buffer, sizeof(buffer), 0);
+				bytesRead = bytesRead + n;
+				std::string newPart(buffer, n);
+				partRead = partRead + newPart;
+			}
+			// Until now only read until \r\n\r\n or a bit after.
+			Request request(partRead);
+			request.extractElements();
+			ssize_t bodyLength = request.getContentLength();
+			
+
+			// if (bodyLength){
+			// 	while (bytesRead < (request.getBytesUntilHeaders() + bodyLength)){
+			// 		ssize_t n = recv(new_fd, buffer, sizeof(buffer), 0);
+			// 		bytesRead = bytesRead + n;
+			// 		std::string newPart(buffer, n);
+			// 		partRead = partRead + newPart;
+			// 	}
+			// }
+			// std::cout << partRead << std::endl;
+			// std::cout << partRead.size() << std::endl;
+			std::cout << bytesRead << std::endl;
+			std::cout << bodyLength << std::endl;
 		}
 	}
 	return (0);

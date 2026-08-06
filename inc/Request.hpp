@@ -1,15 +1,19 @@
 #pragma once 
 #include <iostream>
 #include <string>
+#include <sstream>
 
 class Request {
 	private:
 		std::string Input;
+		ssize_t 	bytesUntilHeaders;
+		std::string	fullRequest;
 		std::string	requestLine;
 		std::string Method;
 		std::string Path;
-		// std::string	*body;
-		//hashtable var voor headers
+		ssize_t 		contentLength;
+		std::string contentLengthHeader;
+		std::string	Body;
 	public:
 		Request(std::string input) : Input(input){}
 		// Request(const Request& other);
@@ -17,7 +21,9 @@ class Request {
 		~Request(){}
 
 		// Read request into string
-		void extractReqLine();
-		// Extract headers -> extractHeaders()
+		void extractElements();
+		ssize_t	getContentLength();
+		ssize_t getBytesUntilHeaders();
+		// void getFullRequest();
 		// Extract body -> extractBody()
 };
