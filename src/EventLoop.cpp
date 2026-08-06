@@ -75,6 +75,7 @@ int	createSockAddr(int *sockfd, struct addrinfo *result)
 			std::cout << "Socket failed.\n";
 			continue;
 		}
+		fcntl(*sockfd, F_SETFL, O_NONBLOCK);
 		//setsockopt is a flag that bypasses the default cooling down time of your 
  		//operating system when you restart your server to avoid error.
 		int on = true;

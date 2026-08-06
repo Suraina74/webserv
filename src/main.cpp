@@ -5,11 +5,12 @@ int	main(int ac, char **av)
 {
 	(void)av;
 
-	if (ac != 2)
-	{
-		cout << "usage: ./webserv config" << endl;
-		return (1);
-	}
+	(void)ac;
+	// if (ac != 2)
+	// {
+	// 	cout << "usage: ./webserv config" << endl;
+	// 	return (1);
+	// }
 	if (server())
 	{
 		cout << "Server creation failed." << endl;
