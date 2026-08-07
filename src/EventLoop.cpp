@@ -1,12 +1,14 @@
 #include "../inc/EventLoop.hpp"
 
-int	eventLoop(int *sockfd)
-{
-	char	index_page_txt[2048];
-	char	index_path[] = "www/index.html";
+int nfds = 1;
 
-	EventLoop	poll_fds;
-	pollfd		pfd;
+int eventLoop(int *sockfd)
+{
+	char index_page_txt[2048];
+	char index_path[] = "www/index.html";
+
+	EventLoop poll_fds;
+	pollfd pfd;
 
 	pfd.fd = *sockfd;
 	pfd.events = POLLIN;
@@ -14,24 +16,34 @@ int	eventLoop(int *sockfd)
 	poll_fds.fds.push_back(pfd);
 	while (1)
 	{
-		int ready = poll(poll_fds.fds.data(), poll_fds.fds.size(), -1);
+		int ready = poll(poll_fds.fds.data(), nfds, 100);
 		if (ready == -1)
 		{
 			perror("poll");
 			return (1);
 		}
-		for (unsigned long i = 1; i < poll_fds.fds.size(); i++)
+		if (poll_fds.fds[0].revents & POLLIN)
 		{
-			poll_fds.fds[i].fd = accept(*sockfd, NULL, NULL);
-			if (poll_fds.fds[i].fd == -1)
+			poll_fds.fds[nfds].fd = accept(*sockfd, NULL, NULL);
+			if (poll_fds.fds[nfds].fd == -1)
 			{
 				perror("accept");
 				return (1);
 			}
-			if (ready > 0 && (poll_fds.fds[i].revents & POLLIN))
+			poll_fds.fds[nfds].events = POLLIN;
+			nfds++;
+		}
+		for (int i = 1; i < nfds; i++)
+		{
+			if ((poll_fds.fds[i].revents & POLLIN))
 			{
-				if (poll_fds.fds[i].fd >= 0)
-				{
+				char buffer[2048];
+				recv(poll_fds.fds[i].fd, buffer, sizeof(buffer), 0);
+				// cout << buffer << endl;
+			}
+			poll_fds.fds[i].events = POLLOUT;
+			if (poll_fds.fds[i].revents & POLLOUT)
+			{
 					int open_index = open(index_path, O_RDONLY);
 					if (open_index >= 0)
 					{
@@ -43,21 +55,14 @@ int	eventLoop(int *sockfd)
 						}
 						close(open_index);
 					}
-				}
 			}
-			if (ready > 0 && (poll_fds.fds[i].revents & POLLOUT))
-			{
-				char buffer[2048];
-				recv(poll_fds.fds[i].fd, buffer, sizeof(buffer), 0);
-			}
-			
+			poll_fds.fds[i].events = POLLIN;
 		}
-		
 	}
 	return (0);
 }
 
-int	createSockAddr(int *sockfd, struct addrinfo *result)
+int createSockAddr(int *sockfd, struct addrinfo *result)
 {
 	struct addrinfo info;
 	struct addrinfo *ptr;
@@ -91,7 +96,7 @@ int	createSockAddr(int *sockfd, struct addrinfo *result)
 			perror("Bind failed.\n");
 			continue;
 		}
-		break ;
+		break;
 	}
 	return (0);
 }
