@@ -37,31 +37,28 @@ int	eventLoop(int *sockfd)
 			char buffer[2048];
 			ssize_t n = recv(new_fd, buffer, sizeof(buffer), 0);
 			ssize_t bytesRead = n;
-			std::string partRead(buffer, n); // "Create a new std::string containing the first n characters/bytes starting at the first byte of buffer."
-			while (partRead.find("\r\n\r\n") == std::string::npos){
+			std::string messageReceived(buffer, n); // "Create a new std::string containing the first n characters/bytes starting at the first byte of buffer."
+			while (messageReceived.find("\r\n\r\n") == std::string::npos){
 				ssize_t n = recv(new_fd, buffer, sizeof(buffer), 0);
 				bytesRead = bytesRead + n;
-				std::string newPart(buffer, n);
-				partRead = partRead + newPart;
+				std::string newMessage(buffer, n);
+				messageReceived = messageReceived + newMessage;
 			}
 			// Until now only read until \r\n\r\n or a bit after.
-			Request request(partRead);
+			Request request(messageReceived);
 			request.extractElements();
-			ssize_t bodyLength = request.getContentLength();
-			
-
-			// if (bodyLength){
-			// 	while (bytesRead < (request.getBytesUntilHeaders() + bodyLength)){
-			// 		ssize_t n = recv(new_fd, buffer, sizeof(buffer), 0);
-			// 		bytesRead = bytesRead + n;
-			// 		std::string newPart(buffer, n);
-			// 		partRead = partRead + newPart;
-			// 	}
-			// }
-			// std::cout << partRead << std::endl;
-			// std::cout << partRead.size() << std::endl;
-			std::cout << bytesRead << std::endl;
-			std::cout << bodyLength << std::endl;
+			ssize_t contentLength = request.getContentLength();
+			if (contentLength){
+				while (bytesRead < (request.getBytesUntilHeaders() + contentLength)){
+					ssize_t n = recv(new_fd, buffer, sizeof(buffer), 0);
+					bytesRead = bytesRead + n;
+					std::string newMessage(buffer, n);
+					messageReceived = messageReceived + newMessage;
+				}
+			}
+			// std::cout << messageReceived;
+			std::cout << messageReceived.size() << std::endl;
+			std::cout << request.getBytesUntilHeaders() + contentLength << std::endl;
 		}
 	}
 	return (0);

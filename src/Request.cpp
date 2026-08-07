@@ -1,13 +1,5 @@
 #include "../inc/Request.hpp"
 
-// void Request::getFullRequest(){
-// 	if (Input.find("\r\n\r\n") == -1){
-// 		char buffer[2048];
-// 		ssize_t n = recv(new_fd, buffer, sizeof(buffer), 0);
-// 	}
-// }
-
-
 void Request::extractElements(){
 	int posCRLF = Input.find("\r\n"); // Each line ends with \r\n.
 	requestLine = Input.substr(0, posCRLF);
@@ -40,7 +32,6 @@ void Request::extractElements(){
 
 	// Find how many bytes the part is until the header.
 	// Als bytes read kleiner is dan bytes until header + bodylen, dan moet je nog lezen t/m until header + bodylen.
-
 	int posEndHeaders = Input.find("\r\n\r\n");
 	std::string untilHeaders = Input.substr(0, (posEndHeaders + 4));
 	bytesUntilHeaders = untilHeaders.size();

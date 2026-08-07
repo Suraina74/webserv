@@ -5,15 +5,14 @@
 
 class Request {
 	private:
-		std::string Input;
-		ssize_t 	bytesUntilHeaders;
-		std::string	fullRequest;
-		std::string	requestLine;
-		std::string Method;
-		std::string Path;
-		ssize_t 		contentLength;
-		std::string contentLengthHeader;
-		std::string	Body;
+		std::string Input{};
+		std::string	requestLine{};
+		std::string Method{};
+		std::string Path{};
+		std::string contentLengthHeader{};
+		ssize_t 	contentLength{};
+		ssize_t 	bytesUntilHeaders{};
+		std::string	fileName{};
 	public:
 		Request(std::string input) : Input(input){}
 		// Request(const Request& other);
