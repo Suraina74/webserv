@@ -17,33 +17,33 @@ void Request::extractElements(){
 			Path = word;
 		}
 		i++;
-	}
-	ss.clear();
-	size_t startContentLen = Input.find("Content-Length");
+	}	
+}
+
+ssize_t getContentlength(std::string message){
+	std::string contentLengthHeader{};
+	size_t startContentLen = message.find("Content-Length");
 	if (startContentLen != std::string::npos){
-		size_t endContentLen = Input.find("\r\n", startContentLen);
-		contentLengthHeader = Input.substr(startContentLen, (endContentLen - startContentLen));
+		size_t endContentLen = message.find("\r\n", startContentLen);
+		contentLengthHeader = message.substr(startContentLen, (endContentLen - startContentLen));
 	}
+	std::stringstream ss(message);
+	ssize_t contentLength{};
 	if (!contentLengthHeader.empty()){
 		std::string _;
 		ss.str(contentLengthHeader);
 		ss >> _ >> contentLength;
 	}
-
-	// Find how many bytes the part is until the header.
-	// Als bytes read kleiner is dan bytes until header + bodylen, dan moet je nog lezen t/m until header + bodylen.
-	int posEndHeaders = Input.find("\r\n\r\n");
-	std::string untilHeaders = Input.substr(0, (posEndHeaders + 4));
-	bytesUntilHeaders = untilHeaders.size();
-	// Body = Input.substr()
-}
-
-ssize_t Request::getContentLength(){
 	return contentLength;
 }
-ssize_t Request::getBytesUntilHeaders(){
+
+ssize_t	getBytesUntilHeaders(std::string message){
+	int posEndHeaders = message.find("\r\n\r\n");
+	std::string requestUntilHeaders = message.substr(0, (posEndHeaders + 4));
+	ssize_t bytesUntilHeaders = requestUntilHeaders.size();
 	return bytesUntilHeaders;
 }
+
 // GET / HTTP/1.1 niets na /
 // GET /index.html HTTP/1.1 specifieke html page na /
 // GET /style.css HTTP/1.1
@@ -66,3 +66,8 @@ ssize_t Request::getBytesUntilHeaders(){
 // Transfer-Encoding: chunked
 
 // But we use content-length, this is a sign that it is not using HTTP chunked transfer encoding. The receiver should receive content-length bytes after the header section.
+
+// Eerst volledige request krijgen met recv.
+// Dan alle elementen eruithalen (parsen).
+// Dan valideren.
+// Dan kijken wat response moet zijn.

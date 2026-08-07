@@ -1,6 +1,32 @@
 #include "../inc/EventLoop.hpp"
 #include "../inc/Request.hpp"
 
+std::string receiveRequest(int clientFd){
+	char buffer[2048];
+	ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
+	ssize_t bytesRead = n;
+	std::string messageUntillHeader(buffer, n);
+	while (messageUntillHeader.find("\r\n\r\n") == std::string::npos){
+		ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
+		bytesRead = bytesRead + n;
+		std::string newMessage(buffer, n);
+		messageUntillHeader = messageUntillHeader + newMessage;
+	}
+	ssize_t contentLength = getContentlength(messageUntillHeader);
+	// Check on contentLength of het niet een -getal is of een heel groot getal.
+	ssize_t headerBytes = getBytesUntilHeaders(messageUntillHeader);
+	std::string fullRequest = messageUntillHeader;
+	if (contentLength){
+		while (bytesRead < (headerBytes + contentLength)){
+			ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
+			bytesRead = bytesRead + n;
+			std::string newMessage(buffer, n);
+			fullRequest = fullRequest + newMessage;
+		}
+	}
+	return fullRequest;
+}
+
 int	eventLoop(int *sockfd)
 {
 	EventLoop	poll_fds;
@@ -34,31 +60,10 @@ int	eventLoop(int *sockfd)
 					close(open_index);
 				}
 			}
-			char buffer[2048];
-			ssize_t n = recv(new_fd, buffer, sizeof(buffer), 0);
-			ssize_t bytesRead = n;
-			std::string messageReceived(buffer, n); // "Create a new std::string containing the first n characters/bytes starting at the first byte of buffer."
-			while (messageReceived.find("\r\n\r\n") == std::string::npos){
-				ssize_t n = recv(new_fd, buffer, sizeof(buffer), 0);
-				bytesRead = bytesRead + n;
-				std::string newMessage(buffer, n);
-				messageReceived = messageReceived + newMessage;
-			}
-			// Until now only read until \r\n\r\n or a bit after.
-			Request request(messageReceived);
+			std::string fullRequest = receiveRequest(new_fd);
+			// std::cout << fullRequest;
+			Request request(fullRequest);
 			request.extractElements();
-			ssize_t contentLength = request.getContentLength();
-			if (contentLength){
-				while (bytesRead < (request.getBytesUntilHeaders() + contentLength)){
-					ssize_t n = recv(new_fd, buffer, sizeof(buffer), 0);
-					bytesRead = bytesRead + n;
-					std::string newMessage(buffer, n);
-					messageReceived = messageReceived + newMessage;
-				}
-			}
-			// std::cout << messageReceived;
-			std::cout << messageReceived.size() << std::endl;
-			std::cout << request.getBytesUntilHeaders() + contentLength << std::endl;
 		}
 	}
 	return (0);
