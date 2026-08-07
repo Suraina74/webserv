@@ -12,7 +12,6 @@ int	eventLoop(int *sockfd)
 	pfd.events = POLLIN;
 	pfd.revents = 0;
 	poll_fds.fds.push_back(pfd);
-
 	while (1)
 	{
 		int ready = poll(poll_fds.fds.data(), poll_fds.fds.size(), -1);
