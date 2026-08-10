@@ -1,20 +1,8 @@
 #pragma once
 #include "Server.hpp"
-
-using std::cout;
-using std::cerr;
-using std::cin;
-
-using std::endl;
-using std::string;
-using std::vector;
-using std::map;
-using std::set;
-using std::runtime_error;
-
-using std::ifstream;
-using std::ofstream;
-using std::istringstream;
+#include "Location.hpp"
+#include "ServerConfig.hpp"
+using namespace std;
 
 class Config 
 {
@@ -25,39 +13,19 @@ class Config
 		Config();
 		~Config();
 
-		void cleanLine(string& line);
+		const vector<ServerConfig>& getServers() const;
+		void parse(const string& filename);
+		void parseServer(ifstream& configFile, int& lineNum);
 		void parseLine(string& line, ServerConfig& server, int lineNum);
-		void parse(const std::string& filename);
-		const std::vector<ServerConfig>& getServers() const;
 		void parseHost(string& val, ServerConfig& server, int lineNum);
 		void parseRoot(string& val, ServerConfig& server, int lineNum);
 		void parseIndex(string& val, ServerConfig& server, int lineNum);
 		void parsePort(string& val, ServerConfig& server, int lineNum);
-		void parseServer(ifstream& configFile, int& lineNum);
+		void parseMaxClient(string& val, ServerConfig& server, int lineNum);
+		void parseErr(string& val, string& extra, ServerConfig& server, int lineNum);
+		void parseServerName(string& val, ServerConfig& server, int lineNum);
 };
 
-class ServerConfig 
-{
-	private:
-		int		_listen;
-		string	_host;
-		string	_serverName;
-		string	_root;
-		string	_errPage;
-		string	_index;
-		bool	_foundServer = false;
-		
-	public:
-		ServerConfig();
-		~ServerConfig();
-
-		void setPort(int port);
-		void setHost(const std::string &host);
-		void setRoot(const std::string &root);
-		void setIndex(const std::string &index);
-
-		int							getPort() const;
-		const std::string			&getHost() const;
-		const std::string			&getRoot() const;
-		const std::string			&getIndex() const;
-};
+void cleanLine(string& line);
+void verifyNum(string sub, int lineNum);
+void emptyValCheck(string& val, int lineNum);
