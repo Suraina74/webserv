@@ -1,122 +1,72 @@
 #include "../inc/Config.hpp"
 
-ServerConfig::ServerConfig():_listen(0), _host(""), _serverName(""), _root(""), _errPage(""), _index("") {}
-
-ServerConfig::~ServerConfig(){}
-
-void ServerConfig::setPort(int port)
-{
-	_listen = port;
-}
-
-void ServerConfig::setHost(const std::string &host)
-{
-	_host = host;
-}
-
-void ServerConfig::setRoot(const std::string &root)
-{
-	_root = root;
-}
-
-void ServerConfig::setIndex(const std::string &index)
-{
-	_index = index;
-}
-
 Config::Config():_servers(){}
 
 Config::~Config(){}
 
-
-void Config::cleanLine(string& line)
+const std::vector<ServerConfig>& Config::getServers() const
 {
-	size_t commentPos = line.find('#');
-	if (commentPos != string::npos)
-		line.erase(commentPos);
-	size_t firstPos = line.find_first_not_of(" \t");
-	if (firstPos == string::npos)
-    {
-        line.clear();
-        return;
-    }
-
-	line.erase(0, firstPos);
-	size_t lastPos = line.find_last_not_of(" \t");
-		line.erase(lastPos + 1);
-}
-
-void verifyNum(string sub, int lineNum)
-{
-	int octet;
-	size_t pos = 0;
-	if (sub.empty())
-		throw runtime_error("Line " + std::to_string(lineNum) + ": empty octet value.");
-	try
-	{
-		octet = stoi(sub, &pos); 
-	}
-	catch(const std::exception& e)
-	{
-    	throw runtime_error("Line " + std::to_string(lineNum) + ": Invalid octet number."); 
-	}
-	if (octet > 255 || octet < 0)
-		throw runtime_error("Line " + std::to_string(lineNum) + ": Invalid octet range."); 
-	if (pos != sub.length())
-		throw runtime_error("Line " + std::to_string(lineNum) + ": Invalid octet value."); 
+	return _servers;
 }
 
 void Config::parseHost(string& val, ServerConfig& server, int lineNum)
 {
-	if (val.empty())
-		throw runtime_error("Line " + std::to_string(lineNum) + ": empty value.");
-	if (val.back() != ';')
-    	throw runtime_error("Line " + std::to_string(lineNum) + ": missing ';'");
-	val.pop_back();
-	string tmp = val;
+	emptyValCheck(val, lineNum);
+	string tmp = val;//store val to tmp
 	int numOfDots = 0;
 	while (true)
 	{
-		size_t pos = tmp.find('.');
-		if (pos == string::npos)
+		size_t dotPos = tmp.find('.');
+		//the correct host format should contain 3 dots, exit loop when there are no more dots
+		if (dotPos == string::npos)
         	break;
-		string sub = tmp.substr(0, pos);
+		//extract the value before dotPos into sub
+		string sub = tmp.substr(0, dotPos);
+		//evaluate if extracted sub value is valid
 		verifyNum(sub, lineNum);
+		//count the amount of dots
 		numOfDots++;
-    	tmp.erase(0, pos + 1);
+		//delete the value that has been verified
+    	tmp.erase(0, dotPos + 1);
 	}
 	verifyNum(tmp, lineNum);
 	if (numOfDots != 3)
-		throw runtime_error("Line " + std::to_string(lineNum) + ": wrong amount of '.'.");
+		throw runtime_error("Line " + to_string(lineNum) + ": wrong amount of '.'.");
 	server.setHost(val);
 }
 
 void Config::parseRoot(string& val, ServerConfig& server, int lineNum)
 {
-	if (val.empty())
-		throw runtime_error("Line " + std::to_string(lineNum) + ": empty value.");
-	if (val.back() != ';')
-    	throw runtime_error("Line " + std::to_string(lineNum) + ": Missing ';'");
-	val.pop_back();
+	emptyValCheck(val, lineNum);
+	string	validChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/._-";
+	struct stat info;
+	if (val.find_first_not_of(validChars) != string::npos)
+		throw runtime_error("Line " + to_string(lineNum) + ": found invalid character.");
+	if (stat(val.c_str(), &info) == -1)
+		throw runtime_error("Line " + to_string(lineNum) + ": root path does not exist.");
+	if (!S_ISDIR(info.st_mode))
+		throw runtime_error("Line " + to_string(lineNum) + ": root path is not a directory.");
+	server.setRoot(val);
 }
 
 void Config::parseIndex(string& val, ServerConfig& server, int lineNum)
 {
-	if (val.empty())
-		throw runtime_error("Line " + std::to_string(lineNum) + ": empty value.");
-	if (val.back() != ';')
-    	throw runtime_error("Line " + std::to_string(lineNum) + ": Missing ';'");
-	val.pop_back();
+	emptyValCheck(val, lineNum);
+	if (val.find("/") != string::npos)
+		throw runtime_error("Line " + to_string(lineNum) + ": invalid file name.");
+	string path = server.getRoot() + '/' + val;
+	struct stat info;
+	if (stat(path.c_str(), &info) != 0)
+        throw runtime_error("Line " + to_string(lineNum) + ": index file does not exist.");
+	if (!S_ISREG(info.st_mode))//check if a file is valid
+		throw runtime_error("Line " + to_string(lineNum) + ": index is not a regular file.");
+	server.setIndex(val);
 }
 
 void Config::parsePort(string& val, ServerConfig& server, int lineNum)
 {
 	//pop_back() removes the last element
-	if (val.empty())
-		throw runtime_error("Line " + std::to_string(lineNum) + ": empty value.");
-	if (val.back() != ';')
-    	throw runtime_error("Line " + std::to_string(lineNum) + ": Missing ';'");
-	val.pop_back();
+	emptyValCheck(val, lineNum);
 	int port = 0;
 	size_t pos = 0;
 	try
@@ -125,11 +75,11 @@ void Config::parsePort(string& val, ServerConfig& server, int lineNum)
 	}
 	catch(const std::exception& e)
 	{
-    	throw runtime_error("Line " + std::to_string(lineNum) + ": Invalid port number"); 
+    	throw runtime_error("Line " + to_string(lineNum) + ": Invalid port number."); 
 	}
 	
     if (port < 1 || port > 65535 || pos != val.size())
-        throw runtime_error("Line " + std::to_string(lineNum) + ": invalid port number");
+        throw runtime_error("Line " + to_string(lineNum) + ": invalid port number.");
 	server.setPort(port);
 }
 
@@ -140,10 +90,20 @@ void Config::parseLine(string& line, ServerConfig& server, int lineNum)
 	string		  val;
 	string		  extra;
 
-	iss >> key >> val;
-
+	if (!(iss >> key >> val))
+    	throw runtime_error("Line " + to_string(lineNum) + ": Missing argument.");
 	if (iss >> extra)
-    	throw runtime_error("Line " + std::to_string(lineNum) + ": Too many arguments.");
+	{
+		if (key == "error_page")
+		{
+			string extra2;
+        	if (iss >> extra2)
+        	    throw runtime_error("Line " + to_string(lineNum) + ": Too many arguments.");
+			parseErr(val, extra, server, lineNum);
+		}
+		else
+    		throw runtime_error("Line " + to_string(lineNum) + ": Too many arguments.");
+	}
 	if (key == "listen")
 		parsePort(val, server, lineNum);
 	else if (key == "host")
@@ -152,8 +112,12 @@ void Config::parseLine(string& line, ServerConfig& server, int lineNum)
 		parseRoot(val, server, lineNum);
 	else if (key == "index")
 		parseIndex(val, server, lineNum);
+	else if (key == "client_max_body_size")
+		parseMaxClient(val, server, lineNum);
+	else if (key == "server_name")
+		parseServerName(val, server, lineNum);
 	else
-		throw std::runtime_error("Line " + std::to_string(lineNum) + ": Unknown directive: " + key);
+        throw runtime_error("Line " + to_string(lineNum) +": Unknown directive '" + key + "'.");
 }
 
 void Config::parseServer(ifstream& configFile, int& lineNum)
@@ -162,13 +126,11 @@ void Config::parseServer(ifstream& configFile, int& lineNum)
 	string line;
 	ServerConfig server = ServerConfig();
 	if (!getline(configFile, line))
-    	throw runtime_error("Line " + std::to_string(lineNum) + ": Unexpected end of file.");
-	
+    	throw runtime_error("Line " + to_string(lineNum) + ": Unexpected end of file.");
 	cleanLine(line);
 	lineNum++;
-
     if (line != "{")
-    	throw runtime_error("Line " + std::to_string(lineNum) + ": Expected {");
+    	throw runtime_error("Line " + to_string(lineNum) + ": Expected '{'.");
 	while (getline(configFile, line))
 	{
 		cleanLine(line);
@@ -183,21 +145,20 @@ void Config::parseServer(ifstream& configFile, int& lineNum)
 		parseLine(line, server, lineNum);
 	}
 	if (!closed)
-    	throw runtime_error("Line " + std::to_string(lineNum) + ": missing closing '}'");
-
+    	throw runtime_error("Line " + to_string(lineNum) + ": missing closing '}'.");
 	//vector as a class member is automatically constructed and can be used immediately
 	//push_back(x) add x to the end of the list
 	_servers.push_back(server);
 }
 
-void Config::parse(const std::string &filename)
+void Config::parse(const string &filename)
 {
 	ifstream configFile(filename);
 	string line;
 	int lineNum = 0;
 
 	if(!configFile.is_open())
-		throw runtime_error("Line " + std::to_string(lineNum) + ": Open config file failed.");
+		throw runtime_error("Line " + to_string(lineNum) + ": Open config file failed.");
 
 	while(getline(configFile, line))
 	{
@@ -209,12 +170,8 @@ void Config::parse(const std::string &filename)
 			parseServer(configFile, lineNum);
 
 		else
-    		throw runtime_error("Line " + std::to_string(lineNum) + ": Expected 'server'");
+    		throw runtime_error("Line " + to_string(lineNum) + ": Expected 'server'");
 		cout << line << endl;
 	}
 }
 
-const std::vector<ServerConfig>& Config::getServers() const
-{
-	return _servers;
-}
