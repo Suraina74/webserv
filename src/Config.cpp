@@ -46,17 +46,67 @@ void Config::cleanLine(string& line)
 		line.erase(lastPos + 1);
 }
 
-void Config::parseHost(string& line, ServerConfig& server, int lineNum)
+void verifyNum(string sub, int lineNum)
 {
-
+	int octet;
+	size_t pos = 0;
+	if (sub.empty())
+		throw runtime_error("Line " + std::to_string(lineNum) + ": empty octet value.");
+	try
+	{
+		octet = stoi(sub, &pos); 
+	}
+	catch(const std::exception& e)
+	{
+    	throw runtime_error("Line " + std::to_string(lineNum) + ": Invalid octet number."); 
+	}
+	if (octet > 255 || octet < 0)
+		throw runtime_error("Line " + std::to_string(lineNum) + ": Invalid octet range."); 
+	if (pos != sub.length())
+		throw runtime_error("Line " + std::to_string(lineNum) + ": Invalid octet value."); 
 }
-void Config::parseRoot(string& line, ServerConfig& server, int lineNum)
-{
 
+void Config::parseHost(string& val, ServerConfig& server, int lineNum)
+{
+	if (val.empty())
+		throw runtime_error("Line " + std::to_string(lineNum) + ": empty value.");
+	if (val.back() != ';')
+    	throw runtime_error("Line " + std::to_string(lineNum) + ": missing ';'");
+	val.pop_back();
+	string tmp = val;
+	int numOfDots = 0;
+	while (true)
+	{
+		size_t pos = tmp.find('.');
+		if (pos == string::npos)
+        	break;
+		string sub = tmp.substr(0, pos);
+		verifyNum(sub, lineNum);
+		numOfDots++;
+    	tmp.erase(0, pos + 1);
+	}
+	verifyNum(tmp, lineNum);
+	if (numOfDots != 3)
+		throw runtime_error("Line " + std::to_string(lineNum) + ": wrong amount of '.'.");
+	server.setHost(val);
 }
-void Config::parseIndex(string& line, ServerConfig& server, int lineNum)
-{
 
+void Config::parseRoot(string& val, ServerConfig& server, int lineNum)
+{
+	if (val.empty())
+		throw runtime_error("Line " + std::to_string(lineNum) + ": empty value.");
+	if (val.back() != ';')
+    	throw runtime_error("Line " + std::to_string(lineNum) + ": Missing ';'");
+	val.pop_back();
+}
+
+void Config::parseIndex(string& val, ServerConfig& server, int lineNum)
+{
+	if (val.empty())
+		throw runtime_error("Line " + std::to_string(lineNum) + ": empty value.");
+	if (val.back() != ';')
+    	throw runtime_error("Line " + std::to_string(lineNum) + ": Missing ';'");
+	val.pop_back();
 }
 
 void Config::parsePort(string& val, ServerConfig& server, int lineNum)
@@ -68,18 +118,18 @@ void Config::parsePort(string& val, ServerConfig& server, int lineNum)
     	throw runtime_error("Line " + std::to_string(lineNum) + ": Missing ';'");
 	val.pop_back();
 	int port = 0;
-	size_t pos;
+	size_t pos = 0;
 	try
 	{
-		port = std::stoi(val, &pos);
+		port = stoi(val, &pos);
 	}
 	catch(const std::exception& e)
 	{
-    	throw std::runtime_error("Line " + std::to_string(lineNum) + ": Invalid port number"); 
+    	throw runtime_error("Line " + std::to_string(lineNum) + ": Invalid port number"); 
 	}
 	
     if (port < 1 || port > 65535 || pos != val.size())
-        throw std::runtime_error("Line " + std::to_string(lineNum) + ": invalid port number");
+        throw runtime_error("Line " + std::to_string(lineNum) + ": invalid port number");
 	server.setPort(port);
 }
 

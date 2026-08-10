@@ -29,10 +29,10 @@ class Config
 		void parseLine(string& line, ServerConfig& server, int lineNum);
 		void parse(const std::string& filename);
 		const std::vector<ServerConfig>& getServers() const;
-		void parseHost(string& line, ServerConfig& server, int lineNum);
-		void parseRoot(string& line, ServerConfig& server, int lineNum);
-		void parseIndex(string& line, ServerConfig& server, int lineNum);
-		void parsePort(string& line, ServerConfig& server, int lineNum);
+		void parseHost(string& val, ServerConfig& server, int lineNum);
+		void parseRoot(string& val, ServerConfig& server, int lineNum);
+		void parseIndex(string& val, ServerConfig& server, int lineNum);
+		void parsePort(string& val, ServerConfig& server, int lineNum);
 		void parseServer(ifstream& configFile, int& lineNum);
 };
 
