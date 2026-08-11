@@ -21,7 +21,7 @@ class Config
 		void parseRoot(string& val, ServerConfig& server, int lineNum);
 		void parseIndex(string& val, ServerConfig& server, int lineNum);
 		void parsePort(string& val, ServerConfig& server, int lineNum);
-		void parseMaxClient(string& val, ServerConfig& server, int lineNum);
+		void parseBodySize(string& val, ServerConfig& server, int lineNum);
 		void parseErr(string& val, string& extra, ServerConfig& server, int lineNum);
 		void parseServerName(string& val, ServerConfig& server, int lineNum);
 };

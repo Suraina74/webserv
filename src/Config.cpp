@@ -9,6 +9,61 @@ const std::vector<ServerConfig>& Config::getServers() const
 	return _servers;
 }
 
+void Config::parseBodySize(string& val, ServerConfig& server, int lineNum)
+{
+	emptyValCheck(val, lineNum);
+	size_t i = 0;
+	while (i < val.size() && isdigit(static_cast<unsigned char>(val[i])))
+		i++;
+	if (i == 0 || val.size() - i > 1)
+		throw runtime_error("Line " + to_string(lineNum) + ": invalid size value.");
+	try
+	{
+		size_t num = static_cast<size_t>(stoll(val.substr(0, i)));
+		size_t multiplier = 1;
+		if (val.size() - i == 1)
+		{
+			switch (toupper(static_cast<unsigned char>(val[i])))
+        	{
+        	    case 'K': multiplier = 1024; break;
+        	    case 'M': multiplier = 1024 * 1024; break;
+        	    case 'G': multiplier = 1024 * 1024 * 1024; break;
+        	    default:
+        	        throw runtime_error("Line " + to_string(lineNum) + ": invalid size unit.");
+        	}
+		}
+		if (num > numeric_limits<size_t>::max()/multiplier)
+			throw runtime_error("Line " + to_string(lineNum) + ": size value too large.");
+		server.setBodySize(num * multiplier);
+	}
+	catch(const out_of_range&)
+	{
+		throw runtime_error("Line " + to_string(lineNum) + ": size value too large.");
+	}
+}
+
+void Config::parseErr(string& val, string& extra, ServerConfig& server, int lineNum)
+{
+	emptyValCheck(val, lineNum);
+}
+
+void Config::parseServerName(string& val, ServerConfig& server, int lineNum)
+{
+	emptyValCheck(val, lineNum);
+	if (val.size() > 63)
+		throw runtime_error("Line " + to_string(lineNum) + ": server name too long.");
+	string	validChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-";
+	if (val.find_first_not_of(validChars) != string::npos)
+		throw runtime_error("Line " + to_string(lineNum) + ": found invalid character.");
+	if (val.front() == '-' || val.front() == '.' || val.back() == '-' || val.back() == '.')
+		throw runtime_error("Line " + to_string(lineNum) + ": server name cannot end or begin with '.' or '-'.");
+	if (val.find(".-") != string::npos || val.find("-.") != string::npos || val.find("..") != string::npos)
+		throw runtime_error("Line " + to_string(lineNum) + ": server name cannot be separated by '.-', '-.' or '..'. ");
+	server.setServerName(val);
+
+	//current solution is incorrect i should check each label that is seperated by .
+}
+
 void Config::parseHost(string& val, ServerConfig& server, int lineNum)
 {
 	emptyValCheck(val, lineNum);
@@ -113,7 +168,7 @@ void Config::parseLine(string& line, ServerConfig& server, int lineNum)
 	else if (key == "index")
 		parseIndex(val, server, lineNum);
 	else if (key == "client_max_body_size")
-		parseMaxClient(val, server, lineNum);
+		parseBodySize(val, server, lineNum);
 	else if (key == "server_name")
 		parseServerName(val, server, lineNum);
 	else

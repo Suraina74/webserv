@@ -12,7 +12,7 @@ class ServerConfig
 		string	_index;
 		string	_serverName;
 		string	_errPage;
-		size_t  _clientMaxBodySize;
+		size_t  _maxBodySize;
 		bool	_foundServer = false;
 		//map<int, string>  _errorPages;
 		vector<Location> _locations;
@@ -21,13 +21,18 @@ class ServerConfig
 		ServerConfig();
 		~ServerConfig();
 
-		void setPort(int port);
+		void setPort(const int port);
 		void setHost(const string &host);
 		void setRoot(const string &root);
 		void setIndex(const string &index);
+		void setBodySize(const size_t &bodySize);
+		void setServerName(const string &name);
 
-		int						getPort() const;
+
+		const int				getPort() const;
 		const string			&getHost() const;
 		const string			&getRoot() const;
 		const string			&getIndex() const;
+		const string			&getServerName() const;
+		const size_t			&getBodySize() const;
 };
