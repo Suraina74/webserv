@@ -72,17 +72,20 @@ void Config::parseErr(string& val, ServerConfig& server, int lineNum)
 void Config::parseServerName(string& val, ServerConfig& server, int lineNum)
 {
 	emptyValCheck(val, lineNum);
+	string tmp = val;
 
 	if (val.size() > 253)
         throw runtime_error("Line " + to_string(lineNum) + ": server name too long.");
     if (val.front() == '.' || val.back() == '.')
+	{
         throw runtime_error("Line " + to_string(lineNum) + ": server name cannot begin or end with '.'.");
+	}
 
-	string tmp = val;
+	
 	while (true)
 	{
-       size_t dotPos = tmp.find_first_of(".");
-        if (dotPos == string::npos)
+    	size_t dotPos = tmp.find_first_of(".");
+    	if (dotPos == string::npos)
             break;
 		string label = tmp.substr(0, dotPos);
 		verifyLabel(label, lineNum);
@@ -162,7 +165,9 @@ void Config::parsePort(string& val, ServerConfig& server, int lineNum)
 	}
 	
     if (port < 1 || port > 65535 || pos != val.size())
+	{
         throw runtime_error("Line " + to_string(lineNum) + ": invalid port number.");
+	}
 	server.setPort(port);
 }
 
@@ -208,7 +213,9 @@ void Config::parseServer(ifstream& configFile, int& lineNum)
 	cleanLine(line);
 	lineNum++;
     if (line != "{")
+	{
     	throw runtime_error("Line " + to_string(lineNum) + ": Expected '{'.");
+	}
 	while (getline(configFile, line))
 	{
 		cleanLine(line);

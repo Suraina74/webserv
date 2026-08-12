@@ -14,8 +14,9 @@ int	main(int ac, char **av)
 	// 	return (1);
 	// }
 
-	Config config;
-	config.parse(av[1]);
+	
+	Config basicConfig;
+	basicConfig.parse(av[1]);
 
 	return (0);
 }

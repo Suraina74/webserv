@@ -1,5 +1,6 @@
 #pragma once 
 #include "Server.hpp"
+#include "Config.hpp"
 
 class Router 
 {

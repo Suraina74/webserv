@@ -15,6 +15,7 @@
 #include <limits>
 #include <sys/stat.h>
 #include "Config.hpp"
+#include "ServerConfig.hpp"
 
 class Server 
 {

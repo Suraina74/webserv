@@ -1,6 +1,6 @@
 #include "../inc/ServerConfig.hpp"
 
-ServerConfig::ServerConfig():_listen(0), _host(""), _serverName(""), _root(""), _index("") {}
+ServerConfig::ServerConfig():_listen(0), _root(""), _host(""), _index(""), _serverName(""), _maxBodySize(0) {}		
 
 ServerConfig::~ServerConfig(){}
 
@@ -40,7 +40,7 @@ void ServerConfig::setServerName(const string &name)
 	_serverName = name;
 }
 
-const int	ServerConfig::getPort() const
+int	ServerConfig::getPort() const
 {
 	return _listen;
 }

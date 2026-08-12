@@ -3,6 +3,7 @@
 #include "Config.hpp"
 #include "Location.hpp"
 
+using namespace std;
 class ServerConfig 
 {
 	private:
@@ -29,7 +30,7 @@ class ServerConfig
 		void setErrPage(const vector<int>& errCodes, const string& path);
 
 
-		const int				getPort() const;
+		int				getPort() const;
 		const string			&getHost() const;
 		const string			&getRoot() const;
 		const string			&getIndex() const;
