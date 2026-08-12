@@ -9,7 +9,8 @@ class Request {
 		std::string	requestLine{};
 		std::string Method{};
 		std::string Path{};
-		int			statusCode{};
+		std::string	statusCode{};
+		std::string	statusText{};
 		std::string	Content{};
 		// std::string contentLengthHeader{};
 		// ssize_t 	contentLength{};
@@ -17,6 +18,9 @@ class Request {
 		Request(std::string input) : Input(input){}
 		~Request(){}
 		void extractElements();
+		// std::string getMethod();
+		std::string getPath();
+		std::string getStatusCode();
 		// Extract body -> extractBody()
 };
 
@@ -26,3 +30,4 @@ ssize_t 	getBytesUntilHeaders(std::string message);
 
 // Request ontvangen, Extract information, 
 // Wat nodig voor response: Method, Path, statusCode, contentLength, Body
+// Validating http request.

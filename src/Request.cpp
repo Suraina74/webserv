@@ -17,7 +17,11 @@ void Request::extractElements(){
 			Path = word;
 		}
 		i++;
-	}	
+	}
+	if (Path == "/" || Path == "/index.html" || Path == "/uploads.html"){
+		statusCode = "200";
+		statusText = "OK";
+	}
 }
 
 ssize_t getContentlength(std::string message){
@@ -42,6 +46,13 @@ ssize_t	getBytesUntilHeaders(std::string message){
 	std::string requestUntilHeaders = message.substr(0, (posEndHeaders + 4));
 	ssize_t bytesUntilHeaders = requestUntilHeaders.size();
 	return bytesUntilHeaders;
+}
+
+std::string Request::getPath(){
+	return Path;
+}
+std::string Request::getStatusCode(){
+	return statusCode;
 }
 
 // GET / HTTP/1.1 niets na /

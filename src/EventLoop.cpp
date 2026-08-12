@@ -1,5 +1,6 @@
 #include "../inc/EventLoop.hpp"
 #include "../inc/Request.hpp"
+#include "../inc/Response.hpp"
 
 std::string receiveRequest(int clientFd){
 	char buffer[2048];
@@ -32,7 +33,7 @@ int	eventLoop(int *sockfd)
 	EventLoop	poll_fds;
 	char		index_page_txt[2048];
 
-	char index_path[] = "www/uploads.html";
+	char index_path[] = "www/index.html";
 	memset(&poll_fds.fds, 0, sizeof(poll_fds.fds));
 	poll_fds.fds.fd = *sockfd; //this is the fd to read from
 	poll_fds.fds.events = POLLIN; //the events we are intereted in
@@ -64,6 +65,8 @@ int	eventLoop(int *sockfd)
 			// std::cout << fullRequest;
 			Request request(fullRequest);
 			request.extractElements();
+			Response response(request);
+			response.composeResponse();
 		}
 	}
 	return (0);
