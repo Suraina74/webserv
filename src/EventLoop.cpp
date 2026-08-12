@@ -55,8 +55,8 @@ int eventLoop(int *listen_fd)
 						}
 						close(open_index);
 					}
+					poll_fds.fds[i].events = POLLIN;
 			}
-			poll_fds.fds[i].events = POLLIN;
 		}
 	}
 	return (0);
