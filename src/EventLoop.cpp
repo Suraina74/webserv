@@ -2,7 +2,7 @@
 
 int nfds = 1;
 
-int eventLoop(int *sockfd)
+int eventLoop(int *listen_fd)
 {
 	char index_page_txt[2048];
 	char index_path[] = "www/index.html";
@@ -10,7 +10,7 @@ int eventLoop(int *sockfd)
 	EventLoop poll_fds;
 	pollfd pfd;
 
-	pfd.fd = *sockfd;
+	pfd.fd = *listen_fd;
 	pfd.events = POLLIN;
 	pfd.revents = 0;
 	poll_fds.fds.push_back(pfd);
@@ -19,15 +19,15 @@ int eventLoop(int *sockfd)
 		int ready = poll(poll_fds.fds.data(), nfds, 100);
 		if (ready == -1)
 		{
-			perror("poll");
+			::perror("poll");
 			return (1);
 		}
 		if (poll_fds.fds[0].revents & POLLIN)
 		{
-			poll_fds.fds[nfds].fd = accept(*sockfd, NULL, NULL);
+			poll_fds.fds[nfds].fd = accept(*listen_fd, NULL, NULL);
 			if (poll_fds.fds[nfds].fd == -1)
 			{
-				perror("accept");
+				::perror("accept");
 				return (1);
 			}
 			poll_fds.fds[nfds].events = POLLIN;
@@ -62,7 +62,7 @@ int eventLoop(int *sockfd)
 	return (0);
 }
 
-int createSockAddr(int *sockfd, struct addrinfo *result)
+int createSockAddr(int *listen_fd, struct addrinfo *result)
 {
 	struct addrinfo info;
 	struct addrinfo *ptr;
@@ -77,23 +77,23 @@ int createSockAddr(int *sockfd, struct addrinfo *result)
 	}
 	for (ptr = result; ptr != NULL; ptr = ptr->ai_next)
 	{
-		*sockfd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
-		if (*sockfd == -1)
+		*listen_fd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+		if (*listen_fd == -1)
 		{
 			std::cout << "Socket failed.\n";
 			continue;
 		}
-		fcntl(*sockfd, F_SETFL, O_NONBLOCK);
+		fcntl(*listen_fd, F_SETFL, O_NONBLOCK);
 		int on = true;
-		if ((setsockopt(*sockfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on))) == -1)
+		if ((setsockopt(*listen_fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on))) == -1)
 		{
-			perror("Setsockopt failed.\n");
+			::perror("setsockopt failed.\n");
 			continue;
 		}
 		std::cout << "Connected to the host!\n";
-		if (bind(*sockfd, result->ai_addr, result->ai_addrlen) == -1)
+		if (bind(*listen_fd, result->ai_addr, result->ai_addrlen) == -1)
 		{
-			perror("Bind failed.\n");
+			::perror("Bind failed.\n");
 			continue;
 		}
 		break;
