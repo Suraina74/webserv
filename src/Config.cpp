@@ -42,26 +42,54 @@ void Config::parseBodySize(string& val, ServerConfig& server, int lineNum)
 	}
 }
 
-void Config::parseErr(string& val, string& extra, ServerConfig& server, int lineNum)
+void Config::parseErr(string& val, ServerConfig& server, int lineNum)
 {
 	emptyValCheck(val, lineNum);
+	static const set<int> validErrCodes = {400, 401, 402, 403, 404, 405, 406, 407, 408, 409,
+    410, 411, 412, 413, 414, 415, 416, 417, 418, 421, 422, 426, 500, 501, 502, 503, 504, 505};
+
+	size_t pathPos = val.find_last_of(" ") + 1;
+	if (pathPos == string::npos)
+    	throw runtime_error("Line " + to_string(lineNum) + ": error_page requires a code and a path.");
+	string	errPath = val.substr(pathPos);
+	string codes = val.substr(0, pathPos - 1);
+	if (codes.empty() || errPath.empty())
+    	throw runtime_error("Line " + to_string(lineNum) + ": error_page requires a code and a path.");
+	verifyErrPath(errPath, lineNum);
+
+	istringstream iss(codes);
+	vector<int> errCodes;
+	string errCode;
+	while (iss >> errCode)
+	{
+		if (validErrCodes.find(stoi(errCode)) == validErrCodes.end())
+			throw runtime_error("Line " + to_string(lineNum) + ": found invalid error code.");
+		errCodes.push_back(stoi(errCode));
+	}
+	server.setErrPage(errCodes, errPath);
 }
 
 void Config::parseServerName(string& val, ServerConfig& server, int lineNum)
 {
 	emptyValCheck(val, lineNum);
-	if (val.size() > 63)
-		throw runtime_error("Line " + to_string(lineNum) + ": server name too long.");
-	string	validChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-";
-	if (val.find_first_not_of(validChars) != string::npos)
-		throw runtime_error("Line " + to_string(lineNum) + ": found invalid character.");
-	if (val.front() == '-' || val.front() == '.' || val.back() == '-' || val.back() == '.')
-		throw runtime_error("Line " + to_string(lineNum) + ": server name cannot end or begin with '.' or '-'.");
-	if (val.find(".-") != string::npos || val.find("-.") != string::npos || val.find("..") != string::npos)
-		throw runtime_error("Line " + to_string(lineNum) + ": server name cannot be separated by '.-', '-.' or '..'. ");
-	server.setServerName(val);
 
-	//current solution is incorrect i should check each label that is seperated by .
+	if (val.size() > 253)
+        throw runtime_error("Line " + to_string(lineNum) + ": server name too long.");
+    if (val.front() == '.' || val.back() == '.')
+        throw runtime_error("Line " + to_string(lineNum) + ": server name cannot begin or end with '.'.");
+
+	string tmp = val;
+	while (true)
+	{
+       size_t dotPos = tmp.find_first_of(".");
+        if (dotPos == string::npos)
+            break;
+		string label = tmp.substr(0, dotPos);
+		verifyLabel(label, lineNum);
+		tmp.erase(0, dotPos + 1);
+	}
+	verifyLabel(tmp, lineNum);
+	server.setServerName(val);
 }
 
 void Config::parseHost(string& val, ServerConfig& server, int lineNum)
@@ -150,12 +178,7 @@ void Config::parseLine(string& line, ServerConfig& server, int lineNum)
 	if (iss >> extra)
 	{
 		if (key == "error_page")
-		{
-			string extra2;
-        	if (iss >> extra2)
-        	    throw runtime_error("Line " + to_string(lineNum) + ": Too many arguments.");
-			parseErr(val, extra, server, lineNum);
-		}
+			parseErr(val, server, lineNum);
 		else
     		throw runtime_error("Line " + to_string(lineNum) + ": Too many arguments.");
 	}

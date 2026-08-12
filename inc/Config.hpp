@@ -22,10 +22,12 @@ class Config
 		void parseIndex(string& val, ServerConfig& server, int lineNum);
 		void parsePort(string& val, ServerConfig& server, int lineNum);
 		void parseBodySize(string& val, ServerConfig& server, int lineNum);
-		void parseErr(string& val, string& extra, ServerConfig& server, int lineNum);
+		void parseErr(string& val, ServerConfig& server, int lineNum);
 		void parseServerName(string& val, ServerConfig& server, int lineNum);
 };
 
 void cleanLine(string& line);
 void verifyNum(string sub, int lineNum);
 void emptyValCheck(string& val, int lineNum);
+void verifyLabel(string& val, int lineNum);
+void verifyErrPath(string& path, int lineNum);

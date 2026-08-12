@@ -47,3 +47,31 @@ void verifyNum(string sub, int lineNum)
 	if (pos != sub.length())
 		throw runtime_error("Line " + to_string(lineNum) + ": Invalid octet value."); 
 }
+
+void verifyLabel(string& val, int lineNum)
+{
+
+	if (val.empty())
+        throw runtime_error("Line " + to_string(lineNum) + ": empty server name label.");
+	if (val.size() > 63)
+		throw runtime_error("Line " + to_string(lineNum) + ": server name label too long.");
+	string	validChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-";
+	if (val.find_first_not_of(validChars) != string::npos)
+		throw runtime_error("Line " + to_string(lineNum) + ": invalid character in server name.");
+	if (val.front() == '-' || val.back() == '-')
+		throw runtime_error("Line " + to_string(lineNum) + ": server name cannot end or begin with '-'.");
+}
+
+void verifyErrPath(string& path, int lineNum)
+{
+	if (path[0] != '/')
+		throw runtime_error("Line " + to_string(lineNum) + ": path should start with '/'.");
+	static const string validChars =
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/._-";
+    if (path.find_first_not_of(validChars) != string::npos)
+        throw runtime_error("Line " + to_string(lineNum) + ": invalid character in error path.");
+
+    if (path.find("..") != string::npos)
+        throw runtime_error("Line " + to_string(lineNum) + ": path cannot contain '..'.");
+
+}

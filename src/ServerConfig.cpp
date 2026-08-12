@@ -1,8 +1,14 @@
 #include "../inc/ServerConfig.hpp"
 
-ServerConfig::ServerConfig():_listen(0), _host(""), _serverName(""), _root(""), _errPage(""), _index("") {}
+ServerConfig::ServerConfig():_listen(0), _host(""), _serverName(""), _root(""), _index("") {}
 
 ServerConfig::~ServerConfig(){}
+
+void ServerConfig::setErrPage(const vector<int>& errCodes, const string& path)
+{
+	for (size_t i = 0; i < errCodes.size(); i++)
+        _errPages[errCodes[i]] = path;
+}
 
 void ServerConfig::setPort(const int port)
 {

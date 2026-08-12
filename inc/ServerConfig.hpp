@@ -11,10 +11,9 @@ class ServerConfig
 		string	_host;
 		string	_index;
 		string	_serverName;
-		string	_errPage;
 		size_t  _maxBodySize;
+		map<int, string>  _errPages;
 		bool	_foundServer = false;
-		//map<int, string>  _errorPages;
 		vector<Location> _locations;
 		
 	public:
@@ -27,6 +26,7 @@ class ServerConfig
 		void setIndex(const string &index);
 		void setBodySize(const size_t &bodySize);
 		void setServerName(const string &name);
+		void setErrPage(const vector<int>& errCodes, const string& path);
 
 
 		const int				getPort() const;
