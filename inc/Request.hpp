@@ -15,8 +15,6 @@ class Request {
 		// ssize_t 	contentLength{};
 	public:
 		Request(std::string input) : Input(input){}
-		// Request(const Request& other);
-		// Request& operator=(const Request& other);
 		~Request(){}
 		void extractElements();
 		// Extract body -> extractBody()
@@ -24,3 +22,7 @@ class Request {
 
 ssize_t 	getContentlength(std::string message);
 ssize_t 	getBytesUntilHeaders(std::string message);
+
+
+// Request ontvangen, Extract information, 
+// Wat nodig voor response: Method, Path, statusCode, contentLength, Body

@@ -64,7 +64,6 @@ ssize_t	getBytesUntilHeaders(std::string message){
 
 // HTTP chunked transfer encoding is only used when the sender explicitly uses:
 // Transfer-Encoding: chunked
-
 // But we use content-length, this is a sign that it is not using HTTP chunked transfer encoding. The receiver should receive content-length bytes after the header section.
 
 // Eerst volledige request krijgen met recv.
