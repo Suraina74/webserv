@@ -241,6 +241,7 @@ void Config::parse(const string &filename)
 	ifstream configFile(filename);
 	string line;
 	int lineNum = 0;
+	bool     foundServer = false;
 
 	if(!configFile.is_open())
 		throw runtime_error("Line " + to_string(lineNum) + ": Open config file failed.");
@@ -252,11 +253,15 @@ void Config::parse(const string &filename)
 		if (line.empty())
 			continue;
 		if (line == "server")
+		{
 			parseServer(configFile, lineNum);
+			foundServer = true;
+		}
 
 		else
     		throw runtime_error("Line " + to_string(lineNum) + ": Expected 'server'");
-		cout << line << endl;
 	}
+	if (!foundServer)
+    	throw runtime_error("Config file contains no server block.");
 }
 

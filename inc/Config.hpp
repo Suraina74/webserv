@@ -1,6 +1,16 @@
 #pragma once
-#include "Server.hpp"
-#include "Location.hpp"
+#include <iostream>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <fstream>
+#include <sstream>
+#include <poll.h>
+#include <set>
+#include <limits>
+#include <sys/stat.h>
 #include "ServerConfig.hpp"
 
 using namespace std;

@@ -1,7 +1,8 @@
 #pragma once
-#include "Server.hpp"
-#include "Config.hpp"
-#include "Location.hpp"
+#include <string>
+#include <map>
+#include <vector>
+#include <cstddef> 
 
 using namespace std;
 class ServerConfig 
@@ -14,8 +15,7 @@ class ServerConfig
 		string	_serverName;
 		size_t  _maxBodySize;
 		map<int, string>  _errPages;
-		bool	_foundServer = false;
-		vector<Location> _locations;
+		//vector<Location> _locations;
 		
 	public:
 		ServerConfig();
