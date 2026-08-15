@@ -31,9 +31,9 @@ std::string receiveRequest(int clientFd){
 int	eventLoop(int *sockfd)
 {
 	EventLoop	poll_fds;
-	char		index_page_txt[2048];
+	// char		index_page_txt[2048];
 
-	char index_path[] = "www/index.html";
+	// char index_path[] = "www/index.html";
 	memset(&poll_fds.fds, 0, sizeof(poll_fds.fds));
 	poll_fds.fds.fd = *sockfd; //this is the fd to read from
 	poll_fds.fds.events = POLLIN; //the events we are intereted in
@@ -49,24 +49,23 @@ int	eventLoop(int *sockfd)
 			int new_fd = accept(*sockfd, NULL, NULL);
 			if (new_fd >= 0)
 			{
-				int open_index = open(index_path, O_RDONLY);
-				if (open_index >= 0)
-				{
-					ssize_t n = read(open_index, index_page_txt, sizeof(index_page_txt) - 1);
-					if (n > 0)
-					{
-						index_page_txt[n] = '\0';
-						send(new_fd, index_page_txt, n, 0);
-					}
-					close(open_index);
+				std::string fullRequest = receiveRequest(new_fd);
+				Request request(fullRequest);
+				request.extractElements();
+				Response response(request);
+				response.composeResponse();
+				std::string fullResponse = response.getFullResponse();
+				int lenResponse = fullResponse.length();
+				const char *cFullResponse = fullResponse.c_str();
+				// send sends in parts too like read.
+				int n = send(new_fd, cFullResponse, lenResponse, 0);
+				int totalSent = n;
+				while (totalSent < lenResponse){
+					n = send(new_fd, cFullResponse + totalSent, lenResponse - totalSent, 0);
+					totalSent = totalSent + n;
 				}
+				close (new_fd);
 			}
-			std::string fullRequest = receiveRequest(new_fd);
-			// std::cout << fullRequest;
-			Request request(fullRequest);
-			request.extractElements();
-			Response response(request);
-			response.composeResponse();
 		}
 	}
 	return (0);

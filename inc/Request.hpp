@@ -12,8 +12,6 @@ class Request {
 		std::string	statusCode{};
 		std::string	statusText{};
 		std::string	Content{};
-		// std::string contentLengthHeader{};
-		// ssize_t 	contentLength{};
 	public:
 		Request(std::string input) : Input(input){}
 		~Request(){}
@@ -21,6 +19,7 @@ class Request {
 		// std::string getMethod();
 		std::string getPath();
 		std::string getStatusCode();
+		std::string getStatusText();
 		// Extract body -> extractBody()
 };
 

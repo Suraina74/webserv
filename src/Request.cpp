@@ -1,7 +1,7 @@
 #include "../inc/Request.hpp"
 
 void Request::extractElements(){
-	int posCRLF = Input.find("\r\n"); // Each line ends with \r\n.
+	int posCRLF = Input.find("\r\n");
 	requestLine = Input.substr(0, posCRLF);
 
 	int i = 0;
@@ -14,13 +14,21 @@ void Request::extractElements(){
 			Method = word;
 		}
 		else{
-			Path = word;
+			Path = "www" + word;
 		}
 		i++;
 	}
-	if (Path == "/" || Path == "/index.html" || Path == "/uploads.html"){
+	if (Path == "www/"){
+		Path = "www/index.html";
+	}
+	if (Path == "www/index.html" || Path == "www/uploads.html" || Path == "www/gaia.html"){
 		statusCode = "200";
 		statusText = "OK";
+	}
+	else{
+		Path = "www/404.html";
+		statusCode = "404";
+		statusText = "Not Found";
 	}
 }
 
@@ -53,6 +61,9 @@ std::string Request::getPath(){
 }
 std::string Request::getStatusCode(){
 	return statusCode;
+}
+std::string Request::getStatusText(){
+	return statusText;
 }
 
 // GET / HTTP/1.1 niets na /

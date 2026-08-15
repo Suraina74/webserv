@@ -1,20 +1,21 @@
 #pragma once 
 #include "Server.hpp"
 #include "Request.hpp"
+#include <sstream>
 
-class Response 
+class Response
 {
 	private:
-		Request 	httpRequest;
+		Request 	request;
 		std::string	statusLine = "HTTP/1.1";
-		std::string statusText;
-		std::string contentType;
-		std::string contentLength;
+		std::string contentType = "Content-Type: text/html\r\n";
+		std::string contentLength = "Content-Length: ";
+		std::string body{};
+		std::string fullResponse{};
 	public:
-		Response(Request request) : httpRequest(request){}
-		// Response(const Response& other);
-		// Response operator=(const Response& other);
-		void composeResponse();
+		Response(Request httpRequest) : request(httpRequest){}
+		int composeResponse();
+		std::string getFullResponse();
 		~Response(){}
 };
 
