@@ -2,6 +2,8 @@
 #include "Config.hpp"
 #include "ServerConfig.hpp"
 
+using namespace std;
+
 class Server 
 {
 	private:

@@ -24,9 +24,11 @@ class Config
 		Config();
 		~Config();
 
-		const vector<ServerConfig>& getServers() const;
+		//main parser
 		void parse(const string& filename);
-		void parseServer(ifstream& configFile, int& lineNum);
+		//server block parser
+		void parseServer(ifstream& configFile, int& lineNum, bool& foundServer);
+		//server directive parser
 		void parseLine(string& line, ServerConfig& server, int lineNum);
 		void parseHost(string& val, ServerConfig& server, int lineNum);
 		void parseRoot(string& val, ServerConfig& server, int lineNum);
@@ -35,6 +37,21 @@ class Config
 		void parseBodySize(string& val, ServerConfig& server, int lineNum);
 		void parseErr(string& val, ServerConfig& server, int lineNum);
 		void parseServerName(string& val, ServerConfig& server, int lineNum);
+		//location block parser
+		void parseLocation(ifstream& configFile, string& line, ServerConfig& server, int lineNum);
+		//location directive parser
+		void parseLocLine(string& line, Location& loc, int lineNum);
+		void parseMethods(string& val, Location& loc, int lineNum);
+		void parseCGI(string& val, Location& loc, int lineNum);
+		void parseLocPath(string& val, Location& loc, int lineNum);
+    	void parseLocRoot(string& val, Location& loc, int lineNum);
+    	void parseLocIndex(string& val, Location& loc, int lineNum);
+    	void parseUploadPath(string& val, Location& loc, int lineNum);
+    	void parseUpload(string& val, Location& loc, int lineNum);
+    	void parseRedirect(string& val, Location& loc, int lineNum);
+    	void parseDirectoryListing(string& val, Location& loc, int lineNum);
+		//accessor to server
+		const vector<ServerConfig>& getServers() const;
 };
 
 void cleanLine(string& line);

@@ -1,11 +1,13 @@
 #pragma once 
 #include "Server.hpp"
 
+using namespace std;
+
 class Socket 
 {
 	private:
-		std::string	status_line;
-		std::string	*body;
+		string	status_line;
+		string	*body;
 		//hashtable var voor headers
 	public:
 		Socket();

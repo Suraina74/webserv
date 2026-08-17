@@ -1,4 +1,5 @@
 #include "../inc/EventLoop.hpp"
+#include <cstring>
 
 int	eventLoop(int *sockfd)
 {

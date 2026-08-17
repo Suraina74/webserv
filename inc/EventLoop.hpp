@@ -1,6 +1,8 @@
 #pragma once
 #include "Server.hpp"
 
+using namespace std;
+
 class EventLoop 
 {
 	public:

@@ -13,7 +13,7 @@ void cleanLine(string& line)
     }
 
 	line.erase(0, firstPos);
-	size_t lastPos = line.find_last_not_of(" \t");
+	size_t lastPos = line.find_last_not_of(" \t\r");
 		line.erase(lastPos + 1);
 }
 

@@ -1,11 +1,9 @@
 #pragma once
-#include <string>
-#include <map>
-#include <vector>
-#include <cstddef> 
+#include "Location.hpp"
 
 using namespace std;
-class ServerConfig 
+
+class ServerConfig
 {
 	private:
 		int		_listen;
@@ -15,7 +13,7 @@ class ServerConfig
 		string	_serverName;
 		size_t  _maxBodySize;
 		map<int, string>  _errPages;
-		//vector<Location> _locations;
+		vector<Location> _locations;
 		
 	public:
 		ServerConfig();
@@ -28,12 +26,13 @@ class ServerConfig
 		void setBodySize(const size_t &bodySize);
 		void setServerName(const string &name);
 		void setErrPage(const vector<int>& errCodes, const string& path);
+		void addLocation(const Location& loc);
 
-
-		int				getPort() const;
+		int						getPort() const;
 		const string			&getHost() const;
 		const string			&getRoot() const;
 		const string			&getIndex() const;
 		const string			&getServerName() const;
 		const size_t			&getBodySize() const;
+		const map<int, string>	&getErrPages() const;
 };

@@ -40,6 +40,11 @@ void ServerConfig::setServerName(const string &name)
 	_serverName = name;
 }
 
+void ServerConfig::addLocation(const Location& loc)
+{
+	_locations.push_back(loc);
+}
+
 int	ServerConfig::getPort() const
 {
 	return _listen;
@@ -68,4 +73,9 @@ const string& ServerConfig::getServerName() const
 const size_t& ServerConfig::getBodySize() const
 {
 	return _maxBodySize;
+}
+
+const std::map<int, std::string>& ServerConfig::getErrPages() const
+{
+    return _errPages;
 }
