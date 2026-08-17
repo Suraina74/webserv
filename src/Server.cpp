@@ -1,7 +1,7 @@
-#include "../inc/Server.hpp"
 #include "../inc/EventLoop.hpp"
+#include "../inc/ServerConfig.hpp"
 
-int	server()
+int	server(const ServerConfig &servers)
 {
 	struct addrinfo *result = nullptr;
 	int listen_fd = 0;
@@ -19,7 +19,7 @@ int	server()
 		perror("listen");
 		return (1);
 	}
-	if (eventLoop(&listen_fd))
+	if (eventLoop(&listen_fd, servers))
 		return (1);
 	return (0);
 }

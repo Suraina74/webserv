@@ -1,5 +1,9 @@
 #pragma once
-#include "Server.hpp"
+#include <poll.h>
+#include <vector>
+#include <iostream>
+
+using namespace std;
 
 class EventLoop 
 {

@@ -1,11 +1,13 @@
 #pragma once 
-#include "Server.hpp"
+#include <iostream>
+
+using namespace std;
 
 class Response 
 {
 	private:
-		std::string	status_line;
-		std::string	*body;
+		string	status_line;
+		string	*body;
 		//hashtable var voor headers
 	public:
 		Response();

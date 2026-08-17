@@ -1,63 +1,57 @@
 #pragma once
-// #include "Server.hpp"
+#include <iostream>
+#include <unistd.h>
+#include <fstream>
+#include <sstream>
+#include <poll.h>
+#include <set>
+#include <limits>
+#include <sys/stat.h>
+#include "ServerConfig.hpp"
 
-using std::cout;
-using std::cerr;
-using std::cin;
+using namespace std;
 
-using std::endl;
-using std::string;
-using std::vector;
-using std::map;
-using std::set;
-using std::runtime_error;
+class Config 
+{
+	private:
+		vector<ServerConfig> _servers;
 
-using std::ifstream;
-using std::ofstream;
-using std::istringstream;
+	public:
+		Config();
+		~Config();
 
-// class Config 
-// {
-// 	private:
-// 		vector<ServerConfig> _servers;
+		//main parser
+		void parse(const string& filename);
+		//server block parser
+		void parseServer(ifstream& configFile, int& lineNum, bool& foundServer);
+		//server directive parser
+		void parseLine(string& line, ServerConfig& server, int lineNum);
+		void parseHost(string& val, ServerConfig& server, int lineNum);
+		void parseRoot(string& val, ServerConfig& server, int lineNum);
+		void parseIndex(string& val, ServerConfig& server, int lineNum);
+		void parsePort(string& val, ServerConfig& server, int lineNum);
+		void parseBodySize(string& val, ServerConfig& server, int lineNum);
+		void parseErr(string& val, ServerConfig& server, int lineNum);
+		void parseServerName(string& val, ServerConfig& server, int lineNum);
+		//location block parser
+		void parseLocation(ifstream& configFile, string& line, ServerConfig& server, int lineNum);
+		//location directive parser
+		void parseLocLine(string& line, Location& loc, int lineNum);
+		void parseMethods(string& val, Location& loc, int lineNum);
+		void parseCGI(string& val, Location& loc, int lineNum);
+		void parseLocPath(string& val, Location& loc, int lineNum);
+    	void parseLocRoot(string& val, Location& loc, int lineNum);
+    	void parseLocIndex(string& val, Location& loc, int lineNum);
+    	void parseUploadPath(string& val, Location& loc, int lineNum);
+    	void parseUpload(string& val, Location& loc, int lineNum);
+    	void parseRedirect(string& val, Location& loc, int lineNum);
+    	void parseDirectoryListing(string& val, Location& loc, int lineNum);
+		//accessor to server
+		const vector<ServerConfig>& getServers() const;
+};
 
-// 	public:
-// 		Config();
-// 		~Config();
-
-// 		void cleanLine(string& line);
-// 		void parseLine(string& line, ServerConfig& server, int lineNum);
-// 		void parse(const std::string& filename);
-// 		const std::vector<ServerConfig>& getServers() const;
-// 		void parseHost(string& line, ServerConfig& server, int lineNum);
-// 		void parseRoot(string& line, ServerConfig& server, int lineNum);
-// 		void parseIndex(string& line, ServerConfig& server, int lineNum);
-// 		void parsePort(string& line, ServerConfig& server, int lineNum);
-// 		void parseServer(ifstream& configFile, int& lineNum);
-// };
-
-// class ServerConfig 
-// {
-// 	private:
-// 		int		_listen;
-// 		string	_host;
-// 		string	_serverName;
-// 		string	_root;
-// 		string	_errPage;
-// 		string	_index;
-// 		bool	_foundServer = false;
-		
-// 	public:
-// 		ServerConfig();
-// 		~ServerConfig();
-
-// 		void setPort(int port);
-// 		void setHost(const std::string &host);
-// 		void setRoot(const std::string &root);
-// 		void setIndex(const std::string &index);
-
-// 		int							getPort() const;
-// 		const std::string			&getHost() const;
-// 		const std::string			&getRoot() const;
-// 		const std::string			&getIndex() const;
-// };
+void cleanLine(string& line);
+void verifyNum(string sub, int lineNum);
+void emptyValCheck(string& val, int lineNum);
+void verifyLabel(string& val, int lineNum);
+void verifyErrPath(string& path, int lineNum);

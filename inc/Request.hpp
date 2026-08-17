@@ -1,11 +1,13 @@
 #pragma once 
-#include "Server.hpp"
+#include <iostream>
+
+using namespace std;
 
 class Request 
 {
 	private:
-		std::string	request_line;
-		std::string	*body;
+		string	request_line;
+		string	*body;
 		//hashtable var voor headers
 	public:
 		Request();

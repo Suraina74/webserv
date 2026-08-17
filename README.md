@@ -14,6 +14,7 @@ Send back to client                        Process HTTP request
          |                                          V
          ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ Parse into configs
 ```
+
 # Instructions
 
 To start the program: send terminal input
@@ -22,7 +23,36 @@ make
 ./webserv filename.config
 ______________________
 
-# What is filename.config
+# What does a server structure look like in its config
+Here is a complete example that covers essentially all the functionality your Webserv subject asks for.
+Config
+│
+├── ServerConfig
+│   ├── listen
+│   ├── host
+│   ├── server_name
+│   ├── root
+│   ├── index
+│   ├── error_page
+│   ├── client_max_body_size
+│   │
+│   ├── Location
+│   ├── Location
+│   └── Location
+│
+└── ServerConfig
+    ├── ...
+    └── Locations
+In ./config/standard.config we included a complete server config example.
+the outer server{...} represents one website/server configuration. There could be multiple servers in a config file. 
+- Listen tells your server which port to listen on. 
+- Host specifies the interface/address the server should bind to.
+- Server_name identifies the website. This becomes important if you have multiple servers.
+- Root is the default filesystem location for this server.
+- The index directive tells your server: If the requested resource is a directory, try this file.
+- Client_max_body_size is specifically required so that an HTTP requestion wont exceed the configured limit.
+- Error_page tells the server what page to return when an error occurs.
+- Locations allows different URL paths of the same server to have different behavior/configuration.
 
 # Understanding different functions
 socket()  →  outlet installed, no wiring yet

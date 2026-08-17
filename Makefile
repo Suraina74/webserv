@@ -1,7 +1,7 @@
 NAME = webserv
 CC = c++
-FLAGS = -Wall -Wextra -Werror -g3
-SRC = src/main.cpp src/EventLoop.cpp src/Server.cpp #src/Config.cpp
+FLAGS = -Wall -Wextra -Werror -std=c++11
+SRC = src/main.cpp src/Server.cpp src/EventLoop.cpp src/Config.cpp src/ConfigUtils.cpp src/ServerConfig.cpp src/ConfigServerAttri.cpp
 OBJ = $(SRC:.cpp=.o)
 
 all: $(NAME)
