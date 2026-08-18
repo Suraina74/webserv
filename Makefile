@@ -36,7 +36,9 @@ SRC =	src/main.cpp \
 		src/configParser/Config.cpp \
 		src/configParser/ConfigUtils.cpp \
 		src/configParser/ServerConfig.cpp \
-		src/configParser/ConfigServerAttri.cpp
+		src/configParser/ConfigServerAttri.cpp \
+		src/configParser/ConfigLocationAttri.cpp \
+		src/configParser/Location.cpp 
 
 OBJ = $(SRC:%.cpp=objs/%.o)
 

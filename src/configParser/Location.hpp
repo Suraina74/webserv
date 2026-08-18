@@ -20,10 +20,14 @@ class Location
    		bool					_directoryListing;
 	
 	public:
+		// Constructor
+		Location();
+		~Location();
 		// Setters
     	void setPath(const string& path);
     	void setMethods(const vector<string>& methods);
     	void addMethod(const string& method);
+		void addCGI(const string& ext, const string& path);
     	void setRoot(const string& root);
     	void setIndex(const string& index);
     	void setUploadPath(const string& uploadPath);
@@ -38,6 +42,7 @@ class Location
     	const string& getIndex() const;
     	const string& getUploadPath() const;
     	const string& getRedirect() const;
-    	bool isUploadEnabled() const;
-    	bool isDirectoryListing() const;
+    	bool getUploadEnabled() const;
+    	bool getDirectoryListing() const;
+		const map<string, string>& getCGI() const;
 };

@@ -21,9 +21,20 @@ void emptyValCheck(string& val, int lineNum)
 {
 	if (val.empty())
 		throw runtime_error("Line " + to_string(lineNum) + ": empty value.");
+
+	// strip trailing whitespace/CR/LF first
+	while (!val.empty() && (val.back() == ' ' || val.back() == '\t' ||
+	                         val.back() == '\r' || val.back() == '\n'))
+		val.pop_back();
+
+	if (val.empty())
+		throw runtime_error("Line " + to_string(lineNum) + ": empty value.");
+
 	if (val.back() != ';')
-    	throw runtime_error("Line " + to_string(lineNum) + ": Missing ';'");
+		throw runtime_error("Line " + to_string(lineNum) + ": Missing ';'");
+
 	val.pop_back();
+
 	if (val.empty())
 		throw runtime_error("Line " + to_string(lineNum) + ": empty value.");
 }
