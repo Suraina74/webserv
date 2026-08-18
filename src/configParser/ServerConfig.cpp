@@ -1,4 +1,4 @@
-#include "../inc/ServerConfig.hpp"
+#include "ServerConfig.hpp"
 
 ServerConfig::ServerConfig():_listen(0), _root(""), _host(""), _index(""), _serverName(""), _maxBodySize(0) {}		
 

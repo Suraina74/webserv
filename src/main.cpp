@@ -1,4 +1,4 @@
-#include "../inc/Config.hpp"
+#include "configParser/Config.hpp"
 #include "../inc/EventLoop.hpp"
 
 int main(int ac, char **av)

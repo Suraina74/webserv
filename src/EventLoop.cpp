@@ -105,7 +105,7 @@
 // }
 
 #include "../inc/EventLoop.hpp"
-#include "../inc/ServerConfig.hpp"
+#include "configParser/ServerConfig.hpp"
 #include <string.h>
 
 int eventLoop(int *listen_fd, const ServerConfig &servers)

@@ -1,5 +1,5 @@
 #pragma once 
-#include "Config.hpp"
+#include "../src/configParser/Config.hpp"
 
 using namespace std;
 

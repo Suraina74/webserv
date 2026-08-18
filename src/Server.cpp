@@ -1,5 +1,5 @@
 #include "../inc/EventLoop.hpp"
-#include "../inc/ServerConfig.hpp"
+#include "configParser/ServerConfig.hpp"
 
 int	server(const ServerConfig &servers)
 {
