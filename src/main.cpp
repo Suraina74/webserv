@@ -26,7 +26,6 @@ int main(int ac, char **av)
             cout << "  Index: " << servers[i].getIndex() << endl;
             cout << "  Body size: " << servers[i].getBodySize() << endl;
 
-            
             const map<int, string>& errors = servers[i].getErrPages();
 
             for (map<int, string>::const_iterator it = errors.begin();
@@ -43,6 +42,5 @@ int main(int ac, char **av)
         cerr << e.what() << endl;
         return 1;
     }
-    
     return 0;
 }

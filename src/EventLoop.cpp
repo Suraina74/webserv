@@ -20,7 +20,7 @@ int eventLoop(int *listen_fd, const ServerConfig &servers)
 	poll_fds.fds.push_back(pfd);
 	while (1)
 	{
-		int	ready = poll(poll_fds.fds.data(), nfds, 100);
+		int ready = poll(poll_fds.fds.data(), nfds, 100);
 		if (ready == -1)
 		{
 			::perror("poll");
@@ -45,9 +45,15 @@ int eventLoop(int *listen_fd, const ServerConfig &servers)
 			if ((poll_fds.fds[i].revents & POLLIN))
 			{
 				char buffer[2048];
-				if (recv(poll_fds.fds[i].fd, buffer, sizeof(buffer), 0) == -1)
+				ssize_t received = recv(poll_fds.fds[i].fd, buffer, sizeof(buffer), 0);
+				if (received <= 0)
 				{
-					::perror("recv");
+					if (received == -1)
+						::perror("recv");
+					close(poll_fds.fds[i].fd);
+					poll_fds.fds.erase(poll_fds.fds.begin() + i);
+					nfds--;
+					i--;
 					continue;
 				}
 				poll_fds.fds[i].events = POLLOUT;
@@ -61,9 +67,13 @@ int eventLoop(int *listen_fd, const ServerConfig &servers)
 					if (n > 0)
 					{
 						index_page_txt[n] = '\0';
-						if (send(poll_fds.fds[i].fd, index_page_txt, n, MSG_NOSIGNAL))
+						if (send(poll_fds.fds[i].fd, index_page_txt, n, MSG_NOSIGNAL) == -1)
 						{
 							::perror("send");
+							close(poll_fds.fds[i].fd);
+							poll_fds.fds.erase(poll_fds.fds.begin() + i);
+							nfds--;
+							i--;
 							continue;
 						}
 						poll_fds.fds[i].events = POLLIN;
