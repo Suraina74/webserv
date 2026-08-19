@@ -31,7 +31,6 @@ CC = c++
 FLAGS = -Wall -Wextra -Werror -std=c++11
 
 SRC =	src/main.cpp \
-		src/Server.cpp \
 		src/EventLoop.cpp \
 		src/configParser/Config.cpp \
 		src/configParser/ConfigUtils.cpp \
