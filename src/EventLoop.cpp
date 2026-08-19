@@ -107,22 +107,19 @@
 #include "../inc/EventLoop.hpp"
 #include "configParser/ServerConfig.hpp"
 #include <string.h>
+#include <stdlib.h>
 
 int eventLoop(int *listen_fd, const ServerConfig &servers)
 {
 	char index_page_txt[2048];
-
 	std::string path = std::string(servers.getRoot()) + servers.getIndex();
-
 	EventLoop poll_fds;
-
 	pollfd pfd;
+
 	pfd.fd = *listen_fd;
 	pfd.events = POLLIN;
 	pfd.revents = 0;
-
 	poll_fds.fds.push_back(pfd);
-
 	while (true)
 	{
 		int nfds = poll_fds.fds.size();
@@ -194,18 +191,16 @@ int eventLoop(int *listen_fd, const ServerConfig &servers)
 	return 0;
 }
 
-
-int createSockAddr(int *listen_fd, struct addrinfo *result)
+int createSockAddr(int *listen_fd, struct addrinfo *result, const ServerConfig &servers)
 {
 	struct addrinfo info;
 	struct addrinfo *ptr;
-
 	memset(&info, 0, sizeof(info));
 
 	info.ai_family = AF_INET;
 	info.ai_socktype = SOCK_STREAM;
-
-	if (getaddrinfo("127.0.0.1", "8080", &info, &result) != 0)
+	std::string port = std::to_string(servers.getPort());
+	if (getaddrinfo(servers.getHost().c_str(), port.c_str(), &info, &result) != 0)
 	{
 		cout << "Getaddrinfo failed\n";
 		return 1;
@@ -214,10 +209,9 @@ int createSockAddr(int *listen_fd, struct addrinfo *result)
 	for (ptr = result; ptr != NULL; ptr = ptr->ai_next)
 	{
 		*listen_fd = socket( ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
-
 		if (*listen_fd == -1)
 		{
-			perror("socket");
+			::perror("socket");
 			continue;
 		}
 
@@ -225,29 +219,28 @@ int createSockAddr(int *listen_fd, struct addrinfo *result)
 
 		if (setsockopt(*listen_fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) == -1)
 		{
-			perror("setsockopt");
+			::perror("setsockopt");
 			close(*listen_fd);
 			continue;
 		}
 		if (fcntl(*listen_fd, F_SETFL, O_NONBLOCK) == -1)
 		{
-			perror("fcntl");
+			::perror("fcntl");
 			close(*listen_fd);
 			continue;
 		}
 		if (bind(*listen_fd, ptr->ai_addr, ptr->ai_addrlen) == -1)
 		{
-			perror("bind");
+			::perror("bind");
 			close(*listen_fd);
 			continue;
 		}
 		if (listen(*listen_fd, SOMAXCONN) == -1)
 		{
-			perror("listen");
+			::perror("listen");
 			close(*listen_fd);
 			continue;
 		}
-
 		break;
 	}
 	freeaddrinfo(result);

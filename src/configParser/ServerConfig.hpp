@@ -5,6 +5,7 @@
 #include <netdb.h>
 #include <fcntl.h>
 #include <unistd.h>
+
 using namespace std;
 
 class ServerConfig
@@ -43,4 +44,4 @@ public:
 
 int server(const ServerConfig &servers);
 int eventLoop(int *sockfd, const ServerConfig &servers);
-int createSockAddr(int *sockfd, struct addrinfo *result);
+int createSockAddr(int *sockfd, struct addrinfo *result, const ServerConfig &servers);

@@ -6,7 +6,7 @@ int	server(const ServerConfig &servers)
 	struct addrinfo *result = nullptr;
 	int listen_fd = 0;
 
-	if (createSockAddr(&listen_fd, result) != 0)
+	if (createSockAddr(&listen_fd, result, servers) != 0)
 		return (1);
 	//128 in listen(sockfd, 128) is referred to as backlog number
 	//it is the maximum number of client connections that can be fully 
