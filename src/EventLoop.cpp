@@ -1,6 +1,7 @@
 #include "../inc/EventLoop.hpp"
 #include "configParser/ServerConfig.hpp"
 #include <cstring>
+#include <sys/socket.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -19,7 +20,7 @@ int eventLoop(int *listen_fd, const ServerConfig &servers)
 	poll_fds.fds.push_back(pfd);
 	while (1)
 	{
-		int ready = poll(poll_fds.fds.data(), nfds, 100);
+		int	ready = poll(poll_fds.fds.data(), nfds, 100);
 		if (ready == -1)
 		{
 			::perror("poll");
@@ -27,13 +28,16 @@ int eventLoop(int *listen_fd, const ServerConfig &servers)
 		}
 		if (poll_fds.fds[0].revents & POLLIN)
 		{
-			poll_fds.fds[nfds].fd = accept(*listen_fd, NULL, NULL);
-			if (poll_fds.fds[nfds].fd == -1)
+			pollfd client_pfd;
+			client_pfd.fd = accept(*listen_fd, NULL, NULL);
+			if (client_pfd.fd == -1)
 			{
 				::perror("accept");
 				return (1);
 			}
-			poll_fds.fds[nfds].events = POLLIN;
+			client_pfd.events = POLLIN;
+			client_pfd.revents = 0;
+			poll_fds.fds.push_back(client_pfd);
 			nfds++;
 		}
 		for (int i = 1; i < nfds; i++)
@@ -41,9 +45,13 @@ int eventLoop(int *listen_fd, const ServerConfig &servers)
 			if ((poll_fds.fds[i].revents & POLLIN))
 			{
 				char buffer[2048];
-				recv(poll_fds.fds[i].fd, buffer, sizeof(buffer), 0);
+				if (recv(poll_fds.fds[i].fd, buffer, sizeof(buffer), 0) == -1)
+				{
+					::perror("recv");
+					continue;
+				}
+				poll_fds.fds[i].events = POLLOUT;
 			}
-			poll_fds.fds[i].events = POLLOUT;
 			if (poll_fds.fds[i].revents & POLLOUT)
 			{
 				int open_index = open(path.c_str(), O_RDONLY);
@@ -53,11 +61,15 @@ int eventLoop(int *listen_fd, const ServerConfig &servers)
 					if (n > 0)
 					{
 						index_page_txt[n] = '\0';
-						send(poll_fds.fds[i].fd, index_page_txt, n, 0);
+						if (send(poll_fds.fds[i].fd, index_page_txt, n, MSG_NOSIGNAL))
+						{
+							::perror("send");
+							continue;
+						}
+						poll_fds.fds[i].events = POLLIN;
 					}
 					close(open_index);
 				}
-				poll_fds.fds[i].events = POLLIN;
 			}
 		}
 	}
@@ -75,7 +87,7 @@ int createSockAddr(int *listen_fd, struct addrinfo *result, const ServerConfig &
 	if (getaddrinfo(servers.getHost().c_str(), "8080", &info, &result) != 0)
 	{
 		::perror("getaddrinfo");
-		return 1;
+		return (1);
 	}
 	for (ptr = result; ptr != NULL; ptr = ptr->ai_next)
 	{
