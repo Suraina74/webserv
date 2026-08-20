@@ -1,13 +1,27 @@
 #include "../inc/Request.hpp"
 
-void extractBody(std::string input){
-	int startConDispos = input.find("Content-Disposition");
-	int endConDispos = input.find("Content-Type");
+void Request::extractBody(std::string input, int bodyLen){
+	int startBody = input.find("\r\n\r\n");
+	Body = input.substr(startBody + 4, bodyLen);
+}
 
+void Request::extractFileElements(int bodyLen){
+	size_t startFilename = Body.find("filename=");
+	size_t endFilename = Body.find("Content-Type");
+	fileName = Body.substr(startFilename, (endFilename - startFilename));
+	size_t startOfFileContent = Body.find("\r\n\r\n");
+	size_t lenFileContent = bodyLen - startOfFileContent;
+	fileContent = Body.substr(startOfFileContent + 4, lenFileContent);
+	size_t posWebKit = fileContent.find("------WebKit");
+	fileContent.erase(posWebKit);
+}
+
+void Request::addFile(){
+	
 }
 
 void Request::extractElements(){
-	int posCRLF = Input.find("\r\n"); // CRLF is carriage return(\r) line feed (\n)
+	int posCRLF = Input.find_first_of("\r\n"); // CRLF is carriage return(\r) line feed (\n)
 	requestLine = Input.substr(0, posCRLF);
 
 	int i = 0;
@@ -37,8 +51,12 @@ void Request::extractElements(){
 		statusCode = "404";
 		statusText = "Not Found";
 	}
-	// extract body.
-	extractBody(Input);
+	int contentLength = getContentlength(Input);
+	if (contentLength){
+		extractBody(Input, contentLength);
+		extractFileElements(contentLength);
+		addFile();
+	}
 }
 
 ssize_t getContentlength(std::string message){

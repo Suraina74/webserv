@@ -12,11 +12,16 @@ class Request {
 		std::string Path{};
 		std::string	statusCode{};
 		std::string	statusText{};
-		std::string	Content{};
+		std::string	Body{};
+		std::string fileName{};
+		std::string fileContent{};
 	public:
 		Request(std::string input) : Input(input){}
 		~Request(){}
 		void extractElements();
+		void extractBody(std::string input, int bodyLen);
+		void extractFileElements(int bodyLen);
+		void addFile();
 		// std::string getMethod();
 		std::string getPath();
 		std::string getStatusCode();
