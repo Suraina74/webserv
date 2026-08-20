@@ -12,17 +12,17 @@ std::string receiveRequest(int clientFd){
 	char buffer[2048];
 	ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
 	ssize_t bytesRead = n;
-	std::string messageUntillHeader(buffer, n);
-	while (messageUntillHeader.find("\r\n\r\n") == std::string::npos){
+	std::string messageUntillHeaders(buffer, n);
+	while (messageUntillHeaders.find("\r\n\r\n") == std::string::npos){
 		ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
 		bytesRead = bytesRead + n;
 		std::string newMessage(buffer, n);
-		messageUntillHeader = messageUntillHeader + newMessage;
+		messageUntillHeaders = messageUntillHeaders + newMessage;
 	}
-	ssize_t contentLength = getContentlength(messageUntillHeader);
+	ssize_t contentLength = getContentlength(messageUntillHeaders);
 	// Check on contentLength of het niet een -getal is of een heel groot getal.
-	ssize_t headerBytes = getBytesUntilHeaders(messageUntillHeader);
-	std::string fullRequest = messageUntillHeader;
+	ssize_t headerBytes = getBytesUntilHeaders(messageUntillHeaders);
+	std::string fullRequest = messageUntillHeaders;
 	if (contentLength){
 		while (bytesRead < (headerBytes + contentLength)){
 			ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
@@ -39,7 +39,6 @@ std::string receiveRequest(int clientFd){
 	return fullRequest;
 }
 
-int nfds = 1;
 int eventLoop(int *listen_fd, const ServerConfig &servers)
 {
 	// string path = servers.getRoot() + '/' + servers.getIndex();
@@ -55,12 +54,15 @@ int eventLoop(int *listen_fd, const ServerConfig &servers)
 	while (1)
 	{
 		pollfd client_pfd;
+
+		int nfds = poll_fds.fds.size();
 		int ready = poll(poll_fds.fds.data(), nfds, 100);
 		if (ready == -1)
 		{
 			::perror("poll");
 			return (1);
 		}
+		//this is always true..
 		if (poll_fds.fds[0].revents & POLLIN)
 		{
 			client_pfd.fd = accept(*listen_fd, NULL, NULL);
@@ -97,7 +99,6 @@ int eventLoop(int *listen_fd, const ServerConfig &servers)
 				std::string fullResponse = response.getFullResponse();
 				int lenResponse = fullResponse.length();
 				const char *cFullResponse = fullResponse.c_str();
-				// send sends in parts too like read.
 				int n = send(client_pfd.fd, cFullResponse, lenResponse, 0);
 				if (n == -1 || n == 0){
 					::perror("send");
@@ -135,6 +136,7 @@ int createSockAddr(int *listen_fd, struct addrinfo *result, const ServerConfig &
 	memset(&info, 0, sizeof(info));
 	info.ai_family = AF_INET;
 	info.ai_socktype = SOCK_STREAM;
+	// (char *)servers.getPort().c_str()
 	if (getaddrinfo(servers.getHost().c_str(), "8080", &info, &result) != 0)
 	{
 		::perror("getaddrinfo");

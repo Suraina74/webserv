@@ -67,7 +67,10 @@ int main(int ac, char **av)
                 }
             }
         }
-        server(servers[0]);
+        for (size_t i = 0; i < servers.size(); i++)
+        {
+            server(servers[i]);
+        }
     }
     catch (const exception& e)
     {
