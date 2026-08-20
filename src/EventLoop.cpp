@@ -1,16 +1,49 @@
 #include "../inc/EventLoop.hpp"
 #include "configParser/ServerConfig.hpp"
+#include "../inc/Request.hpp"
+#include "../inc/Response.hpp"
 #include <cstring>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 
+std::string receiveRequest(int clientFd){
+	char buffer[2048];
+	ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
+	ssize_t bytesRead = n;
+	std::string messageUntillHeader(buffer, n);
+	while (messageUntillHeader.find("\r\n\r\n") == std::string::npos){
+		ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
+		bytesRead = bytesRead + n;
+		std::string newMessage(buffer, n);
+		messageUntillHeader = messageUntillHeader + newMessage;
+	}
+	ssize_t contentLength = getContentlength(messageUntillHeader);
+	// Check on contentLength of het niet een -getal is of een heel groot getal.
+	ssize_t headerBytes = getBytesUntilHeaders(messageUntillHeader);
+	std::string fullRequest = messageUntillHeader;
+	if (contentLength){
+		while (bytesRead < (headerBytes + contentLength)){
+			ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
+			if (n == -1 || n == 0)
+			{
+				::perror("recv");
+				return (nullptr);
+			}
+			bytesRead = bytesRead + n;
+			std::string newMessage(buffer, n);
+			fullRequest = fullRequest + newMessage;
+		}
+	}
+	return fullRequest;
+}
+
 int nfds = 1;
 int eventLoop(int *listen_fd, const ServerConfig &servers)
 {
-	char index_page_txt[2048];
-	string path = servers.getRoot() + '/' + servers.getIndex();
+	// string path = servers.getRoot() + '/' + servers.getIndex();
+	(void)servers;
 	EventLoop poll_fds;
 	pollfd pfd;
 
@@ -18,8 +51,10 @@ int eventLoop(int *listen_fd, const ServerConfig &servers)
 	pfd.events = POLLIN;
 	pfd.revents = 0;
 	poll_fds.fds.push_back(pfd);
+	std::string fullRequest{};
 	while (1)
 	{
+		pollfd client_pfd;
 		int ready = poll(poll_fds.fds.data(), nfds, 100);
 		if (ready == -1)
 		{
@@ -28,7 +63,6 @@ int eventLoop(int *listen_fd, const ServerConfig &servers)
 		}
 		if (poll_fds.fds[0].revents & POLLIN)
 		{
-			pollfd client_pfd;
 			client_pfd.fd = accept(*listen_fd, NULL, NULL);
 			if (client_pfd.fd == -1)
 			{
@@ -44,12 +78,8 @@ int eventLoop(int *listen_fd, const ServerConfig &servers)
 		{
 			if ((poll_fds.fds[i].revents & POLLIN))
 			{
-				char buffer[2048];
-				ssize_t received = recv(poll_fds.fds[i].fd, buffer, sizeof(buffer), 0);
-				if (received <= 0)
-				{
-					if (received == -1)
-						::perror("recv");
+				fullRequest = receiveRequest(client_pfd.fd);
+				if (fullRequest.empty()){
 					close(poll_fds.fds[i].fd);
 					poll_fds.fds.erase(poll_fds.fds.begin() + i);
 					nfds--;
@@ -60,26 +90,37 @@ int eventLoop(int *listen_fd, const ServerConfig &servers)
 			}
 			if (poll_fds.fds[i].revents & POLLOUT)
 			{
-				int open_index = open(path.c_str(), O_RDONLY);
-				if (open_index >= 0)
-				{
-					ssize_t n = read(open_index, index_page_txt, sizeof(index_page_txt) - 1);
-					if (n > 0)
-					{
-						index_page_txt[n] = '\0';
-						if (send(poll_fds.fds[i].fd, index_page_txt, n, MSG_NOSIGNAL) == -1)
-						{
-							::perror("send");
-							close(poll_fds.fds[i].fd);
-							poll_fds.fds.erase(poll_fds.fds.begin() + i);
-							nfds--;
-							i--;
-							continue;
-						}
-						poll_fds.fds[i].events = POLLIN;
-					}
-					close(open_index);
+				Request request(fullRequest);
+				request.extractElements();
+				Response response(request);
+				response.composeResponse();
+				std::string fullResponse = response.getFullResponse();
+				int lenResponse = fullResponse.length();
+				const char *cFullResponse = fullResponse.c_str();
+				// send sends in parts too like read.
+				int n = send(client_pfd.fd, cFullResponse, lenResponse, 0);
+				if (n == -1 || n == 0){
+					::perror("send");
+					close(poll_fds.fds[i].fd);
+					poll_fds.fds.erase(poll_fds.fds.begin() + i);
+					nfds--;
+					i--;
+					continue;
 				}
+				int totalSent = n;
+				while (totalSent < lenResponse){
+					n = send(client_pfd.fd, cFullResponse + totalSent, lenResponse - totalSent, 0);
+					if (n == -1 || n == 0){
+						::perror("send");
+						close(poll_fds.fds[i].fd);
+						poll_fds.fds.erase(poll_fds.fds.begin() + i);
+						nfds--;
+						i--;
+						continue;
+					}
+					totalSent = totalSent + n;
+				}
+				poll_fds.fds[i].events = POLLIN;
 			}
 		}
 	}

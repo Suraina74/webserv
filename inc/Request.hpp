@@ -2,6 +2,8 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <fcntl.h>
+#include <unistd.h>
 
 class Request {
 	private:

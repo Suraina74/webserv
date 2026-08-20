@@ -1,6 +1,12 @@
 #include "../inc/EventLoop.hpp"
 #include "../inc/Request.hpp"
 #include "../inc/Response.hpp"
+#include "configParser/ServerConfig.hpp"
+#include <cstring>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 std::string receiveRequest(int clientFd){
 	char buffer[2048];

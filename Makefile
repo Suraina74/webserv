@@ -28,7 +28,7 @@
 
 NAME = webserv
 CC = c++
-FLAGS = -Wall -Wextra -Werror -std=c++11
+FLAGS = -Wall -Wextra -Werror -g -std=c++11
 
 SRC =	src/main.cpp \
 		src/Server.cpp \
