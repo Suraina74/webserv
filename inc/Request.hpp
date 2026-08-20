@@ -1,17 +1,32 @@
 #pragma once 
 #include <iostream>
+#include <string>
+#include <sstream>
 
-using namespace std;
-
-class Request 
-{
+class Request {
 	private:
-		string	request_line;
-		string	*body;
-		//hashtable var voor headers
+		std::string Input{};
+		std::string	requestLine{};
+		std::string Method{};
+		std::string Path{};
+		std::string	statusCode{};
+		std::string	statusText{};
+		std::string	Content{};
 	public:
-		Request();
-		Request(const Request& other);
-		Request& operator=(const Request& other);
-		~Request();
+		Request(std::string input) : Input(input){}
+		~Request(){}
+		void extractElements();
+		// std::string getMethod();
+		std::string getPath();
+		std::string getStatusCode();
+		std::string getStatusText();
+		// Extract body -> extractBody()
 };
+
+ssize_t 	getContentlength(std::string message);
+ssize_t 	getBytesUntilHeaders(std::string message);
+
+
+// Request ontvangen, Extract information, 
+// Wat nodig voor response: Method, Path, statusCode, contentLength, Body
+// Validating http request.
