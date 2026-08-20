@@ -33,33 +33,6 @@ void Config::parseBodySize(string& val, ServerConfig& server, int lineNum)
 	}
 }
 
-// void Config::parseErr(string& val, ServerConfig& server, int lineNum)
-// {
-// 	emptyValCheck(val, lineNum);
-// 	static const set<int> validErrCodes = {400, 401, 402, 403, 404, 405, 406, 407, 408, 409,
-//     410, 411, 412, 413, 414, 415, 416, 417, 418, 421, 422, 426, 500, 501, 502, 503, 504, 505};
-
-// 	size_t pathPos = val.find_last_of(" ") + 1;
-// 	if (pathPos == string::npos)
-//     	throw runtime_error("Line " + to_string(lineNum) + ": error_page requires a code and a path.");
-// 	string	errPath = val.substr(pathPos);
-// 	string codes = val.substr(0, pathPos - 1);
-// 	if (codes.empty() || errPath.empty())
-//     	throw runtime_error("Line " + to_string(lineNum) + ": error_page requires a code and a path.");
-// 	verifyErrPath(errPath, lineNum);
-
-// 	istringstream iss(codes);
-// 	vector<int> errCodes;
-// 	string errCode;
-// 	while (iss >> errCode)
-// 	{
-// 		if (validErrCodes.find(stoi(errCode)) == validErrCodes.end())
-// 			throw runtime_error("Line " + to_string(lineNum) + ": found invalid error code.");
-// 		errCodes.push_back(stoi(errCode));
-// 	}
-// 	server.setErrPage(errCodes, errPath);
-// }
-
 void Config::parseErr(string& val, ServerConfig& server, int lineNum)
 {
     emptyValCheck(val, lineNum);
@@ -70,7 +43,6 @@ void Config::parseErr(string& val, ServerConfig& server, int lineNum)
     };
 
     istringstream iss(val);
-
     vector<int> errCodes;
     string errCode;
     string errPath;
@@ -84,59 +56,39 @@ void Config::parseErr(string& val, ServerConfig& server, int lineNum)
             errPath = errCode;
             break;
         }
-
         size_t pos = 0;
         int code;
-
         try
         {
             code = stoi(errCode, &pos);
         }
         catch (const invalid_argument&)
         {
-            throw runtime_error(
-                "Line " + to_string(lineNum) +
-                ": invalid error code."
-            );
+            throw runtime_error( "Line " + to_string(lineNum) + ": invalid error code.");
         }
         catch (const out_of_range&)
         {
-            throw runtime_error(
-                "Line " + to_string(lineNum) +
-                ": error code out of range."
-            );
+            throw runtime_error("Line " + to_string(lineNum) + ": error code out of range.");
         }
 
         // Make sure the entire token was a number.
         if (pos != errCode.size())
         {
-            throw runtime_error(
-                "Line " + to_string(lineNum) +
-                ": invalid error code."
-            );
+            throw runtime_error("Line " + to_string(lineNum) +": invalid error code.");
         }
 
         if (validErrCodes.find(code) == validErrCodes.end())
         {
-            throw runtime_error(
-                "Line " + to_string(lineNum) +
-                ": found invalid error code."
-            );
+            throw runtime_error("Line " + to_string(lineNum) +": found invalid error code.");
         }
-
         errCodes.push_back(code);
     }
 
     if (errCodes.empty() || errPath.empty())
     {
-        throw runtime_error(
-            "Line " + to_string(lineNum) +
-            ": error_page requires a code and a path."
-        );
+        throw runtime_error("Line " + to_string(lineNum) +": error_page requires a code and a path.");
     }
-
     verifyErrPath(errPath, lineNum);
-
     server.setErrPage(errCodes, errPath);
 }
 

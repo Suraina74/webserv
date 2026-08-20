@@ -31,14 +31,15 @@ CC = c++
 FLAGS = -Wall -Wextra -Werror -g -std=c++11
 
 SRC =	src/main.cpp \
-		src/Server.cpp \
 		src/EventLoop.cpp \
 		src/configParser/Config.cpp \
+		src/configParser/ConfigLocationAttri.cpp \
+		src/configParser/Location.cpp \
 		src/configParser/ConfigUtils.cpp \
 		src/configParser/ServerConfig.cpp \
 		src/configParser/ConfigServerAttri.cpp \
 		src/Request.cpp \
-		src/Response.cpp
+		src/Response.cpp \
 
 OBJ = $(SRC:%.cpp=objs/%.o)
 
