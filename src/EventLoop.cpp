@@ -6,19 +6,19 @@ std::string receiveRequest(int clientFd){
 	char buffer[2048];
 	ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
 	ssize_t bytesRead = n;
-	std::string messageUntillHeader(buffer, n);
-	while (messageUntillHeader.find("\r\n\r\n") == std::string::npos){
+	std::string messageUntillHeaders(buffer, n);
+	while (messageUntillHeaders.find("\r\n\r\n") == std::string::npos){
 		ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
 		bytesRead = bytesRead + n;
 		std::string newMessage(buffer, n);
-		messageUntillHeader = messageUntillHeader + newMessage;
+		messageUntillHeaders = messageUntillHeaders + newMessage;
 	}
-	ssize_t contentLength = getContentlength(messageUntillHeader);
+	ssize_t contentLength = getContentlength(messageUntillHeaders);
 	// Check on contentLength of het niet een -getal is of een heel groot getal.
-	ssize_t headerBytes = getBytesUntilHeaders(messageUntillHeader);
-	std::string fullRequest = messageUntillHeader;
+	ssize_t bytesUntilHeaders = getBytesUntilHeaders(messageUntillHeaders);
+	std::string fullRequest = messageUntillHeaders;
 	if (contentLength){
-		while (bytesRead < (headerBytes + contentLength)){
+		while (bytesRead < (bytesUntilHeaders + contentLength)){
 			ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
 			bytesRead = bytesRead + n;
 			std::string newMessage(buffer, n);
@@ -50,6 +50,7 @@ int	eventLoop(int *sockfd)
 			if (new_fd >= 0)
 			{
 				std::string fullRequest = receiveRequest(new_fd);
+				std::cout << fullRequest;
 				Request request(fullRequest);
 				request.extractElements();
 				Response response(request);

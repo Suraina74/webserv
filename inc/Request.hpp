@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <fstream>
 
 class Request {
 	private:
@@ -30,3 +31,18 @@ ssize_t 	getBytesUntilHeaders(std::string message);
 // Request ontvangen, Extract information, 
 // Wat nodig voor response: Method, Path, statusCode, contentLength, Body
 // Validating http request.
+
+
+// POST /uploads.html HTTP/1.1
+// Host: localhost:8080
+// Connection: keep-alive
+// Content-Length: 207
+// \r\n\r\n
+// ------WebKitFormBoundarydRcwfbvAQ3EKmZuB
+// Content-Disposition: form-data; name="filename"; filename="Hello"
+// Content-Type: application/octet-stream
+
+// helloooo
+
+
+// ------WebKitFormBoundarydRcwfbvAQ3EKmZuB--

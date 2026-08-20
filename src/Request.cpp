@@ -1,7 +1,13 @@
 #include "../inc/Request.hpp"
 
+void extractBody(std::string input){
+	int startConDispos = input.find("Content-Disposition");
+	int endConDispos = input.find("Content-Type");
+
+}
+
 void Request::extractElements(){
-	int posCRLF = Input.find("\r\n");
+	int posCRLF = Input.find("\r\n"); // CRLF is carriage return(\r) line feed (\n)
 	requestLine = Input.substr(0, posCRLF);
 
 	int i = 0;
@@ -21,6 +27,7 @@ void Request::extractElements(){
 	if (Path == "www/"){
 		Path = "www/index.html";
 	}
+	// Kijken of andere manier is om te zien of het bestaande html pages zijn.
 	if (Path == "www/index.html" || Path == "www/uploads.html" || Path == "www/gaia.html"){
 		statusCode = "200";
 		statusText = "OK";
@@ -30,6 +37,8 @@ void Request::extractElements(){
 		statusCode = "404";
 		statusText = "Not Found";
 	}
+	// extract body.
+	extractBody(Input);
 }
 
 ssize_t getContentlength(std::string message){
