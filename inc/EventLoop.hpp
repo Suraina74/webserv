@@ -9,5 +9,4 @@ class EventLoop
 {
 	public:
 		vector<pollfd>	fds;
-		int				timeout;
 };

@@ -101,7 +101,7 @@ int eventLoop(int *listen_fd, const ServerConfig &servers)
 		{
 			if ((poll_fds.fds[i].revents & POLLIN))
 			{
-				fullRequest = receiveRequest(client_pfd.fd);
+				fullRequest = receiveRequest(poll_fds.fds[i].fd);
 				if (fullRequest.empty()){
 					close(poll_fds.fds[i].fd);
 					poll_fds.fds.erase(poll_fds.fds.begin() + i);
@@ -120,7 +120,7 @@ int eventLoop(int *listen_fd, const ServerConfig &servers)
 				std::string fullResponse = response.getFullResponse();
 				int lenResponse = fullResponse.length();
 				const char *cFullResponse = fullResponse.c_str();
-				int n = send(client_pfd.fd, cFullResponse, lenResponse, 0);
+				int n = send(poll_fds.fds[i].fd, cFullResponse, lenResponse, 0);
 				if (n == -1 || n == 0){
 					::perror("send");
 					close(poll_fds.fds[i].fd);
@@ -132,7 +132,7 @@ int eventLoop(int *listen_fd, const ServerConfig &servers)
 				int totalSent = n;
 				while (totalSent < lenResponse)
 				{
-					n = send(client_pfd.fd, cFullResponse + totalSent, lenResponse - totalSent, 0);
+					n = send(poll_fds.fds[i].fd, cFullResponse + totalSent, lenResponse - totalSent, 0);
 					if (n == -1 || n == 0){
 						::perror("send");
 						close(poll_fds.fds[i].fd);
@@ -143,7 +143,6 @@ int eventLoop(int *listen_fd, const ServerConfig &servers)
 					}
 					totalSent = totalSent + n;
 				}
-				poll_fds.fds[i].events = POLLIN;
 				close(poll_fds.fds[i].fd);
 				poll_fds.fds.erase(poll_fds.fds.begin() + i);
 				nfds--;
