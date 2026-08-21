@@ -6,9 +6,10 @@ void Request::extractBody(std::string input, int bodyLen){
 }
 
 void Request::extractFileElements(int bodyLen){
-	size_t startFilename = Body.find("filename=");
+	size_t startFilename = Body.find("filename=") + 9;
 	size_t endFilename = Body.find("Content-Type");
 	fileName = Body.substr(startFilename, (endFilename - startFilename));
+	// std::cout << fileName;
 	size_t startOfFileContent = Body.find("\r\n\r\n");
 	size_t lenFileContent = bodyLen - startOfFileContent;
 	fileContent = Body.substr(startOfFileContent + 4, lenFileContent);
