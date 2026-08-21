@@ -92,6 +92,11 @@ int eventLoop(int *listen_fd, const ServerConfig &servers)
 				::perror("accept");
 				return (1);
 			}
+			if (fcntl(*listen_fd, F_SETFL, O_NONBLOCK) == -1)
+			{
+				::perror("fcntl");
+				continue;
+			}
 			client_pfd.events = POLLIN;
 			client_pfd.revents = 0;
 			poll_fds.fds.push_back(client_pfd);
