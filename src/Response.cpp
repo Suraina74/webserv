@@ -24,8 +24,10 @@ int Response::composeResponse(){
 	std::stringstream ss;
 	ss << bytesRead;
 	ss >> sizeOfBody;
-	contentLength = contentLength + sizeOfBody + "\r\n\r\n";
-	fullResponse = statusLine + contentType + contentLength + body;
+	contentLength = contentLength + sizeOfBody + "\r\n";
+	std::string connection = "Connection: close\r\n\r\n";
+	fullResponse = statusLine + contentType + contentLength + connection + body;
+	std::cout << fullResponse;
 	return 0;
 }
 
