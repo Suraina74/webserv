@@ -11,10 +11,28 @@
 std::string receiveRequest(int clientFd){
 	char buffer[2048];
 	ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
+	if (n == -1)
+	{
+		::perror("recv");
+		return ("");
+	}
+	else if (n == 0)
+	{
+		return ("");
+	}
 	ssize_t bytesRead = n;
 	std::string messageUntillHeaders(buffer, n);
 	while (messageUntillHeaders.find("\r\n\r\n") == std::string::npos){
 		ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
+		if (n == -1)
+		{
+			::perror("recv");
+			return ("");
+		}
+		else if (n == 0)
+		{
+			return ("");
+		}
 		bytesRead = bytesRead + n;
 		std::string newMessage(buffer, n);
 		messageUntillHeaders = messageUntillHeaders + newMessage;
@@ -26,10 +44,14 @@ std::string receiveRequest(int clientFd){
 	if (contentLength){
 		while (bytesRead < (headerBytes + contentLength)){
 			ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
-			if (n == -1 || n == 0)
+			if (n == -1)
 			{
 				::perror("recv");
-				return (nullptr);
+				return ("");
+			}
+			else if (n == 0)
+			{
+				return ("");
 			}
 			bytesRead = bytesRead + n;
 			std::string newMessage(buffer, n);
@@ -62,7 +84,6 @@ int eventLoop(int *listen_fd, const ServerConfig &servers)
 			::perror("poll");
 			return (1);
 		}
-		//this is always true..
 		if (poll_fds.fds[0].revents & POLLIN)
 		{
 			client_pfd.fd = accept(*listen_fd, NULL, NULL);
@@ -90,7 +111,7 @@ int eventLoop(int *listen_fd, const ServerConfig &servers)
 				}
 				poll_fds.fds[i].events = POLLOUT;
 			}
-			if (poll_fds.fds[i].revents & POLLOUT)
+			else if (poll_fds.fds[i].revents & POLLOUT)
 			{
 				Request request(fullRequest);
 				request.extractElements();
@@ -109,7 +130,8 @@ int eventLoop(int *listen_fd, const ServerConfig &servers)
 					continue;
 				}
 				int totalSent = n;
-				while (totalSent < lenResponse){
+				while (totalSent < lenResponse)
+				{
 					n = send(client_pfd.fd, cFullResponse + totalSent, lenResponse - totalSent, 0);
 					if (n == -1 || n == 0){
 						::perror("send");
@@ -122,6 +144,10 @@ int eventLoop(int *listen_fd, const ServerConfig &servers)
 					totalSent = totalSent + n;
 				}
 				poll_fds.fds[i].events = POLLIN;
+				close(poll_fds.fds[i].fd);
+				poll_fds.fds.erase(poll_fds.fds.begin() + i);
+				nfds--;
+				i--;
 			}
 		}
 	}
