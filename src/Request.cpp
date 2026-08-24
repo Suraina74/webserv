@@ -2,23 +2,27 @@
 
 void Request::extractBody(std::string input, int bodyLen){
 	int startBody = input.find("\r\n\r\n");
-	Body = input.substr(startBody + 4, bodyLen);
+	startBody += 4;
+	Body = input.substr(startBody, bodyLen);
 }
 
-void Request::extractFileElements(int bodyLen){
-	size_t startFilename = Body.find("filename=") + 9;
-	size_t endFilename = Body.find("Content-Type");
+void Request::extractFileElements(){
+	size_t startFilename = Body.find("filename=\"");
+	startFilename += 10;
+	size_t endFilename = Body.find('\"', startFilename);
 	fileName = Body.substr(startFilename, (endFilename - startFilename));
-	// std::cout << fileName;
+
 	size_t startOfFileContent = Body.find("\r\n\r\n");
-	size_t lenFileContent = bodyLen - startOfFileContent;
-	fileContent = Body.substr(startOfFileContent + 4, lenFileContent);
-	size_t posWebKit = fileContent.find("------WebKit");
-	fileContent.erase(posWebKit);
+	startOfFileContent += 4;
+	size_t endOfFileContent = Body.find("\r\n------WebKit");
+	fileContent = Body.substr(startOfFileContent, endOfFileContent - startOfFileContent);
 }
 
 void Request::addFile(){
-	
+	std::string uploadPlace = "www/uploads/" + fileName;
+	std::ofstream file(uploadPlace, std::ios::binary);
+	file << fileContent;
+	file.close();
 }
 
 void Request::extractElements(){
@@ -55,7 +59,7 @@ void Request::extractElements(){
 	int contentLength = getContentlength(Input);
 	if (contentLength){
 		extractBody(Input, contentLength);
-		extractFileElements(contentLength);
+		extractFileElements();
 		addFile();
 	}
 }
@@ -64,7 +68,7 @@ ssize_t getContentlength(std::string message){
 	std::string contentLengthHeader{};
 	size_t startContentLen = message.find("Content-Length");
 	if (startContentLen != std::string::npos){
-		size_t endContentLen = message.find("\r\n", startContentLen);
+		size_t endContentLen = message.find("\r\n", startContentLen); // Finds first occurence of \r\n starting at the position of startContentLen.
 		contentLengthHeader = message.substr(startContentLen, (endContentLen - startContentLen));
 	}
 	std::stringstream ss(message);
@@ -96,7 +100,6 @@ std::string Request::getStatusText(){
 
 // GET / HTTP/1.1 niets na /
 // GET /index.html HTTP/1.1 specifieke html page na /
-// GET /style.css HTTP/1.1
 // GET /favicon.ico HTTP/1.1
 // POST /delete.html HTTP/1.1 met body filename=
 

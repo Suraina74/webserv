@@ -20,7 +20,7 @@ class Request {
 		~Request(){}
 		void extractElements();
 		void extractBody(std::string input, int bodyLen);
-		void extractFileElements(int bodyLen);
+		void extractFileElements();
 		void addFile();
 		// std::string getMethod();
 		std::string getPath();

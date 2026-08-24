@@ -50,7 +50,6 @@ int	eventLoop(int *sockfd)
 			if (new_fd >= 0)
 			{
 				std::string fullRequest = receiveRequest(new_fd);
-				std::cout << fullRequest;
 				Request request(fullRequest);
 				request.extractElements();
 				Response response(request);
