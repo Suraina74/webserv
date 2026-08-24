@@ -163,11 +163,14 @@ int createSockAddr(int *listen_fd, struct addrinfo *result, const ServerConfig &
 	struct addrinfo info;
 	struct addrinfo *ptr;
 
+	int port_int = servers.getPort();
+	string p = to_string(port_int);
+	const char *port = p.c_str();
+
 	memset(&info, 0, sizeof(info));
 	info.ai_family = AF_INET;
 	info.ai_socktype = SOCK_STREAM;
-	// (char *)servers.getPort().c_str()
-	if (getaddrinfo(servers.getHost().c_str(), "8080", &info, &result) != 0)
+	if (getaddrinfo(servers.getHost().c_str(), port, &info, &result) != 0)
 	{
 		::perror("getaddrinfo");
 		return (1);
