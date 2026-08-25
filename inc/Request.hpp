@@ -9,6 +9,7 @@ class Request {
 		std::string Input{};
 		std::string	requestLine{};
 		std::string Method{};
+		std::string Protocol{};
 		std::string Path{};
 		std::string	statusCode{};
 		std::string	statusText{};
@@ -24,6 +25,7 @@ class Request {
 		void addFile();
 		// std::string getMethod();
 		std::string getPath();
+		std::string getMethod();
 		std::string getStatusCode();
 		std::string getStatusText();
 		// Extract body -> extractBody()

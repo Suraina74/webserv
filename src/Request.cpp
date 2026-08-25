@@ -26,23 +26,13 @@ void Request::addFile(){
 }
 
 void Request::extractElements(){
-	int posCRLF = Input.find_first_of("\r\n"); // CRLF is carriage return(\r) line feed (\n)
-	requestLine = Input.substr(0, posCRLF);
-
-	int i = 0;
-	int amountElements = 2;
+	int endOfRequestLine = Input.find("\r\n"); // CRLF is: carriage return(\r) line feed (\n)
+	endOfRequestLine -= 2;
+	requestLine = Input.substr(0, endOfRequestLine);
 	std::stringstream ss(requestLine);
-	std::string word;
-	while (i < amountElements){
-		ss >> word;
-		if (i == 0){
-			Method = word;
-		}
-		else{
-			Path = "www" + word;
-		}
-		i++;
-	}
+	ss >> Method >> Path >> Protocol;
+	// Controle op protocol uitvoeren. Of het wel HTTP/1.1 is
+	Path = "www" + Path;
 	if (Path == "www/"){
 		Path = "www/index.html";
 	}
@@ -51,13 +41,15 @@ void Request::extractElements(){
 		statusCode = "200";
 		statusText = "OK";
 	}
+	// Iets doen voor favicon.
 	else{
 		Path = "www/404.html";
 		statusCode = "404";
 		statusText = "Not Found";
 	}
+	// Check if contentLength is not too big, anders error 413 gooien.
 	int contentLength = getContentlength(Input);
-	if (contentLength){
+	if (Method == "POST"){
 		extractBody(Input, contentLength);
 		extractFileElements();
 		addFile();
@@ -65,18 +57,17 @@ void Request::extractElements(){
 }
 
 ssize_t getContentlength(std::string message){
-	std::string contentLengthHeader{};
-	size_t startContentLen = message.find("Content-Length");
-	if (startContentLen != std::string::npos){
+	std::string contentLenStr{};
+	size_t startContentLen = message.find("Content-Length:");
+	if (startContentLen != std::string::npos){	
+		startContentLen += 16;
 		size_t endContentLen = message.find("\r\n", startContentLen); // Finds first occurence of \r\n starting at the position of startContentLen.
-		contentLengthHeader = message.substr(startContentLen, (endContentLen - startContentLen));
+		contentLenStr = message.substr(startContentLen, (endContentLen - startContentLen));
 	}
-	std::stringstream ss(message);
 	ssize_t contentLength{};
-	if (!contentLengthHeader.empty()){
-		std::string _;
-		ss.str(contentLengthHeader);
-		ss >> _ >> contentLength;
+	if (!contentLenStr.empty()){
+		std::stringstream ss(contentLenStr);
+		ss >> contentLength;
 	}
 	return contentLength;
 }
@@ -90,6 +81,9 @@ ssize_t	getBytesUntilHeaders(std::string message){
 
 std::string Request::getPath(){
 	return Path;
+}
+std::string Request::getMethod(){
+	return Method;
 }
 std::string Request::getStatusCode(){
 	return statusCode;
