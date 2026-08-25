@@ -1,4 +1,5 @@
 #pragma once 
+#include "../src/configParser/ServerConfig.hpp"
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -17,7 +18,7 @@ class Request {
 	public:
 		Request(std::string input) : Input(input){}
 		~Request(){}
-		void extractElements();
+		void extractElements(const ServerConfig &server);
 		// std::string getMethod();
 		std::string getPath();
 		std::string getStatusCode();
