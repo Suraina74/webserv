@@ -37,7 +37,7 @@ void Request::extractElements(){
 		Path = "www/index.html";
 	}
 	// Kijken of andere manier is om te zien of het bestaande html pages zijn.
-	if (Path == "www/index.html" || Path == "www/uploads.html" || Path == "www/gaia.html"){
+	if (Path == "www/index.html" || Path == "www/uploads.html"){
 		statusCode = "200";
 		statusText = "OK";
 	}
@@ -54,6 +54,14 @@ void Request::extractElements(){
 		extractFileElements();
 		addFile();
 	}
+	// else if (Method == "DELETE"){
+	// 	std::string uploadPlace = "www/uploads/" + fileName;
+	// 	const char *cUploadPlace = uploadPlace.c_str();
+	// 	int status = remove(cUploadPlace);
+	// 	if (status != 0) {
+    //     	std::cout << "Error deleting file" << std::endl;
+	// 	}
+	// }
 }
 
 ssize_t getContentlength(std::string message){
