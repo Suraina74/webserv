@@ -22,7 +22,7 @@ void Request::extractElements(const ServerConfig &server){
 	if (Path == server.getRoot() + '/'){
 		Path = server.getRoot() + '/' + server.getIndex();
 	}
-	if (Path == "www/index.html" || Path == "www/uploads.html" || Path == "www/gaia.html"){
+	if (Path == "www/index.html" || Path == "www/uploads.html" || Path == "www/gaia.html" || Path == "www/green.html" || Path == "www/blue.html" || Path == "www/yellow.html"){
 		statusCode = "200";
 		statusText = "OK";
 	}

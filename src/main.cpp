@@ -8,17 +8,14 @@ int main(int ac, char **av)
         cout << "Usage: ./webserv <config>" << endl;
         return 1;
     }
-
     try
     {
         Config config;
         const vector<ServerConfig>& servers = config.getServers();
 
         config.parse(av[1]);
-        for (size_t i = 0; i < servers.size(); i++)
-        {
-            server(servers[i]);
-        }
+        if (server(servers))
+            return (1);
     }
     catch (const exception& e)
     {

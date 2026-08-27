@@ -8,7 +8,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-std::string receiveRequest(int clientFd){
+std::string receiveRequest(int clientFd)
+{
 	char buffer[2048];
 	ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
 	if (n == -1)
@@ -22,7 +23,8 @@ std::string receiveRequest(int clientFd){
 	}
 	ssize_t bytesRead = n;
 	std::string messageUntillHeaders(buffer, n);
-	while (messageUntillHeaders.find("\r\n\r\n") == std::string::npos){
+	while (messageUntillHeaders.find("\r\n\r\n") == std::string::npos)
+	{
 		ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
 		if (n == -1)
 		{
@@ -41,8 +43,10 @@ std::string receiveRequest(int clientFd){
 	// Check on contentLength of het niet een -getal is of een heel groot getal.
 	ssize_t headerBytes = getBytesUntilHeaders(messageUntillHeaders);
 	std::string fullRequest = messageUntillHeaders;
-	if (contentLength){
-		while (bytesRead < (headerBytes + contentLength)){
+	if (contentLength)
+	{
+		while (bytesRead < (headerBytes + contentLength))
+		{
 			ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
 			if (n == -1)
 			{
@@ -61,53 +65,62 @@ std::string receiveRequest(int clientFd){
 	return fullRequest;
 }
 
-int eventLoop(int *listen_fd, const ServerConfig &server)
+// servers
+//listenFDs komt van createsock addrs
+//configIndexes
+int eventLoop(const vector<int> &listenFds, const vector<ServerConfig> &servers)
 {
 	EventLoop poll_fds;
-	pollfd pfd;
+	vector<size_t> configIndexes;
 
-	pfd.fd = *listen_fd;
-	pfd.events = POLLIN;
-	pfd.revents = 0;
-	poll_fds.fds.push_back(pfd);
+	for (size_t i = 0; i < listenFds.size(); ++i)
+	{
+		pollfd pfd;
+		pfd.fd = listenFds[i];
+		pfd.events = POLLIN;
+		pfd.revents = 0;
+		poll_fds.fds.push_back(pfd);
+		configIndexes.push_back(i);
+	}
 	std::string fullRequest{};
-
 	while (1)
 	{
 		pollfd client_pfd;
 
-		int nfds = poll_fds.fds.size();
+		size_t nfds = poll_fds.fds.size();
 		int ready = poll(poll_fds.fds.data(), nfds, 100);
 		if (ready == -1)
 		{
 			::perror("poll");
 			return (1);
 		}
-		if (poll_fds.fds[0].revents & POLLIN)
+		for (size_t i = 0; i < nfds; i++)
 		{
-			client_pfd.fd = accept(*listen_fd, NULL, NULL);
-			if (client_pfd.fd == -1)
+			if (i < listenFds.size())
 			{
-				::perror("accept");
-				return (1);
-			}
-			if (fcntl(*listen_fd, F_SETFL, O_NONBLOCK) == -1)
-			{
-				::perror("fcntl");
+				if (poll_fds.fds[i].revents & POLLIN)
+				{
+					client_pfd.fd = accept(listenFds[i], NULL, NULL);
+					if (client_pfd.fd == -1)
+					{
+						::perror("accept");
+						return (1);
+					}
+					client_pfd.events = POLLIN;
+					client_pfd.revents = 0;
+					poll_fds.fds.push_back(client_pfd);
+					configIndexes.push_back(i);
+					nfds++;
+				}
 				continue;
 			}
-			client_pfd.events = POLLIN;
-			client_pfd.revents = 0;
-			poll_fds.fds.push_back(client_pfd);
-			nfds++;
-		}
-		for (int i = 1; i < nfds; i++)
-		{
 			if ((poll_fds.fds[i].revents & POLLIN))
 			{
 				fullRequest = receiveRequest(poll_fds.fds[i].fd);
-				if (fullRequest.empty()){
+				if (fullRequest.empty())
+				{
 					close(poll_fds.fds[i].fd);
+					configIndexes.erase(configIndexes.begin() + i);
 					poll_fds.fds.erase(poll_fds.fds.begin() + i);
 					nfds--;
 					i--;
@@ -118,17 +131,19 @@ int eventLoop(int *listen_fd, const ServerConfig &server)
 			else if (poll_fds.fds[i].revents & POLLOUT)
 			{
 				Request request(fullRequest);
-				request.extractElements(server);
+				request.extractElements(servers[configIndexes[i]]);
 				Response response(request);
 				response.composeResponse();
 				std::string fullResponse = response.getFullResponse();
 				int lenResponse = fullResponse.length();
 				const char *cFullResponse = fullResponse.c_str();
 				int n = send(poll_fds.fds[i].fd, cFullResponse, lenResponse, 0);
-				if (n == -1 || n == 0){
+				if (n == -1 || n == 0)
+				{
 					::perror("send");
 					close(poll_fds.fds[i].fd);
 					poll_fds.fds.erase(poll_fds.fds.begin() + i);
+					configIndexes.erase(configIndexes.begin() + i);
 					nfds--;
 					i--;
 					continue;
@@ -137,10 +152,12 @@ int eventLoop(int *listen_fd, const ServerConfig &server)
 				while (totalSent < lenResponse)
 				{
 					n = send(poll_fds.fds[i].fd, cFullResponse + totalSent, lenResponse - totalSent, 0);
-					if (n == -1 || n == 0){
+					if (n == -1 || n == 0)
+					{
 						::perror("send");
 						close(poll_fds.fds[i].fd);
 						poll_fds.fds.erase(poll_fds.fds.begin() + i);
+						configIndexes.erase(configIndexes.begin() + i);
 						nfds--;
 						i--;
 						continue;
@@ -149,6 +166,7 @@ int eventLoop(int *listen_fd, const ServerConfig &server)
 				}
 				close(poll_fds.fds[i].fd);
 				poll_fds.fds.erase(poll_fds.fds.begin() + i);
+				configIndexes.erase(configIndexes.begin() + i);
 				nfds--;
 				i--;
 			}
@@ -157,66 +175,68 @@ int eventLoop(int *listen_fd, const ServerConfig &server)
 	return (0);
 }
 
-int createSockAddr(int *listen_fd, struct addrinfo *result, const ServerConfig &server)
+vector<int> createSockAddr(struct addrinfo *result, const vector<ServerConfig> &server)
 {
-	struct addrinfo info;
-	struct addrinfo *ptr;
-
-	int port_int = server.getPort();
-	string p = to_string(port_int);
-	const char *port = p.c_str();
-
-	memset(&info, 0, sizeof(info));
-	info.ai_family = AF_INET;
-	info.ai_socktype = SOCK_STREAM;
-	if (getaddrinfo(server.getHost().c_str(), port, &info, &result) != 0)
+	vector<int>	listenFds;
+	for (size_t i = 0; i < server.size(); ++i)
 	{
-		::perror("getaddrinfo");
-		return (1);
+		struct addrinfo info;
+		struct addrinfo *ptr;
+
+		memset(&info, 0, sizeof(info));
+		info.ai_family = AF_INET;
+		info.ai_socktype = SOCK_STREAM;
+		string port = to_string(server[i].getPort());
+		if (getaddrinfo(server[i].getHost().c_str(), port.c_str(), &info, &result) != 0)
+		{
+			::perror("getaddrinfo");
+			break;
+		}
+		for (ptr = result; ptr != NULL; ptr = ptr->ai_next)
+		{
+			int listenFd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+			if (listenFd == -1)
+			{
+				::perror("socket");
+				continue;
+			}
+			if (fcntl(listenFd, F_SETFL, O_NONBLOCK) == -1)
+			{
+				::perror("fcntl");
+				continue;
+			}
+			int on = true;
+			if ((setsockopt(listenFd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on))) == -1)
+			{
+				::perror("setsockopt");
+				continue;
+			}
+			if (bind(listenFd, ptr->ai_addr, ptr->ai_addrlen) == -1)
+			{
+				::perror("bind");
+				continue;
+			}
+			listenFds.push_back(listenFd);
+			break;
+		}
 	}
-	for (ptr = result; ptr != NULL; ptr = ptr->ai_next)
-	{
-		*listen_fd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
-		if (*listen_fd == -1)
-		{
-			::perror("socket");
-			continue;
-		}
-		if (fcntl(*listen_fd, F_SETFL, O_NONBLOCK) == -1)
-		{
-			::perror("fcntl");
-			continue;
-		}
-		int on = true;
-		if ((setsockopt(*listen_fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on))) == -1)
-		{
-			::perror("setsockopt");
-			continue;
-		}
-		if (bind(*listen_fd, result->ai_addr, result->ai_addrlen) == -1)
-		{
-			::perror("bind");
-			continue;
-		}
-		break;
-	}
-	return (0);
+	return (listenFds);
 }
 
-int	server(const ServerConfig &server)
+int server(const vector<ServerConfig> &servers)
 {
 	struct addrinfo *result = nullptr;
-	int listen_fd = 0;
+	vector<int> listenFds = createSockAddr(result, servers);
 
-	if (createSockAddr(&listen_fd, result, server) != 0)
+	if (listenFds.size() != servers.size())
 		return (1);
-	freeaddrinfo(result);
-	if (listen(listen_fd, 10) != 0)
+	for (size_t i = 0; i < listenFds.size(); i++)
 	{
-		perror("listen");
-		return (1);
+		if (listen(listenFds[i], 10) != 0)
+		{
+			perror("listen");
+			return (1);
+		}
 	}
-	if (eventLoop(&listen_fd, server))
-		return (1);
-	return (0);
+	return (eventLoop(listenFds, servers));
 }
