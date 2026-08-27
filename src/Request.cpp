@@ -7,7 +7,17 @@ void Request::extractBody(std::string input, int bodyLen){
 }
 
 void Request::parse(){
-	
+	// Split into request line, headers and body.
+	size_t endOfRequestLine = Input.find("\r\n"); // CRLF is: carriage return(\r) line feed (\n)
+	if (endOfRequestLine == std::string::npos){
+		statusCode = BadRequest;
+		setStatusText(statusCode);
+		return ;
+	}
+	endOfRequestLine -= 2;
+	requestLine = Input.substr(0, endOfRequestLine);
+	extractElements();
+	statusText = setStatusText(statusCode);
 }
 
 void Request::extractFileElements(){
@@ -30,11 +40,10 @@ void Request::addFile(){
 }
 
 void Request::extractElements(){
-	int endOfRequestLine = Input.find("\r\n"); // CRLF is: carriage return(\r) line feed (\n)
-	endOfRequestLine -= 2;
-	requestLine = Input.substr(0, endOfRequestLine);
 	std::stringstream ss(requestLine);
 	ss >> Method >> Path >> Protocol;
+	// if (Method.empty() || Path.empty() || Protocol.empty()){
+	// }
 	// Controle op protocol uitvoeren. Of het wel HTTP/1.1 is
 	Path = "www" + Path;
 	if (Path == "www/"){
@@ -42,14 +51,12 @@ void Request::extractElements(){
 	}
 	// Kijken of andere manier is om te zien of het bestaande html pages zijn.
 	if (Path == "www/index.html" || Path == "www/uploads.html"){
-		statusCode = "200";
-		statusText = "OK";
+		statusCode = OK;
 	}
 	// Iets doen voor favicon.
 	else{
 		Path = "www/404.html";
-		statusCode = "404";
-		statusText = "Not Found";
+		statusCode = PageNotFound;
 	}
 	// Check if contentLength is not too big, anders error 413 gooien.
 	int contentLength = getContentlength(Input);
@@ -91,13 +98,38 @@ ssize_t	getBytesUntilHeaders(std::string message){
 	return bytesUntilHeaders;
 }
 
+std::string Request::setStatusText(httpStatus status){
+	switch (status){
+		case OK:
+			return "200 OK";
+		case BadRequest:
+			return "400 Bad Request";
+		case PageNotFound:
+			return "404 Page Not Found";
+		case MethodNotAllowed:
+			return "405 Method Not Allowed";
+		case RequestTimeout:
+			return "408 Request Timeout";
+		case ContentTooLarge:
+			return "413 Content Too Large";
+		case URITooLong:
+			return "414 URI Too Long";
+		case RequestHeaderFieldsTooLarge:
+			return "431 Request Header Fields Too Large";
+		case InternalServerError:
+			return "500 Internal Server Error";
+		case HTTPVersionNotSupported:
+			return "505 HTTP Version Not Supported";
+	}
+}
+
 std::string Request::getPath(){
 	return Path;
 }
 std::string Request::getMethod(){
 	return Method;
 }
-std::string Request::getStatusCode(){
+httpStatus Request::getStatusCode(){
 	return statusCode;
 }
 std::string Request::getStatusText(){

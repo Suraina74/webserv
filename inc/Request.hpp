@@ -5,6 +5,20 @@
 #include <fstream>
 #include <fcntl.h>
 #include <unistd.h>
+#include <map>
+
+enum httpStatus{
+	OK = 200,
+	BadRequest = 400,
+	PageNotFound = 404,
+	MethodNotAllowed = 405,
+	RequestTimeout = 408,
+	ContentTooLarge = 413,
+	URITooLong = 414,
+	RequestHeaderFieldsTooLarge = 431,
+ 	InternalServerError = 500,
+	HTTPVersionNotSupported = 505
+};
 
 class Request {
 	private:
@@ -13,11 +27,12 @@ class Request {
 		std::string Method{};
 		std::string Protocol{};
 		std::string Path{};
-		std::string	statusCode{};
 		std::string	statusText{};
 		std::string	Body{};
 		std::string fileName{};
 		std::string fileContent{};
+		httpStatus  statusCode;
+
 	public:
 		Request(std::string input) : Input(input){}
 		~Request(){}
@@ -26,10 +41,11 @@ class Request {
 		void extractBody(std::string input, int bodyLen);
 		void extractFileElements();
 		void addFile();
+		std::string setStatusText(httpStatus status);
 		// std::string getMethod();
 		std::string getPath();
 		std::string getMethod();
-		std::string getStatusCode();
+		httpStatus  getStatusCode();
 		std::string getStatusText();
 		// Extract body -> extractBody()
 };

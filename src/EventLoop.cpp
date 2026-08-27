@@ -119,10 +119,12 @@ int eventLoop(int *listen_fd, const ServerConfig &servers)
 			else if (poll_fds.fds[i].revents & POLLOUT)
 			{
 				Request request(fullRequest);
-				request.extractElements();
+				// request.extractElements();
+				request.parse();
 				Response response(request);
 				response.composeResponse();
 				std::string fullResponse = response.getFullResponse();
+				// std::cout << fullResponse;
 				int lenResponse = fullResponse.length();
 				const char *cFullResponse = fullResponse.c_str();
 				int n = send(poll_fds.fds[i].fd, cFullResponse, lenResponse, 0);
