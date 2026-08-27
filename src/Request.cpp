@@ -6,6 +6,10 @@ void Request::extractBody(std::string input, int bodyLen){
 	Body = input.substr(startBody, bodyLen);
 }
 
+void Request::parse(){
+	
+}
+
 void Request::extractFileElements(){
 	size_t startFilename = Body.find("filename=\"");
 	startFilename += 10;

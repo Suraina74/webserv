@@ -20,6 +20,7 @@ class Request {
 		Request(std::string input) : Input(input){}
 		~Request(){}
 		void extractElements();
+		void parse();
 		void extractBody(std::string input, int bodyLen);
 		void extractFileElements();
 		void addFile();
@@ -35,7 +36,8 @@ ssize_t 	getContentlength(std::string message);
 ssize_t 	getBytesUntilHeaders(std::string message);
 
 
-// Request ontvangen, Extract information, 
+// Request ontvangen, headers apart opslaan, body opslaan,
+// Extract information, 
 // Wat nodig voor response: Method, Path, statusCode, contentLength, Body
 // Validating http request.
 
