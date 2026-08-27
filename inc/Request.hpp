@@ -2,7 +2,12 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+<<<<<<< HEAD
 #include <fstream>
+=======
+#include <fcntl.h>
+#include <unistd.h>
+>>>>>>> main
 
 class Request {
 	private:

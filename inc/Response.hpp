@@ -1,5 +1,4 @@
-#pragma once 
-#include "Server.hpp"
+#pragma once
 #include "Request.hpp"
 #include <sstream>
 
