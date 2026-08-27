@@ -1,5 +1,5 @@
-#include "../inc/EventLoop.hpp"
 #include "configParser/ServerConfig.hpp"
+#include "../inc/EventLoop.hpp"
 #include "../inc/Request.hpp"
 #include "../inc/Response.hpp"
 #include <cstring>
@@ -65,22 +65,20 @@ std::string receiveRequest(int clientFd)
 	return fullRequest;
 }
 
-// servers
-//listenFDs komt van createsock addrs
-//configIndexes
 int eventLoop(const vector<int> &listenFds, const vector<ServerConfig> &servers)
 {
 	EventLoop poll_fds;
-	vector<size_t> configIndexes;
 
 	for (size_t i = 0; i < listenFds.size(); ++i)
 	{
-		pollfd pfd;
-		pfd.fd = listenFds[i];
-		pfd.events = POLLIN;
-		pfd.revents = 0;
-		poll_fds.fds.push_back(pfd);
-		configIndexes.push_back(i);
+		pollfd server_socket;
+
+		server_socket.fd = listenFds[i];
+		server_socket.events = POLLIN;
+		server_socket.revents = 0;
+
+		poll_fds.fds.push_back(server_socket);
+		poll_fds.configIndexes.push_back(i);
 	}
 	std::string fullRequest{};
 	while (1)
@@ -109,7 +107,7 @@ int eventLoop(const vector<int> &listenFds, const vector<ServerConfig> &servers)
 					client_pfd.events = POLLIN;
 					client_pfd.revents = 0;
 					poll_fds.fds.push_back(client_pfd);
-					configIndexes.push_back(i);
+					poll_fds.configIndexes.push_back(i);
 					nfds++;
 				}
 				continue;
@@ -120,7 +118,7 @@ int eventLoop(const vector<int> &listenFds, const vector<ServerConfig> &servers)
 				if (fullRequest.empty())
 				{
 					close(poll_fds.fds[i].fd);
-					configIndexes.erase(configIndexes.begin() + i);
+					poll_fds.configIndexes.erase(poll_fds.configIndexes.begin() + i);
 					poll_fds.fds.erase(poll_fds.fds.begin() + i);
 					nfds--;
 					i--;
@@ -131,7 +129,7 @@ int eventLoop(const vector<int> &listenFds, const vector<ServerConfig> &servers)
 			else if (poll_fds.fds[i].revents & POLLOUT)
 			{
 				Request request(fullRequest);
-				request.extractElements(servers[configIndexes[i]]);
+				request.extractElements(servers[poll_fds.configIndexes[i]]);
 				Response response(request);
 				response.composeResponse();
 				std::string fullResponse = response.getFullResponse();
@@ -143,7 +141,7 @@ int eventLoop(const vector<int> &listenFds, const vector<ServerConfig> &servers)
 					::perror("send");
 					close(poll_fds.fds[i].fd);
 					poll_fds.fds.erase(poll_fds.fds.begin() + i);
-					configIndexes.erase(configIndexes.begin() + i);
+					poll_fds.configIndexes.erase(poll_fds.configIndexes.begin() + i);
 					nfds--;
 					i--;
 					continue;
@@ -157,7 +155,7 @@ int eventLoop(const vector<int> &listenFds, const vector<ServerConfig> &servers)
 						::perror("send");
 						close(poll_fds.fds[i].fd);
 						poll_fds.fds.erase(poll_fds.fds.begin() + i);
-						configIndexes.erase(configIndexes.begin() + i);
+						poll_fds.configIndexes.erase(poll_fds.configIndexes.begin() + i);
 						nfds--;
 						i--;
 						continue;
@@ -166,7 +164,7 @@ int eventLoop(const vector<int> &listenFds, const vector<ServerConfig> &servers)
 				}
 				close(poll_fds.fds[i].fd);
 				poll_fds.fds.erase(poll_fds.fds.begin() + i);
-				configIndexes.erase(configIndexes.begin() + i);
+				poll_fds.configIndexes.erase(poll_fds.configIndexes.begin() + i);
 				nfds--;
 				i--;
 			}
@@ -177,7 +175,8 @@ int eventLoop(const vector<int> &listenFds, const vector<ServerConfig> &servers)
 
 vector<int> createSockAddr(struct addrinfo *result, const vector<ServerConfig> &server)
 {
-	vector<int>	listenFds;
+	vector<int>	listenFdsList;
+
 	for (size_t i = 0; i < server.size(); ++i)
 	{
 		struct addrinfo info;
@@ -216,27 +215,29 @@ vector<int> createSockAddr(struct addrinfo *result, const vector<ServerConfig> &
 				::perror("bind");
 				continue;
 			}
-			listenFds.push_back(listenFd);
+			listenFdsList.push_back(listenFd);
 			break;
 		}
 	}
-	return (listenFds);
+	return (listenFdsList);
 }
 
 int server(const vector<ServerConfig> &servers)
 {
-	struct addrinfo *result = nullptr;
-	vector<int> listenFds = createSockAddr(result, servers);
+	EventLoop eloop;
 
-	if (listenFds.size() != servers.size())
-		return (1);
-	for (size_t i = 0; i < listenFds.size(); i++)
+	eloop.result = nullptr;
+	eloop.listenFds = createSockAddr(eloop.result, servers);
+	for (size_t i = 0; i < eloop.listenFds.size(); i++)
 	{
-		if (listen(listenFds[i], 10) != 0)
+		if (listen(eloop.listenFds[i], 10) != 0)
 		{
-			perror("listen");
+			::perror("listen");
 			return (1);
 		}
 	}
-	return (eventLoop(listenFds, servers));
+	return (eventLoop(eloop.listenFds, servers));
 }
+
+//todos
+// Socket cleanup, error events, partial sends, and server-to-config mapping need work.
