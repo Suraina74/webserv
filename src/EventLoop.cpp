@@ -1,25 +1,58 @@
 #include "../inc/EventLoop.hpp"
+#include "configParser/ServerConfig.hpp"
 #include "../inc/Request.hpp"
 #include "../inc/Response.hpp"
+#include <cstring>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 std::string receiveRequest(int clientFd){
 	char buffer[2048];
 	ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
+	if (n == -1)
+	{
+		::perror("recv");
+		return ("");
+	}
+	else if (n == 0)
+	{
+		return ("");
+	}
 	ssize_t bytesRead = n;
 	std::string messageUntillHeaders(buffer, n);
 	while (messageUntillHeaders.find("\r\n\r\n") == std::string::npos){
 		ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
+		if (n == -1)
+		{
+			::perror("recv");
+			return ("");
+		}
+		else if (n == 0)
+		{
+			return ("");
+		}
 		bytesRead = bytesRead + n;
 		std::string newMessage(buffer, n);
 		messageUntillHeaders = messageUntillHeaders + newMessage;
 	}
 	ssize_t contentLength = getContentlength(messageUntillHeaders);
 	// Check on contentLength of het niet een -getal is of een heel groot getal.
-	ssize_t bytesUntilHeaders = getBytesUntilHeaders(messageUntillHeaders);
+	ssize_t headerBytes = getBytesUntilHeaders(messageUntillHeaders);
 	std::string fullRequest = messageUntillHeaders;
 	if (contentLength){
-		while (bytesRead < (bytesUntilHeaders + contentLength)){
+		while (bytesRead < (headerBytes + contentLength)){
 			ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
+			if (n == -1)
+			{
+				::perror("recv");
+				return ("");
+			}
+			else if (n == 0)
+			{
+				return ("");
+			}
 			bytesRead = bytesRead + n;
 			std::string newMessage(buffer, n);
 			fullRequest = fullRequest + newMessage;
@@ -28,28 +61,63 @@ std::string receiveRequest(int clientFd){
 	return fullRequest;
 }
 
-int	eventLoop(int *sockfd)
+int eventLoop(int *listen_fd, const ServerConfig &servers)
 {
-	EventLoop	poll_fds;
-	// char		index_page_txt[2048];
+	// string path = servers.getRoot() + '/' + servers.getIndex();
+	(void)servers;
+	EventLoop poll_fds;
+	pollfd pfd;
 
-	// char index_path[] = "www/index.html";
-	memset(&poll_fds.fds, 0, sizeof(poll_fds.fds));
-	poll_fds.fds.fd = *sockfd; //this is the fd to read from
-	poll_fds.fds.events = POLLIN; //the events we are intereted in
+	pfd.fd = *listen_fd;
+	pfd.events = POLLIN;
+	pfd.revents = 0;
+	poll_fds.fds.push_back(pfd);
+	std::string fullRequest{};
 	while (1)
 	{
-		//first you have to accept a connection
-		//then we read or write data over a network socket
-		poll(&poll_fds.fds, poll_fds.nfds, 100);
-		// if (ready > 0 && (poll_fds.fds.revents & POLLIN))
+		pollfd client_pfd;
+
+		int nfds = poll_fds.fds.size();
+		int ready = poll(poll_fds.fds.data(), nfds, 100);
+		if (ready == -1)
 		{
-			//accept() is the function that takes an incoming connection 
-			//from your listening socket and creates a new socket for that specific client.
-			int new_fd = accept(*sockfd, NULL, NULL);
-			if (new_fd >= 0)
+			::perror("poll");
+			return (1);
+		}
+		if (poll_fds.fds[0].revents & POLLIN)
+		{
+			client_pfd.fd = accept(*listen_fd, NULL, NULL);
+			if (client_pfd.fd == -1)
 			{
-				std::string fullRequest = receiveRequest(new_fd);
+				::perror("accept");
+				return (1);
+			}
+			if (fcntl(*listen_fd, F_SETFL, O_NONBLOCK) == -1)
+			{
+				::perror("fcntl");
+				continue;
+			}
+			client_pfd.events = POLLIN;
+			client_pfd.revents = 0;
+			poll_fds.fds.push_back(client_pfd);
+			nfds++;
+		}
+		for (int i = 1; i < nfds; i++)
+		{
+			if ((poll_fds.fds[i].revents & POLLIN))
+			{
+				fullRequest = receiveRequest(poll_fds.fds[i].fd);
+				if (fullRequest.empty()){
+					close(poll_fds.fds[i].fd);
+					poll_fds.fds.erase(poll_fds.fds.begin() + i);
+					nfds--;
+					i--;
+					continue;
+				}
+				poll_fds.fds[i].events = POLLOUT;
+			}
+			else if (poll_fds.fds[i].revents & POLLOUT)
+			{
 				Request request(fullRequest);
 				request.extractElements();
 				Response response(request);
@@ -57,21 +125,40 @@ int	eventLoop(int *sockfd)
 				std::string fullResponse = response.getFullResponse();
 				int lenResponse = fullResponse.length();
 				const char *cFullResponse = fullResponse.c_str();
-				// send sends in parts too like read.
-				int n = send(new_fd, cFullResponse, lenResponse, 0);
+				int n = send(poll_fds.fds[i].fd, cFullResponse, lenResponse, 0);
+				if (n == -1 || n == 0){
+					::perror("send");
+					close(poll_fds.fds[i].fd);
+					poll_fds.fds.erase(poll_fds.fds.begin() + i);
+					nfds--;
+					i--;
+					continue;
+				}
 				int totalSent = n;
-				while (totalSent < lenResponse){
-					n = send(new_fd, cFullResponse + totalSent, lenResponse - totalSent, 0);
+				while (totalSent < lenResponse)
+				{
+					n = send(poll_fds.fds[i].fd, cFullResponse + totalSent, lenResponse - totalSent, 0);
+					if (n == -1 || n == 0){
+						::perror("send");
+						close(poll_fds.fds[i].fd);
+						poll_fds.fds.erase(poll_fds.fds.begin() + i);
+						nfds--;
+						i--;
+						continue;
+					}
 					totalSent = totalSent + n;
 				}
-				close (new_fd);
+				close(poll_fds.fds[i].fd);
+				poll_fds.fds.erase(poll_fds.fds.begin() + i);
+				nfds--;
+				i--;
 			}
 		}
 	}
 	return (0);
 }
 
-int	createSockAddr(int *sockfd, struct addrinfo *result)
+int createSockAddr(int *listen_fd, struct addrinfo *result, const ServerConfig &servers)
 {
 	struct addrinfo info;
 	struct addrinfo *ptr;
@@ -79,39 +166,55 @@ int	createSockAddr(int *sockfd, struct addrinfo *result)
 	memset(&info, 0, sizeof(info));
 	info.ai_family = AF_INET;
 	info.ai_socktype = SOCK_STREAM;
-	//getaddrinfo sets result to a linked list that 
- 	//includes as many candidate addresses as match 
-	//the ai_family and ai_socktype you set value to
-	if (getaddrinfo("127.0.0.1", "8080", &info, &result) != 0)
+	// (char *)servers.getPort().c_str()
+	if (getaddrinfo(servers.getHost().c_str(), "8080", &info, &result) != 0)
 	{
-		std::cout << "Getaddrinfo failed\n";
-		return 1;
+		::perror("getaddrinfo");
+		return (1);
 	}
-	//this for loop runs through the linked list returned by getaddrinfo until it
- 	//finds one that successfully bind with the sockfd
 	for (ptr = result; ptr != NULL; ptr = ptr->ai_next)
 	{
-		*sockfd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
-		if (*sockfd == -1)
+		*listen_fd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+		if (*listen_fd == -1)
 		{
-			std::cout << "Socket failed.\n";
+			::perror("socket");
 			continue;
 		}
-		//setsockopt is a flag that bypasses the default cooling down time of your 
- 		//operating system when you restart your server to avoid error.
+		if (fcntl(*listen_fd, F_SETFL, O_NONBLOCK) == -1)
+		{
+			::perror("fcntl");
+			continue;
+		}
 		int on = true;
-		if ((setsockopt(*sockfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on))) == -1)
+		if ((setsockopt(*listen_fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on))) == -1)
 		{
-			perror("Setsockopt failed.\n");
+			::perror("setsockopt");
 			continue;
 		}
-		std::cout << "Connected to the host!\n";
-		if (bind(*sockfd, result->ai_addr, result->ai_addrlen) == -1)
+		if (bind(*listen_fd, result->ai_addr, result->ai_addrlen) == -1)
 		{
-			perror("Bind failed.\n");
+			::perror("bind");
 			continue;
 		}
-		break ;
+		break;
 	}
+	return (0);
+}
+
+int	server(const ServerConfig &servers)
+{
+	struct addrinfo *result = nullptr;
+	int listen_fd = 0;
+
+	if (createSockAddr(&listen_fd, result, servers) != 0)
+		return (1);
+	freeaddrinfo(result);
+	if (listen(listen_fd, 10) != 0)
+	{
+		perror("listen");
+		return (1);
+	}
+	if (eventLoop(&listen_fd, servers))
+		return (1);
 	return (0);
 }
