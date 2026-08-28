@@ -71,6 +71,9 @@ the outer server{...} represents one website/server configuration. There could b
 - Error_page tells the server what page to return when an error occurs.
 - Locations allows different URL paths of the same server to have different behavior/configuration.
 
+# Server part
+``` getsockaddr -> create listening socket -> bind socket addr to a port -> listen for incoming client connections -> accept incoming client connection on this listening sock -> poll loop to check which fds are ready -> read/write on ready fd(s)```
+
 # Understanding different functions
 socket()  →  outlet installed, no wiring yet
 bind()    →  wiring given a specific address
