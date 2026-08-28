@@ -22,7 +22,7 @@ enum httpStatus{
 
 class Request {
 	private:
-		std::string Input{};
+		std::string fullRequest{};
 		std::string	requestLine{};
 		std::string Method{};
 		std::string Protocol{};
@@ -32,11 +32,13 @@ class Request {
 		std::string fileName{};
 		std::string fileContent{};
 		httpStatus  statusCode;
+		std::map<std::string, std::string> headers;
 
 	public:
-		Request(std::string input) : Input(input){}
+		Request(std::string fRequest) : fullRequest(fRequest){}
 		~Request(){}
-		void extractElements();
+		void extractMethodPathProtocol();
+		void extractHeaders();
 		void parse();
 		void extractBody(std::string input, int bodyLen);
 		void extractFileElements();

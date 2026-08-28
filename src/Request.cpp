@@ -8,15 +8,16 @@ void Request::extractBody(std::string input, int bodyLen){
 
 void Request::parse(){
 	// Split into request line, headers and body.
-	size_t endOfRequestLine = Input.find("\r\n"); // CRLF is: carriage return(\r) line feed (\n)
+	size_t endOfRequestLine = fullRequest.find("\r\n"); // CRLF is: carriage return(\r) line feed (\n)
 	if (endOfRequestLine == std::string::npos){
 		statusCode = BadRequest;
 		setStatusText(statusCode);
 		return ;
 	}
 	endOfRequestLine -= 2;
-	requestLine = Input.substr(0, endOfRequestLine);
-	extractElements();
+	requestLine = fullRequest.substr(0, endOfRequestLine);
+	extractMethodPathProtocol();
+	// extractHeaders();
 	statusText = setStatusText(statusCode);
 }
 
@@ -39,7 +40,35 @@ void Request::addFile(){
 	file.close();
 }
 
-void Request::extractElements(){
+void Request::extractHeaders(){
+	int beginHeaders = fullRequest.find("\r\n") + 2;
+	int endHeaders = fullRequest.find("\r\n\r\n") + 1;
+	std::string headerString = fullRequest.substr(beginHeaders, endHeaders - beginHeaders);
+	// std::cout << headerString;
+	// validate..
+	int amountLines = 0;
+	for (size_t i = 0; i < headerString.size(); i++){
+		if (headerString[i] == '\r'){
+			amountLines++;
+		}
+	}
+	int startLine = 0;
+	int endLine = 0;
+	for (int i = 0; i < amountLines; i++){
+		endLine = headerString.find("\r\n");
+		std::string line = headerString.substr(startLine, endLine - startLine);
+		std::stringstream ss(line);
+		std::string key, value;
+		ss >> key >> value;
+		headers.insert({key, value});
+		ss.str("");
+		ss.clear();
+		startLine = endLine + 2;
+	}
+	std::cout << headers.size() << std::endl;	
+}
+
+void Request::extractMethodPathProtocol(){
 	std::stringstream ss(requestLine);
 	ss >> Method >> Path >> Protocol;
 	// if (Method.empty() || Path.empty() || Protocol.empty()){
@@ -59,9 +88,9 @@ void Request::extractElements(){
 		statusCode = PageNotFound;
 	}
 	// Check if contentLength is not too big, anders error 413 gooien.
-	int contentLength = getContentlength(Input);
+	int contentLength = getContentlength(fullRequest);
 	if (Method == "POST"){
-		extractBody(Input, contentLength);
+		extractBody(fullRequest, contentLength);
 		extractFileElements();
 		addFile();
 	}
