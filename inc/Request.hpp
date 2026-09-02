@@ -39,7 +39,8 @@ class Request {
 	public:
 		Request(){}
 		~Request(){}
-		void parseRequestLine();
+		bool parseRequestLine();
+		bool validateRequestLine();
 		bool parseUntilHeaders(std::string hString);
 		void parseHeaders();
 		bool validateHeaders();

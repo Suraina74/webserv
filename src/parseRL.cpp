@@ -1,20 +1,16 @@
 #include "../inc/Request.hpp"
 
 // Validation required!!
-
-void Request::parseRequestLine(){
+bool Request::parseRequestLine(){
 	size_t endOfRequestLine = partialRequest.find("\r\n"); // CRLF is: carriage return(\r) line feed (\n)
 	if (endOfRequestLine == std::string::npos){
 		statusCode = BadRequest;
 		setStatusText(statusCode);
-		return ;
+		return false;
 	}
 	requestLine = partialRequest.substr(0, endOfRequestLine);
 	std::stringstream ss(requestLine);
 	ss >> Method >> Path >> Protocol;
-	// if (Method.empty() || Path.empty() || Protocol.empty()){
-	// }
-	// Controle op protocol uitvoeren. Of het wel HTTP/1.1 is
 	Path = "www" + Path;
 	if (Path == "www/"){
 		Path = "www/index.html";
@@ -26,4 +22,15 @@ void Request::parseRequestLine(){
 	}
 	statusText = setStatusText(statusCode);
 	// Iets doen voor favicon.
+	if (validateRequestLine() == false){
+		return false;
+	}
+	return true;
+}
+
+bool Request::validateRequestLine(){
+	// if (Method.empty() || Path.empty() || Protocol.empty()){
+	// }
+	// Controle op protocol uitvoeren. Of het wel HTTP/1.1 is
+	return true;
 }

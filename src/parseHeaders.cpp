@@ -43,7 +43,9 @@ bool Request::validateHeaders(){
 
 bool Request::parseUntilHeaders(std::string hString){
 	partialRequest = hString;
-	parseRequestLine();
+	if (parseRequestLine() == false){
+		return false;
+	}
 	parseHeaders();
 	if (validateHeaders() == false){
 		return false;
