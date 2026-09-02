@@ -1,73 +1,5 @@
 #include "../inc/Request.hpp"
 
-void Request::extractBody(std::string input, int bodyLen){
-	int startBody = input.find("\r\n\r\n");
-	startBody += 4;
-	Body = input.substr(startBody, bodyLen);
-}
-
-void Request::parse(){
-	// Split into request line, headers and body.
-	size_t endOfRequestLine = fullRequest.find("\r\n"); // CRLF is: carriage return(\r) line feed (\n)
-	if (endOfRequestLine == std::string::npos){
-		statusCode = BadRequest;
-		setStatusText(statusCode);
-		return ;
-	}
-	endOfRequestLine -= 2;
-	requestLine = fullRequest.substr(0, endOfRequestLine);
-	extractMethodPathProtocol();
-	// extractHeaders();
-	statusText = setStatusText(statusCode);
-}
-
-void Request::extractFileElements(){
-	size_t startFilename = Body.find("filename=\"");
-	startFilename += 10;
-	size_t endFilename = Body.find('\"', startFilename);
-	fileName = Body.substr(startFilename, (endFilename - startFilename));
-
-	size_t startOfFileContent = Body.find("\r\n\r\n");
-	startOfFileContent += 4;
-	size_t endOfFileContent = Body.find("\r\n------WebKit");
-	fileContent = Body.substr(startOfFileContent, endOfFileContent - startOfFileContent);
-}
-
-void Request::addFile(){
-	std::string uploadPlace = "www/uploads/" + fileName;
-	std::ofstream file(uploadPlace, std::ios::binary);
-	file << fileContent;
-	file.close();
-}
-
-void Request::extractHeaders(){
-	int beginHeaders = fullRequest.find("\r\n") + 2;
-	int endHeaders = fullRequest.find("\r\n\r\n") + 1;
-	std::string headerString = fullRequest.substr(beginHeaders, endHeaders - beginHeaders);
-	// std::cout << headerString;
-	// validate..
-	int amountLines = 0;
-	for (size_t i = 0; i < headerString.size(); i++){
-		if (headerString[i] == '\r'){
-			amountLines++;
-		}
-	}
-	int startLine = 0;
-	int endLine = 0;
-	for (int i = 0; i < amountLines; i++){
-		endLine = headerString.find("\r\n");
-		std::string line = headerString.substr(startLine, endLine - startLine);
-		std::stringstream ss(line);
-		std::string key, value;
-		ss >> key >> value;
-		headers.insert({key, value});
-		ss.str("");
-		ss.clear();
-		startLine = endLine + 2;
-	}
-	std::cout << headers.size() << std::endl;	
-}
-
 void Request::extractMethodPathProtocol(){
 	std::stringstream ss(requestLine);
 	ss >> Method >> Path >> Protocol;
@@ -104,27 +36,29 @@ void Request::extractMethodPathProtocol(){
 	// }
 }
 
-ssize_t getContentlength(std::string message){
-	std::string contentLenStr{};
-	size_t startContentLen = message.find("Content-Length:");
-	if (startContentLen != std::string::npos){	
-		startContentLen += 16;
-		size_t endContentLen = message.find("\r\n", startContentLen); // Finds first occurence of \r\n starting at the position of startContentLen.
-		contentLenStr = message.substr(startContentLen, (endContentLen - startContentLen));
+void Request::extractHeaders(){
+	int beginHeaders = fullRequest.find("\r\n") + 2;
+	int endHeaders = fullRequest.find("\r\n\r\n") + 1;
+	std::string headerString = fullRequest.substr(beginHeaders, endHeaders - beginHeaders);
+	int amountLines = 0;
+	for (size_t i = 0; i < headerString.size(); i++){
+		if (headerString[i] == '\r'){
+			amountLines++;
+		}
 	}
-	ssize_t contentLength{};
-	if (!contentLenStr.empty()){
-		std::stringstream ss(contentLenStr);
-		ss >> contentLength;
+	int startLine = 0;
+	int endLine = 0;
+	for (int i = 0; i < amountLines; i++){
+		endLine = headerString.find("\r\n", startLine);
+		std::string line = headerString.substr(startLine, endLine - startLine);
+		std::stringstream ss(line);
+		std::string key, value;
+		ss >> key >> value;
+		headers.insert({key, value});
+		ss.str("");
+		ss.clear();
+		startLine = endLine + 2;
 	}
-	return contentLength;
-}
-
-ssize_t	getBytesUntilHeaders(std::string message){
-	int posEndHeaders = message.find("\r\n\r\n");
-	std::string requestUntilHeaders = message.substr(0, (posEndHeaders + 4));
-	ssize_t bytesUntilHeaders = requestUntilHeaders.size();
-	return bytesUntilHeaders;
 }
 
 std::string Request::setStatusText(httpStatus status){
@@ -150,6 +84,72 @@ std::string Request::setStatusText(httpStatus status){
 		case HTTPVersionNotSupported:
 			return "505 HTTP Version Not Supported";
 	}
+}
+
+void Request::parse(){
+	// Split into request line, headers and body.
+	size_t endOfRequestLine = fullRequest.find("\r\n"); // CRLF is: carriage return(\r) line feed (\n)
+	if (endOfRequestLine == std::string::npos){
+		statusCode = BadRequest;
+		setStatusText(statusCode);
+		return ;
+	}
+	endOfRequestLine -= 2;
+	requestLine = fullRequest.substr(0, endOfRequestLine);
+	extractMethodPathProtocol();
+	extractHeaders();
+	if (Method == "POST"){
+		
+	}
+	statusText = setStatusText(statusCode);
+}
+
+void Request::extractFileElements(){
+	size_t startFilename = Body.find("filename=\"");
+	startFilename += 10;
+	size_t endFilename = Body.find('\"', startFilename);
+	fileName = Body.substr(startFilename, (endFilename - startFilename));
+
+	size_t startOfFileContent = Body.find("\r\n\r\n");
+	startOfFileContent += 4;
+	size_t endOfFileContent = Body.find("\r\n------WebKit");
+	fileContent = Body.substr(startOfFileContent, endOfFileContent - startOfFileContent);
+}
+
+void Request::addFile(){
+	std::string uploadPlace = "www/uploads/" + fileName;
+	std::ofstream file(uploadPlace, std::ios::binary);
+	file << fileContent;
+	file.close();
+}
+
+ssize_t getContentlength(std::string message){
+	std::string contentLenStr{};
+	size_t startContentLen = message.find("Content-Length:");
+	if (startContentLen != std::string::npos){	
+		startContentLen += 16;
+		size_t endContentLen = message.find("\r\n", startContentLen); // Finds first occurence of \r\n starting at the position of startContentLen.
+		contentLenStr = message.substr(startContentLen, (endContentLen - startContentLen));
+	}
+	ssize_t contentLength{};
+	if (!contentLenStr.empty()){
+		std::stringstream ss(contentLenStr);
+		ss >> contentLength;
+	}
+	return contentLength;
+}
+
+ssize_t	getBytesUntilHeaders(std::string message){
+	int posEndHeaders = message.find("\r\n\r\n");
+	std::string requestUntilHeaders = message.substr(0, (posEndHeaders + 4));
+	ssize_t bytesUntilHeaders = requestUntilHeaders.size();
+	return bytesUntilHeaders;
+}
+
+void Request::extractBody(std::string input, int bodyLen){
+	int startBody = input.find("\r\n\r\n");
+	startBody += 4;
+	Body = input.substr(startBody, bodyLen);
 }
 
 std::string Request::getPath(){
