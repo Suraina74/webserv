@@ -1,53 +1,122 @@
 #include "../inc/Request.hpp"
 
-void Request::extractElements(){
-	int posCRLF = Input.find("\r\n");
-	requestLine = Input.substr(0, posCRLF);
 
-	int i = 0;
-	int amountElements = 2;
-	std::stringstream ss(requestLine);
-	std::string word;
-	while (i < amountElements){
-		ss >> word;
-		if (i == 0){
-			Method = word;
-		}
-		else{
-			Path = "www" + word;
-		}
-		i++;
-	}
-	if (Path == "www/"){
-		Path = "www/index.html";
-	}
-	if (Path == "www/index.html" || Path == "www/uploads.html" || Path == "www/gaia.html"){
-		statusCode = "200";
-		statusText = "OK";
-	}
-	else{
-		Path = "www/404.html";
-		statusCode = "404";
-		statusText = "Not Found";
+// 	// if (Method == "DELETE"){
+// 	// 	std::string uploadPlace = "www/uploads/" + fileName;
+// 	// 	const char *cUploadPlace = uploadPlace.c_str();
+// 	// 	int status = remove(cUploadPlace);
+// 	// 	if (status != 0) {
+//     //     	std::cout << "Error deleting file" << std::endl;
+// 	// 	}
+// 	// }
+
+
+void Request::extractBody(){
+	int startBody = fullRequest.find("\r\n\r\n");
+	startBody += 4;
+	Body = fullRequest.substr(startBody, contentLength);
+	// std::cout << Body << std::endl;
+	// std::cout << contentLength << std::endl;
+}
+
+void Request::extractFileElements(){
+	size_t startFilename = Body.find("filename=\"");
+	startFilename += 10;
+	size_t endFilename = Body.find('\"', startFilename);
+	fileName = Body.substr(startFilename, (endFilename - startFilename));
+
+	size_t startOfFileContent = Body.find("\r\n\r\n");
+	startOfFileContent += 4;
+	size_t endOfFileContent = Body.find("\r\n------WebKit");
+	fileContent = Body.substr(startOfFileContent, endOfFileContent - startOfFileContent);
+}
+
+void Request::addFile(){
+	std::string uploadPlace = "www/uploads/" + fileName;
+	std::ofstream file(uploadPlace, std::ios::binary);
+	file << fileContent;
+	file.close();
+}
+
+std::string Request::setStatusText(httpStatus status){
+	switch (status){
+		case OK:
+			return "200 OK";
+		case BadRequest:
+			return "400 Bad Request";
+		case PageNotFound:
+			return "404 Page Not Found";
+		case MethodNotAllowed:
+			return "405 Method Not Allowed";
+		case RequestTimeout:
+			return "408 Request Timeout";
+		case ContentTooLarge:
+			return "413 Content Too Large";
+		case URITooLong:
+			return "414 URI Too Long";
+		case RequestHeaderFieldsTooLarge:
+			return "431 Request Header Fields Too Large";
+		case InternalServerError:
+			return "500 Internal Server Error";
+		case HTTPVersionNotSupported:
+			return "505 HTTP Version Not Supported";
 	}
 }
 
-ssize_t getContentlength(std::string message){
-	std::string contentLengthHeader{};
-	size_t startContentLen = message.find("Content-Length");
-	if (startContentLen != std::string::npos){
-		size_t endContentLen = message.find("\r\n", startContentLen);
-		contentLengthHeader = message.substr(startContentLen, (endContentLen - startContentLen));
+void Request::parse(){
+	// Split into request line, headers and body.
+	if (contentLength){
+		extractBody();
+		if (!Body.empty()){
+			extractFileElements();
+			addFile();
+		}
 	}
-	std::stringstream ss(message);
-	ssize_t contentLength{};
-	if (!contentLengthHeader.empty()){
-		std::string _;
-		ss.str(contentLengthHeader);
-		ss >> _ >> contentLength;
-	}
-	return contentLength;
+	statusText = setStatusText(statusCode);
 }
+
+void Request::cleanRequest(){
+	fullRequest = {};
+	partialRequest = {};
+	requestLine = {};
+	headerMap = {};
+	contentLength = {};
+	Method = {};
+	Protocol = {};
+	Path = {};
+	statusText = {};
+	Body = {};
+	fileName = {};
+	fileContent = {};
+	statusCode = OK;
+}
+
+
+
+
+
+
+
+
+
+// ssize_t getContentlength(std::string message){
+// 	std::string contentLenStr{};
+// 	size_t startContentLen = message.find("Content-Length:");
+// 	if (startContentLen != std::string::npos){	
+// 		startContentLen += 16;
+// 		size_t endContentLen = message.find("\r\n", startContentLen); // Finds first occurence of \r\n starting at the position of startContentLen.
+// 		contentLenStr = message.substr(startContentLen, (endContentLen - startContentLen));
+// 	}
+// 	// else{
+// 		// Als er geen content-length is als header en het is chunked transfer, dan bytes tellen na \r\n\r\n
+// 	// }
+// 	ssize_t contentLength{};
+// 	if (!contentLenStr.empty()){
+// 		std::stringstream ss(contentLenStr);
+// 		ss >> contentLength;
+// 	}
+// 	return contentLength;
+// }
 
 ssize_t	getBytesUntilHeaders(std::string message){
 	int posEndHeaders = message.find("\r\n\r\n");
@@ -56,19 +125,32 @@ ssize_t	getBytesUntilHeaders(std::string message){
 	return bytesUntilHeaders;
 }
 
+void Request::setRequest(std::string request){
+	fullRequest = request;
+}
+
+ssize_t Request::getContentLength(){
+	return contentLength;
+}
 std::string Request::getPath(){
 	return Path;
 }
-std::string Request::getStatusCode(){
+std::string Request::getMethod(){
+	return Method;
+}
+httpStatus Request::getStatusCode(){
 	return statusCode;
 }
 std::string Request::getStatusText(){
 	return statusText;
 }
 
+std::string Request::getFullRequest(){
+	return fullRequest;
+}
+
 // GET / HTTP/1.1 niets na /
 // GET /index.html HTTP/1.1 specifieke html page na /
-// GET /style.css HTTP/1.1
 // GET /favicon.ico HTTP/1.1
 // POST /delete.html HTTP/1.1 met body filename=
 
