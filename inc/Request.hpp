@@ -23,7 +23,10 @@ enum httpStatus{
 class Request {
 	private:
 		std::string fullRequest{};
+		std::string partialRequest{};
 		std::string	requestLine{};
+		std::map<std::string, std::string> headerMap{};
+		ssize_t		contentLength{};
 		std::string Method{};
 		std::string Protocol{};
 		std::string Path{};
@@ -31,28 +34,32 @@ class Request {
 		std::string	Body{};
 		std::string fileName{};
 		std::string fileContent{};
-		httpStatus  statusCode;
-		std::map<std::string, std::string> headers;
+		httpStatus  statusCode = OK;
 
 	public:
-		Request(std::string fRequest) : fullRequest(fRequest){}
+		Request(){}
 		~Request(){}
-		void extractMethodPathProtocol();
-		void extractHeaders();
+		void parseRequestLine();
+		bool parseUntilHeaders(std::string hString);
+		void parseHeaders();
+		bool validateHeaders();
 		void parse();
-		void extractBody(std::string input, int bodyLen);
+		void extractBody();
 		void extractFileElements();
 		void addFile();
 		std::string setStatusText(httpStatus status);
-		// std::string getMethod();
+		void setRequest(std::string request);
+		void cleanRequest();
+
+		ssize_t getContentLength();
 		std::string getPath();
 		std::string getMethod();
 		httpStatus  getStatusCode();
 		std::string getStatusText();
-		// Extract body -> extractBody()
+		std::string getFullRequest();
 };
 
-ssize_t 	getContentlength(std::string message);
+// ssize_t 	getContentlength(std::string message);
 ssize_t 	getBytesUntilHeaders(std::string message);
 
 

@@ -52,6 +52,7 @@ int Response::composeResponse()
 			close(fd);
 		}
 	}
+	// std::cout << bytesRead << std::endl;
 	std::string sizeOfBody;
 	std::stringstream ss;
 	ss << bytesRead;

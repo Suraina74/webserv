@@ -1,64 +1,41 @@
 #include "../inc/Request.hpp"
 
-void Request::extractMethodPathProtocol(){
-	std::stringstream ss(requestLine);
-	ss >> Method >> Path >> Protocol;
-	// if (Method.empty() || Path.empty() || Protocol.empty()){
-	// }
-	// Controle op protocol uitvoeren. Of het wel HTTP/1.1 is
-	Path = "www" + Path;
-	if (Path == "www/"){
-		Path = "www/index.html";
-	}
-	// Kijken of andere manier is om te zien of het bestaande html pages zijn.
-	if (Path == "www/index.html" || Path == "www/uploads.html"){
-		statusCode = OK;
-	}
-	// Iets doen voor favicon.
-	else{
-		Path = "www/404.html";
-		statusCode = PageNotFound;
-	}
-	// Check if contentLength is not too big, anders error 413 gooien.
-	int contentLength = getContentlength(fullRequest);
-	if (Method == "POST"){
-		extractBody(fullRequest, contentLength);
-		extractFileElements();
-		addFile();
-	}
-	// else if (Method == "DELETE"){
-	// 	std::string uploadPlace = "www/uploads/" + fileName;
-	// 	const char *cUploadPlace = uploadPlace.c_str();
-	// 	int status = remove(cUploadPlace);
-	// 	if (status != 0) {
-    //     	std::cout << "Error deleting file" << std::endl;
-	// 	}
-	// }
+
+// 	// if (Method == "DELETE"){
+// 	// 	std::string uploadPlace = "www/uploads/" + fileName;
+// 	// 	const char *cUploadPlace = uploadPlace.c_str();
+// 	// 	int status = remove(cUploadPlace);
+// 	// 	if (status != 0) {
+//     //     	std::cout << "Error deleting file" << std::endl;
+// 	// 	}
+// 	// }
+
+
+void Request::extractBody(){
+	int startBody = fullRequest.find("\r\n\r\n");
+	startBody += 4;
+	Body = fullRequest.substr(startBody, contentLength);
+	// std::cout << Body << std::endl;
+	// std::cout << contentLength << std::endl;
 }
 
-void Request::extractHeaders(){
-	int beginHeaders = fullRequest.find("\r\n") + 2;
-	int endHeaders = fullRequest.find("\r\n\r\n") + 1;
-	std::string headerString = fullRequest.substr(beginHeaders, endHeaders - beginHeaders);
-	int amountLines = 0;
-	for (size_t i = 0; i < headerString.size(); i++){
-		if (headerString[i] == '\r'){
-			amountLines++;
-		}
-	}
-	int startLine = 0;
-	int endLine = 0;
-	for (int i = 0; i < amountLines; i++){
-		endLine = headerString.find("\r\n", startLine);
-		std::string line = headerString.substr(startLine, endLine - startLine);
-		std::stringstream ss(line);
-		std::string key, value;
-		ss >> key >> value;
-		headers.insert({key, value});
-		ss.str("");
-		ss.clear();
-		startLine = endLine + 2;
-	}
+void Request::extractFileElements(){
+	size_t startFilename = Body.find("filename=\"");
+	startFilename += 10;
+	size_t endFilename = Body.find('\"', startFilename);
+	fileName = Body.substr(startFilename, (endFilename - startFilename));
+
+	size_t startOfFileContent = Body.find("\r\n\r\n");
+	startOfFileContent += 4;
+	size_t endOfFileContent = Body.find("\r\n------WebKit");
+	fileContent = Body.substr(startOfFileContent, endOfFileContent - startOfFileContent);
+}
+
+void Request::addFile(){
+	std::string uploadPlace = "www/uploads/" + fileName;
+	std::ofstream file(uploadPlace, std::ios::binary);
+	file << fileContent;
+	file.close();
 }
 
 std::string Request::setStatusText(httpStatus status){
@@ -88,56 +65,58 @@ std::string Request::setStatusText(httpStatus status){
 
 void Request::parse(){
 	// Split into request line, headers and body.
-	size_t endOfRequestLine = fullRequest.find("\r\n"); // CRLF is: carriage return(\r) line feed (\n)
-	if (endOfRequestLine == std::string::npos){
-		statusCode = BadRequest;
-		setStatusText(statusCode);
-		return ;
-	}
-	endOfRequestLine -= 2;
-	requestLine = fullRequest.substr(0, endOfRequestLine);
-	extractMethodPathProtocol();
-	extractHeaders();
-	if (Method == "POST"){
-		
+	if (contentLength){
+		extractBody();
+		if (!Body.empty()){
+			extractFileElements();
+			addFile();
+		}
 	}
 	statusText = setStatusText(statusCode);
 }
 
-void Request::extractFileElements(){
-	size_t startFilename = Body.find("filename=\"");
-	startFilename += 10;
-	size_t endFilename = Body.find('\"', startFilename);
-	fileName = Body.substr(startFilename, (endFilename - startFilename));
-
-	size_t startOfFileContent = Body.find("\r\n\r\n");
-	startOfFileContent += 4;
-	size_t endOfFileContent = Body.find("\r\n------WebKit");
-	fileContent = Body.substr(startOfFileContent, endOfFileContent - startOfFileContent);
+void Request::cleanRequest(){
+	fullRequest = {};
+	partialRequest = {};
+	requestLine = {};
+	headerMap = {};
+	contentLength = {};
+	Method = {};
+	Protocol = {};
+	Path = {};
+	statusText = {};
+	Body = {};
+	fileName = {};
+	fileContent = {};
+	statusCode = OK;
 }
 
-void Request::addFile(){
-	std::string uploadPlace = "www/uploads/" + fileName;
-	std::ofstream file(uploadPlace, std::ios::binary);
-	file << fileContent;
-	file.close();
-}
 
-ssize_t getContentlength(std::string message){
-	std::string contentLenStr{};
-	size_t startContentLen = message.find("Content-Length:");
-	if (startContentLen != std::string::npos){	
-		startContentLen += 16;
-		size_t endContentLen = message.find("\r\n", startContentLen); // Finds first occurence of \r\n starting at the position of startContentLen.
-		contentLenStr = message.substr(startContentLen, (endContentLen - startContentLen));
-	}
-	ssize_t contentLength{};
-	if (!contentLenStr.empty()){
-		std::stringstream ss(contentLenStr);
-		ss >> contentLength;
-	}
-	return contentLength;
-}
+
+
+
+
+
+
+
+// ssize_t getContentlength(std::string message){
+// 	std::string contentLenStr{};
+// 	size_t startContentLen = message.find("Content-Length:");
+// 	if (startContentLen != std::string::npos){	
+// 		startContentLen += 16;
+// 		size_t endContentLen = message.find("\r\n", startContentLen); // Finds first occurence of \r\n starting at the position of startContentLen.
+// 		contentLenStr = message.substr(startContentLen, (endContentLen - startContentLen));
+// 	}
+// 	// else{
+// 		// Als er geen content-length is als header en het is chunked transfer, dan bytes tellen na \r\n\r\n
+// 	// }
+// 	ssize_t contentLength{};
+// 	if (!contentLenStr.empty()){
+// 		std::stringstream ss(contentLenStr);
+// 		ss >> contentLength;
+// 	}
+// 	return contentLength;
+// }
 
 ssize_t	getBytesUntilHeaders(std::string message){
 	int posEndHeaders = message.find("\r\n\r\n");
@@ -146,12 +125,13 @@ ssize_t	getBytesUntilHeaders(std::string message){
 	return bytesUntilHeaders;
 }
 
-void Request::extractBody(std::string input, int bodyLen){
-	int startBody = input.find("\r\n\r\n");
-	startBody += 4;
-	Body = input.substr(startBody, bodyLen);
+void Request::setRequest(std::string request){
+	fullRequest = request;
 }
 
+ssize_t Request::getContentLength(){
+	return contentLength;
+}
 std::string Request::getPath(){
 	return Path;
 }
@@ -163,6 +143,10 @@ httpStatus Request::getStatusCode(){
 }
 std::string Request::getStatusText(){
 	return statusText;
+}
+
+std::string Request::getFullRequest(){
+	return fullRequest;
 }
 
 // GET / HTTP/1.1 niets na /

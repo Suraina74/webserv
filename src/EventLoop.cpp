@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-std::string receiveRequest(int clientFd){
+std::string receiveRequest(int clientFd, Request& request){
 	char buffer[2048];
 	ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
 	if (n == -1)
@@ -21,8 +21,8 @@ std::string receiveRequest(int clientFd){
 		return ("");
 	}
 	ssize_t bytesRead = n;
-	std::string messageUntillHeaders(buffer, n);
-	while (messageUntillHeaders.find("\r\n\r\n") == std::string::npos){
+	std::string untilHeaders(buffer, n);
+	while (untilHeaders.find("\r\n\r\n") == std::string::npos){
 		ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
 		if (n == -1)
 		{
@@ -35,14 +35,15 @@ std::string receiveRequest(int clientFd){
 		}
 		bytesRead = bytesRead + n;
 		std::string newMessage(buffer, n);
-		messageUntillHeaders = messageUntillHeaders + newMessage;
+		untilHeaders += newMessage;
 	}
-	ssize_t contentLength = getContentlength(messageUntillHeaders);
-	// Check on contentLength of het niet een -getal is of een heel groot getal.
-	ssize_t headerBytes = getBytesUntilHeaders(messageUntillHeaders);
-	std::string fullRequest = messageUntillHeaders;
-	if (contentLength){
-		while (bytesRead < (headerBytes + contentLength)){
+	if (request.parseUntilHeaders(untilHeaders) == false){
+		return ("");
+	}
+	ssize_t headerBytes = getBytesUntilHeaders(untilHeaders);
+	std::string fullRequest = untilHeaders;
+	if (request.getContentLength()){
+		while (bytesRead < (headerBytes + request.getContentLength())){
 			ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
 			if (n == -1)
 			{
@@ -55,7 +56,7 @@ std::string receiveRequest(int clientFd){
 			}
 			bytesRead = bytesRead + n;
 			std::string newMessage(buffer, n);
-			fullRequest = fullRequest + newMessage;
+			fullRequest += newMessage;
 		}
 	}
 	return fullRequest;
@@ -72,7 +73,8 @@ int eventLoop(int *listen_fd, const ServerConfig &servers)
 	pfd.events = POLLIN;
 	pfd.revents = 0;
 	poll_fds.fds.push_back(pfd);
-	std::string fullRequest{};
+	std::string fRequest{};
+	Request request;
 	while (1)
 	{
 		pollfd client_pfd;
@@ -106,25 +108,23 @@ int eventLoop(int *listen_fd, const ServerConfig &servers)
 		{
 			if ((poll_fds.fds[i].revents & POLLIN))
 			{
-				fullRequest = receiveRequest(poll_fds.fds[i].fd);
-				if (fullRequest.empty()){
+				fRequest = receiveRequest(poll_fds.fds[i].fd, request);
+				if (fRequest.empty()){
 					close(poll_fds.fds[i].fd);
 					poll_fds.fds.erase(poll_fds.fds.begin() + i);
 					nfds--;
 					i--;
 					continue;
 				}
+				request.setRequest(fRequest);
+				request.parse();
 				poll_fds.fds[i].events = POLLOUT;
 			}
 			else if (poll_fds.fds[i].revents & POLLOUT)
 			{
-				Request request(fullRequest);
-				// request.extractElements();
-				request.parse();
 				Response response(request);
 				response.composeResponse();
 				std::string fullResponse = response.getFullResponse();
-				// std::cout << fullResponse;
 				int lenResponse = fullResponse.length();
 				const char *cFullResponse = fullResponse.c_str();
 				int n = send(poll_fds.fds[i].fd, cFullResponse, lenResponse, 0);
@@ -154,6 +154,7 @@ int eventLoop(int *listen_fd, const ServerConfig &servers)
 				poll_fds.fds.erase(poll_fds.fds.begin() + i);
 				nfds--;
 				i--;
+				request.cleanRequest();
 			}
 		}
 	}
