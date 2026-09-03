@@ -24,20 +24,42 @@ void Request::parseHeaders(){
 		ss.clear();
 		startLine = endLine + 2;
 	}
-	auto it = headerMap.find("Content-Length");
-	if (it != headerMap.end()){  //An iterator is a pointer-like object that allows traversing through the elements of a map.
-		std::string contentLenStr = it->second; // first = key, second = value of a map.
-		std::stringstream ss(contentLenStr);
-		ss >> contentLength;
+}
+
+bool checkIfOnlyNumbers(std::string string){
+	if (string.empty()){
+		return false;
 	}
+	for (size_t i = 0; i < string.size(); i++){
+		if (!isdigit(string[i])){
+			return false;
+		}
+	}
+	return true;
 }
 
 bool Request::validateHeaders(){
+	auto it = headerMap.find("Content-Length");
+	if (it != headerMap.end()){  //An iterator is a pointer-like object that allows traversing through the elements of a map.
+		std::string contentLenStr = it->second; // first = key, second = value of a map.
+		if (checkIfOnlyNumbers(contentLenStr) == false){
+			statusCode = BadRequest;
+			statusText = setStatusText(statusCode);
+			return false;
+		}
+		std::stringstream ss(contentLenStr);
+		ss >> contentLength;
+	}
 	if (contentLength < 0){
-		std::cout << "Invalid content length" << std::endl;
+		statusCode = BadRequest;
+	}
+	// if (contentLength > body size in config file){
+	//	statusCode = RequestHeaderFieldsTooLarge;
+	// }
+	if (statusCode != OK){
+		statusText = setStatusText(statusCode);
 		return false;
 	}
-	statusText = setStatusText(statusCode);
 	return true;
 }
 

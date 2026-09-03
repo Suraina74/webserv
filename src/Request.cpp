@@ -15,8 +15,6 @@ void Request::extractBody(){
 	int startBody = fullRequest.find("\r\n\r\n");
 	startBody += 4;
 	Body = fullRequest.substr(startBody, contentLength);
-	// std::cout << Body << std::endl;
-	// std::cout << contentLength << std::endl;
 }
 
 void Request::extractFileElements(){
@@ -32,6 +30,7 @@ void Request::extractFileElements(){
 }
 
 void Request::addFile(){
+	// Vanuit config halen waar files moeten worden opgeslagen.
 	std::string uploadPlace = "www/uploads/" + fileName;
 	std::ofstream file(uploadPlace, std::ios::binary);
 	file << fileContent;
@@ -63,16 +62,14 @@ std::string Request::setStatusText(httpStatus status){
 	}
 }
 
-void Request::parse(){
-	// Split into request line, headers and body.
-	if (contentLength){
+void Request::parseBody(){
+	// Als het gaat om chuncked trasfer, dan is er alleen geen contentLength, maar kan nog steeds wel een body zijn.
+	if (contentLength && statusCode == OK){
 		extractBody();
-		if (!Body.empty()){
-			extractFileElements();
-			addFile();
-		}
+		extractFileElements();
+		addFile();
+		statusText = setStatusText(statusCode);
 	}
-	statusText = setStatusText(statusCode);
 }
 
 void Request::cleanRequest(){

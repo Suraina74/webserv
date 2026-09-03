@@ -44,7 +44,7 @@ class Request {
 		bool parseUntilHeaders(std::string hString);
 		void parseHeaders();
 		bool validateHeaders();
-		void parse();
+		void parseBody();
 		void extractBody();
 		void extractFileElements();
 		void addFile();

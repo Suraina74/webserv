@@ -38,7 +38,7 @@ std::string receiveRequest(int clientFd, Request& request){
 		untilHeaders += newMessage;
 	}
 	if (request.parseUntilHeaders(untilHeaders) == false){
-		return ("");
+		return (untilHeaders);
 	}
 	ssize_t headerBytes = getBytesUntilHeaders(untilHeaders);
 	std::string fullRequest = untilHeaders;
@@ -117,7 +117,8 @@ int eventLoop(int *listen_fd, const ServerConfig &servers)
 					continue;
 				}
 				request.setRequest(fRequest);
-				request.parse();
+				request.parseBody();
+				//request.action?
 				poll_fds.fds[i].events = POLLOUT;
 			}
 			else if (poll_fds.fds[i].revents & POLLOUT)
