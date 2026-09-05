@@ -3,6 +3,7 @@
 #include <vector>
 #include <iostream>
 #include "../src/configParser/ServerConfig.hpp"
+#define TIMEOUT 60
 
 using namespace std;
 

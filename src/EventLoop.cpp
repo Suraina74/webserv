@@ -86,7 +86,7 @@ int eventLoop(const vector<int> &listenFds, const vector<ServerConfig> &servers)
 		pollfd client_pfd;
 
 		size_t nfds = poll_fds.fds.size();
-		int ready = poll(poll_fds.fds.data(), nfds, 100);
+		int ready = poll(poll_fds.fds.data(), nfds, TIMEOUT);
 		if (ready == -1)
 		{
 			::perror("poll");
