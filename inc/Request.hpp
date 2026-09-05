@@ -23,14 +23,17 @@ enum httpStatus{
 class Request {
 	private:
 		std::string fullRequest{};
+		std::string requestTillHeaders{};
+		ssize_t 	headerBytes{};
 		std::string partialRequest{};
+		ssize_t     bytesRead{};
 		std::string	requestLine{};
 		std::map<std::string, std::string> headerMap{};
 		ssize_t		contentLength{};
 		std::string Method{};
 		std::string Protocol{};
 		std::string Path{};
-		std::string	statusText{};
+		std::string	statusText = "200 OK";
 		std::string	Body{};
 		std::string fileName{};
 		std::string fileContent{};
@@ -48,9 +51,12 @@ class Request {
 		void extractBody();
 		void extractFileElements();
 		void addFile();
+		void cleanRequest();
+
 		std::string setStatusText(httpStatus status);
 		void setRequest(std::string request);
-		void cleanRequest();
+		void setBytesRead(ssize_t bytes);
+		void setHeaderBytes(ssize_t bytes);
 
 		ssize_t getContentLength();
 		std::string getPath();
@@ -58,10 +64,10 @@ class Request {
 		httpStatus  getStatusCode();
 		std::string getStatusText();
 		std::string getFullRequest();
+		std::string getRequestTillHeaders();
+		ssize_t getHeaderBytes();
+		ssize_t getBytesRead();
 };
-
-// ssize_t 	getContentlength(std::string message);
-ssize_t 	getBytesUntilHeaders(std::string message);
 
 
 // Request ontvangen, headers apart opslaan, body opslaan,

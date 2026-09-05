@@ -23,13 +23,13 @@ bool Request::validateRequestLine(){
 }
 
 bool Request::parseRequestLine(){
-	size_t endOfRequestLine = partialRequest.find("\r\n"); // CRLF is: carriage return(\r) line feed (\n)
+	size_t endOfRequestLine = requestTillHeaders.find("\r\n"); // CRLF is: carriage return(\r) line feed (\n)
 	if (endOfRequestLine == std::string::npos){
 		statusCode = BadRequest;
 		setStatusText(statusCode);
 		return false;
 	}
-	requestLine = partialRequest.substr(0, endOfRequestLine);
+	requestLine = requestTillHeaders.substr(0, endOfRequestLine);
 	// Check of er 3 woorden in RL zitten.
 	std::stringstream ss(requestLine);
 	std::string word;

@@ -63,7 +63,7 @@ std::string Request::setStatusText(httpStatus status){
 }
 
 void Request::parseBody(){
-	// Als het gaat om chuncked trasfer, dan is er alleen geen contentLength, maar kan nog steeds wel een body zijn.
+	// Als het gaat om chuncked transfer, dan is er alleen geen contentLength, maar kan nog steeds wel een body zijn.
 	if (contentLength && statusCode == OK){
 		extractBody();
 		extractFileElements();
@@ -74,14 +74,17 @@ void Request::parseBody(){
 
 void Request::cleanRequest(){
 	fullRequest = {};
+	requestTillHeaders = {};
+	headerBytes = {};
 	partialRequest = {};
+	bytesRead = {};
 	requestLine = {};
 	headerMap = {};
 	contentLength = {};
 	Method = {};
 	Protocol = {};
 	Path = {};
-	statusText = {};
+	statusText = "200 OK";
 	Body = {};
 	fileName = {};
 	fileContent = {};
@@ -93,37 +96,16 @@ void Request::cleanRequest(){
 
 
 
-
-
-
-// ssize_t getContentlength(std::string message){
-// 	std::string contentLenStr{};
-// 	size_t startContentLen = message.find("Content-Length:");
-// 	if (startContentLen != std::string::npos){	
-// 		startContentLen += 16;
-// 		size_t endContentLen = message.find("\r\n", startContentLen); // Finds first occurence of \r\n starting at the position of startContentLen.
-// 		contentLenStr = message.substr(startContentLen, (endContentLen - startContentLen));
-// 	}
-// 	// else{
-// 		// Als er geen content-length is als header en het is chunked transfer, dan bytes tellen na \r\n\r\n
-// 	// }
-// 	ssize_t contentLength{};
-// 	if (!contentLenStr.empty()){
-// 		std::stringstream ss(contentLenStr);
-// 		ss >> contentLength;
-// 	}
-// 	return contentLength;
-// }
-
-ssize_t	getBytesUntilHeaders(std::string message){
-	int posEndHeaders = message.find("\r\n\r\n");
-	std::string requestUntilHeaders = message.substr(0, (posEndHeaders + 4));
-	ssize_t bytesUntilHeaders = requestUntilHeaders.size();
-	return bytesUntilHeaders;
-}
-
 void Request::setRequest(std::string request){
 	fullRequest = request;
+}
+
+void Request::setBytesRead(ssize_t bytes){
+	bytesRead = bytes;
+}
+
+void Request::setHeaderBytes(ssize_t bytes){
+	headerBytes = bytes;
 }
 
 ssize_t Request::getContentLength(){
@@ -144,6 +126,18 @@ std::string Request::getStatusText(){
 
 std::string Request::getFullRequest(){
 	return fullRequest;
+}
+
+std::string Request::getRequestTillHeaders(){
+	return requestTillHeaders;
+}
+
+ssize_t Request::getBytesRead(){
+	return bytesRead;
+}
+
+ssize_t Request::getHeaderBytes(){
+	return headerBytes;
 }
 
 // GET / HTTP/1.1 niets na /

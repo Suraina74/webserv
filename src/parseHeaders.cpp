@@ -2,17 +2,17 @@
 
 void Request::parseHeaders(){
 	int amountLines = 0;
-	for (size_t i = 0; i < partialRequest.size(); i++){
-		if (partialRequest[i] == '\r'){
+	for (size_t i = 0; i < requestTillHeaders.size(); i++){
+		if (requestTillHeaders[i] == '\r'){
 			amountLines++;
 		}
 	}
 	amountLines -= 2;
-	int startLine = partialRequest.find("\r\n") + 2;
+	int startLine = requestTillHeaders.find("\r\n") + 2;
 	int endLine = 0;
 	for (int i = 0; i < amountLines; i++){
-		endLine = partialRequest.find("\r\n", startLine);
-		std::string line = partialRequest.substr(startLine, endLine - startLine);
+		endLine = requestTillHeaders.find("\r\n", startLine);
+		std::string line = requestTillHeaders.substr(startLine, endLine - startLine);
 		std::stringstream ss(line);
 		std::string key, value;
 		ss >> key;
@@ -64,7 +64,7 @@ bool Request::validateHeaders(){
 }
 
 bool Request::parseUntilHeaders(std::string hString){
-	partialRequest = hString;
+	requestTillHeaders = hString;
 	if (parseRequestLine() == false){
 		return false;
 	}

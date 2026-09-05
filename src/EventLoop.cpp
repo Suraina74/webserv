@@ -8,58 +8,31 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-std::string receiveRequest(int clientFd, Request& request){
+int receiveRequest(int clientFd, Request& request){
 	char buffer[2048];
 	ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
 	if (n == -1)
 	{
 		::perror("recv");
-		return ("");
+		return -1;
 	}
 	else if (n == 0)
 	{
-		return ("");
+		return 0;
 	}
-	ssize_t bytesRead = n;
-	std::string untilHeaders(buffer, n);
-	while (untilHeaders.find("\r\n\r\n") == std::string::npos){
-		ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
-		if (n == -1)
-		{
-			::perror("recv");
-			return ("");
+	request.setBytesRead(request.getBytesRead() + n);
+	std::string part(buffer, n);
+	request.setRequest(request.getFullRequest() + part);
+	if (request.getFullRequest().find("\r\n\r\n") != std::string::npos && request.getHeaderBytes() == 0){
+		if ((request.parseUntilHeaders(request.getFullRequest())) == false){
+			return 2;
 		}
-		else if (n == 0)
-		{
-			return ("");
-		}
-		bytesRead = bytesRead + n;
-		std::string newMessage(buffer, n);
-		untilHeaders += newMessage;
+		request.setHeaderBytes(request.getRequestTillHeaders().size());
 	}
-	if (request.parseUntilHeaders(untilHeaders) == false){
-		return (untilHeaders);
+	if (request.getBytesRead() == request.getHeaderBytes() + request.getContentLength()){
+		return 2;
 	}
-	ssize_t headerBytes = getBytesUntilHeaders(untilHeaders);
-	std::string fullRequest = untilHeaders;
-	if (request.getContentLength()){
-		while (bytesRead < (headerBytes + request.getContentLength())){
-			ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
-			if (n == -1)
-			{
-				::perror("recv");
-				return ("");
-			}
-			else if (n == 0)
-			{
-				return ("");
-			}
-			bytesRead = bytesRead + n;
-			std::string newMessage(buffer, n);
-			fullRequest += newMessage;
-		}
-	}
-	return fullRequest;
+	return 1;
 }
 
 int eventLoop(int *listen_fd, const ServerConfig &servers)
@@ -108,18 +81,19 @@ int eventLoop(int *listen_fd, const ServerConfig &servers)
 		{
 			if ((poll_fds.fds[i].revents & POLLIN))
 			{
-				fRequest = receiveRequest(poll_fds.fds[i].fd, request);
-				if (fRequest.empty()){
+				int returnValue = receiveRequest(poll_fds.fds[i].fd, request);
+				if (returnValue == -1 || returnValue == 0){
 					close(poll_fds.fds[i].fd);
 					poll_fds.fds.erase(poll_fds.fds.begin() + i);
 					nfds--;
 					i--;
 					continue;
 				}
-				request.setRequest(fRequest);
-				request.parseBody();
-				//request.action?
-				poll_fds.fds[i].events = POLLOUT;
+				else if (returnValue == 2){
+					request.parseBody();
+					//request.action?
+					poll_fds.fds[i].events = POLLOUT;
+				}
 			}
 			else if (poll_fds.fds[i].revents & POLLOUT)
 			{
@@ -195,7 +169,7 @@ int createSockAddr(int *listen_fd, struct addrinfo *result, const ServerConfig &
 			::perror("setsockopt");
 			continue;
 		}
-		if (bind(*listen_fd, result->ai_addr, result->ai_addrlen) == -1)
+		if (::bind(*listen_fd, result->ai_addr, result->ai_addrlen) == -1)
 		{
 			::perror("bind");
 			continue;
