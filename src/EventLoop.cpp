@@ -69,15 +69,17 @@ int eventLoop(const vector<int> &listenFds, const vector<ServerConfig> &servers)
 {
 	EventLoop poll_fds;
 
+	//setup listining sockets
 	for (size_t i = 0; i < listenFds.size(); ++i)
 	{
-		pollfd server_socket;
+		pollfd listen_socket;
 
-		server_socket.fd = listenFds[i];
-		server_socket.events = POLLIN;
-		server_socket.revents = 0;
+		listen_socket.fd = listenFds[i];
+		listen_socket.events = POLLIN;
+		listen_socket.revents = 0;
 
-		poll_fds.fds.push_back(server_socket);
+		//why create a general list of fds when you can keep them seprate? just cleanup on both.
+		poll_fds.fds.push_back(listen_socket);
 		poll_fds.configIndexes.push_back(i);
 	}
 	std::string fullRequest{};
@@ -94,6 +96,7 @@ int eventLoop(const vector<int> &listenFds, const vector<ServerConfig> &servers)
 		}
 		for (size_t i = 0; i < nfds; i++)
 		{
+			//begining of list is listining fds but I could instead use a list of listen fds todo this part..
 			if (i < listenFds.size())
 			{
 				if (poll_fds.fds[i].revents & POLLIN)
@@ -112,6 +115,7 @@ int eventLoop(const vector<int> &listenFds, const vector<ServerConfig> &servers)
 				}
 				continue;
 			}
+			//client fds
 			if ((poll_fds.fds[i].revents & POLLIN))
 			{
 				fullRequest = receiveRequest(poll_fds.fds[i].fd);

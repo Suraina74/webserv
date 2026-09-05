@@ -11,7 +11,10 @@ class EventLoop
 {
 	public:
 		struct addrinfo *result;
+		// get rid of general fd vect...
 		vector<pollfd>	fds;
+		// vector<pollfd>	listing_fd;
+		// vector<pollfd>	client_fd;
 		vector<size_t>	configIndexes;
 		vector<int>		listenFds;
 };
