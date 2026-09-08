@@ -191,7 +191,7 @@ int createSockAddr(int *listen_fd, struct addrinfo *result, const ServerConfig &
 			::perror("setsockopt");
 			continue;
 		}
-		if (bind(*listen_fd, result->ai_addr, result->ai_addrlen) == -1)
+		if (::bind(*listen_fd, result->ai_addr, result->ai_addrlen) == -1)
 		{
 			::perror("bind");
 			continue;
