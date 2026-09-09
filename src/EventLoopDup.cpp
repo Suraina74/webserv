@@ -98,7 +98,7 @@ int eventLoop(int *listen_fd, const ServerConfig &currentServer)
 				continue;
 			}
 			client_pfd.events = POLLIN;
-			client_pfd.revents = 0;//Q: is it always necessary to set revents
+			client_pfd.revents = 0;//Q: is it always necessary to set revents?
 			poll_fds.fds.push_back(client_pfd);
 			nfds++;//Q: if nfds = poll_fds.fds.size(), then nfds++ is unnecessary here
 		}
@@ -126,7 +126,7 @@ int eventLoop(int *listen_fd, const ServerConfig &currentServer)
 				string fullResponse = response.getFullResponse();
 				int lenResponse = fullResponse.length();
 				const char *cFullResponse = fullResponse.c_str();//Q: why make it const char* when you can use &fullResponse for send()
-				int n = send(poll_fds.fds[i].fd, cFullResponse, lenResponse, 0);
+				int n = send(poll_fds.fds[i].fd, &fullResponse, lenResponse, 0);
 				if (n == -1 || n == 0){
 					::perror("send");
 					close(poll_fds.fds[i].fd);
