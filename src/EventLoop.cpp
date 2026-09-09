@@ -8,61 +8,49 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-std::string receiveRequest(int clientFd)
-{
+int receiveRequest(int clientFd, Request& request){
 	char buffer[2048];
 	ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
 	if (n == -1)
 	{
 		::perror("recv");
-		return ("");
+		return -1;
 	}
 	else if (n == 0)
 	{
-		return ("");
+		return 0;
 	}
-	ssize_t bytesRead = n;
-	std::string messageUntillHeaders(buffer, n);
-	while (messageUntillHeaders.find("\r\n\r\n") == std::string::npos)
-	{
-		ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
-		if (n == -1)
-		{
-			::perror("recv");
-			return ("");
+	request.setBytesRead(request.getBytesRead() + n);
+	std::string part(buffer, n);
+	request.setRequest(request.getFullRequest() + part);
+	if (request.getFullRequest().find("\r\n\r\n") != std::string::npos && request.getHeaderBytes() == 0){
+		if ((request.parseUntilHeaders(request.getFullRequest())) == false){
+			return 2;
 		}
-		else if (n == 0)
-		{
-			return ("");
-		}
-		bytesRead = bytesRead + n;
-		std::string newMessage(buffer, n);
-		messageUntillHeaders = messageUntillHeaders + newMessage;
+		request.setHeaderBytes(request.getRequestTillHeaders().size());
 	}
-	ssize_t contentLength = getContentlength(messageUntillHeaders);
-	// Check on contentLength of het niet een -getal is of een heel groot getal.
-	ssize_t headerBytes = getBytesUntilHeaders(messageUntillHeaders);
-	std::string fullRequest = messageUntillHeaders;
-	if (contentLength)
-	{
-		while (bytesRead < (headerBytes + contentLength))
-		{
-			ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
-			if (n == -1)
-			{
-				::perror("recv");
-				return ("");
-			}
-			else if (n == 0)
-			{
-				return ("");
-			}
-			bytesRead = bytesRead + n;
-			std::string newMessage(buffer, n);
-			fullRequest = fullRequest + newMessage;
-		}
+	if (request.getBytesRead() == request.getHeaderBytes() + request.getContentLength()){
+		return 2;
 	}
-	return fullRequest;
+	return 1;
+}
+
+int sendResponse(int clientFd, Response& response){
+	if (response.getBytesSent() < response.getLenResponse()){
+		int n = send(clientFd, response.getCFullResponse() + response.getBytesSent(), response.getLenResponse() - response.getBytesSent(), 0);
+		if (n == -1){
+			::perror("send");
+			return -1;
+		}
+		else if (n == 0){
+			return 0;
+		}
+		response.setBytesSent(response.getBytesSent() + n);
+	}
+	if (response.getBytesSent() == response.getLenResponse()){
+		return 2;
+	}
+	return 1;
 }
 
 int eventLoop(const vector<int> &listenFds, const vector<ServerConfig> &servers)
@@ -74,15 +62,13 @@ int eventLoop(const vector<int> &listenFds, const vector<ServerConfig> &servers)
 	{
 		pollfd listen_socket;
 
-		listen_socket.fd = listenFds[i];
-		listen_socket.events = POLLIN;
-		listen_socket.revents = 0;
-
-		//why create a general list of fds when you can keep them seprate? just cleanup on both.
-		poll_fds.fds.push_back(listen_socket);
-		poll_fds.configIndexes.push_back(i);
-	}
-	std::string fullRequest{};
+	pfd.fd = *listen_fd;
+	pfd.events = POLLIN;
+	pfd.revents = 0;
+	poll_fds.fds.push_back(pfd);
+	std::string fRequest{};
+	Request request;
+	Response response;
 	while (1)
 	{
 		pollfd client_pfd;
@@ -118,9 +104,8 @@ int eventLoop(const vector<int> &listenFds, const vector<ServerConfig> &servers)
 			//client fds
 			if ((poll_fds.fds[i].revents & POLLIN))
 			{
-				fullRequest = receiveRequest(poll_fds.fds[i].fd);
-				if (fullRequest.empty())
-				{
+				int returnValue = receiveRequest(poll_fds.fds[i].fd, request);
+				if (returnValue == -1 || returnValue == 0){
 					close(poll_fds.fds[i].fd);
 					poll_fds.configIndexes.erase(poll_fds.configIndexes.begin() + i);
 					poll_fds.fds.erase(poll_fds.fds.begin() + i);
@@ -128,21 +113,21 @@ int eventLoop(const vector<int> &listenFds, const vector<ServerConfig> &servers)
 					i--;
 					continue;
 				}
-				poll_fds.fds[i].events = POLLOUT;
+				else if (returnValue == 2){
+					request.parseBody();
+					//request.action?
+					poll_fds.fds[i].events = POLLOUT;
+				}
 			}
 			else if (poll_fds.fds[i].revents & POLLOUT)
 			{
-				Request request(fullRequest);
-				request.extractElements(servers[poll_fds.configIndexes[i]]);
-				Response response(request);
+				response.setRequest(request);
 				response.composeResponse();
 				std::string fullResponse = response.getFullResponse();
-				int lenResponse = fullResponse.length();
-				const char *cFullResponse = fullResponse.c_str();
-				int n = send(poll_fds.fds[i].fd, cFullResponse, lenResponse, 0);
-				if (n == -1 || n == 0)
-				{
-					::perror("send");
+				response.setLenResponse(fullResponse.length());
+				response.setCString(fullResponse.c_str());
+				int returnValue = sendResponse(poll_fds.fds[i].fd, response);
+				if (returnValue == 0 || returnValue == -1){
 					close(poll_fds.fds[i].fd);
 					poll_fds.fds.erase(poll_fds.fds.begin() + i);
 					poll_fds.configIndexes.erase(poll_fds.configIndexes.begin() + i);
@@ -150,27 +135,14 @@ int eventLoop(const vector<int> &listenFds, const vector<ServerConfig> &servers)
 					i--;
 					continue;
 				}
-				int totalSent = n;
-				while (totalSent < lenResponse)
-				{
-					n = send(poll_fds.fds[i].fd, cFullResponse + totalSent, lenResponse - totalSent, 0);
-					if (n == -1 || n == 0)
-					{
-						::perror("send");
-						close(poll_fds.fds[i].fd);
-						poll_fds.fds.erase(poll_fds.fds.begin() + i);
-						poll_fds.configIndexes.erase(poll_fds.configIndexes.begin() + i);
-						nfds--;
-						i--;
-						continue;
-					}
-					totalSent = totalSent + n;
+				else if (returnValue == 2){
+					close(poll_fds.fds[i].fd);
+					poll_fds.fds.erase(poll_fds.fds.begin() + i);
+					nfds--;
+					i--;
+					request.cleanRequest();
+					response.cleanResponse();
 				}
-				close(poll_fds.fds[i].fd);
-				poll_fds.fds.erase(poll_fds.fds.begin() + i);
-				poll_fds.configIndexes.erase(poll_fds.configIndexes.begin() + i);
-				nfds--;
-				i--;
 			}
 		}
 	}
