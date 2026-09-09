@@ -30,6 +30,16 @@ This is where your Config::parse(), Config::parseServer(), Config::parseLocation
 Server sends the response back to the client
 After processing, the server builds an HTTP response (status line, headers like Content-Length and Content-Type, and body) and writes it back on the same connection's fd using send() (or write()). Depending on the Connection header and HTTP version, the socket is then either kept open for further requests (keep-alive) or closed. This is the arrow going back up to the client in your diagram — same TCP socket, just traffic flowing the other direction.
 
+# Work division
+To complete this project we splited our work into four main parts:
+Configuration
+      ↓
+Network / Server setup
+      ↓
+Event loop
+      ↓
+HTTP processing
+
 # Instructions
 
 To start the program: send terminal input
