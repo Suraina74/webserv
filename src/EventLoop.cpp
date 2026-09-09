@@ -189,7 +189,7 @@ vector<int> createSockAddr(struct addrinfo *result, const vector<ServerConfig> &
 		memset(&info, 0, sizeof(info));
 		info.ai_family = AF_INET;
 		info.ai_socktype = SOCK_STREAM;
-		string port = to_string(server[i].getPort());
+		string port = server[i].getPort();
 		if (getaddrinfo(server[i].getHost().c_str(), port.c_str(), &info, &result) != 0)
 		{
 			::perror("getaddrinfo");
