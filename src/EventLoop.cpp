@@ -214,7 +214,7 @@ vector<int> createSockAddr(struct addrinfo *result, const vector<ServerConfig> &
 				::perror("setsockopt");
 				continue;
 			}
-			if (bind(listenFd, ptr->ai_addr, ptr->ai_addrlen) == -1)
+			if (::bind(listenFd, ptr->ai_addr, ptr->ai_addrlen) == -1)
 			{
 				::perror("bind");
 				continue;
