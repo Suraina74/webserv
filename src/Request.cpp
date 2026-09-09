@@ -1,6 +1,6 @@
 #include "../inc/Request.hpp"
 
-void Request::extractElements(){
+void Request::extractElements(const ServerConfig &server){
 	int posCRLF = Input.find("\r\n");
 	requestLine = Input.substr(0, posCRLF);
 
@@ -8,20 +8,21 @@ void Request::extractElements(){
 	int amountElements = 2;
 	std::stringstream ss(requestLine);
 	std::string word;
+
 	while (i < amountElements){
 		ss >> word;
 		if (i == 0){
 			Method = word;
 		}
 		else{
-			Path = "www" + word;
+			Path = server.getRoot() + word;
 		}
 		i++;
 	}
-	if (Path == "www/"){
-		Path = "www/index.html";
+	if (Path == server.getRoot() + '/'){
+		Path = server.getRoot() + '/' + server.getIndex();
 	}
-	if (Path == "www/index.html" || Path == "www/uploads.html" || Path == "www/gaia.html"){
+	if (Path == "www/index.html" || Path == "www/uploads.html" || Path == "www/gaia.html" || Path == "www/green.html" || Path == "www/blue.html" || Path == "www/yellow.html"){
 		statusCode = "200";
 		statusText = "OK";
 	}
