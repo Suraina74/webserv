@@ -33,7 +33,7 @@ public:
 	void setErrPage(const vector<int> &errCodes, const string &path);
 	void addLocation(const Location &loc);
 
-	int getPort() const;
+	const string &getPort() const;
 	const string &getHost() const;
 	const string &getRoot() const;
 	const string &getIndex() const;

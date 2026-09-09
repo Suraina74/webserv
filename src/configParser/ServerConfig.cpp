@@ -45,9 +45,9 @@ void ServerConfig::addLocation(const Location& loc)
 	_locations.push_back(loc);
 }
 
-int	ServerConfig::getPort() const
+const string&	ServerConfig::getPort() const
 {
-	return _listen;
+	return to_string(_listen);
 }
 
 const string& ServerConfig::getHost() const
