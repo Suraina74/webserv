@@ -5,17 +5,30 @@
 class Response
 {
 	private:
-		Request 	request;
+		Request 	request{};
 		std::string	statusLine = "HTTP/1.1";
 		std::string contentType = "Content-Type: text/html\r\n";
 		std::string contentLength = "Content-Length: ";
 		std::string body{};
 		std::string fullResponse{};
+		int         lenResponse{};
+		const char* cFullResponse{};
+		int         bytesSent{};
 	public:
-		Response(Request httpRequest) : request(httpRequest){}
-		int composeResponse();
-		std::string getFullResponse();
+		Response(){}
 		~Response(){}
+		int composeResponse();
+		void cleanResponse();
+
+		void setRequest(Request r);
+		void setLenResponse(int length);
+		void setCString(const char* cString);
+		void setBytesSent(int bytes);
+
+		std::string getFullResponse();
+		const char* getCFullResponse();
+		int getLenResponse();
+		int getBytesSent();
 };
 
 

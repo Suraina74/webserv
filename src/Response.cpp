@@ -62,7 +62,48 @@ int Response::composeResponse()
 	return 0;
 }
 
+void Response::cleanResponse(){
+	request = {};
+	statusLine = "HTTP/1.1";
+	contentType = "Content-Type: text/html\r\n";
+	contentLength = "Content-Length: ";
+	body = {};
+	fullResponse = {};
+	lenResponse = {};
+	cFullResponse = {};
+	bytesSent = {};
+}
+
+void Response::setRequest(Request r){
+	request = r;
+}
+
+void Response::setCString(const char* cString){
+	cFullResponse = cString;
+}
+
+void Response::setLenResponse(int length){
+	lenResponse = length;
+}
+
+void Response::setBytesSent(int bytes){
+	bytesSent = bytes;
+}
+
 std::string Response::getFullResponse()
 {
 	return fullResponse;
+}
+
+const char* Response::getCFullResponse(){
+	return cFullResponse;
+}
+
+int Response::getLenResponse()
+{
+	return lenResponse;
+}
+
+int Response::getBytesSent(){
+	return bytesSent;
 }

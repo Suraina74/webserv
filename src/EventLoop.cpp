@@ -35,6 +35,24 @@ int receiveRequest(int clientFd, Request& request){
 	return 1;
 }
 
+int sendResponse(int clientFd, Response& response){
+	if (response.getBytesSent() < response.getLenResponse()){
+		int n = send(clientFd, response.getCFullResponse() + response.getBytesSent(), response.getLenResponse() - response.getBytesSent(), 0);
+		if (n == -1){
+			::perror("send");
+			return -1;
+		}
+		else if (n == 0){
+			return 0;
+		}
+		response.setBytesSent(response.getBytesSent() + n);
+	}
+	if (response.getBytesSent() == response.getLenResponse()){
+		return 2;
+	}
+	return 1;
+}
+
 int eventLoop(int *listen_fd, const ServerConfig &servers)
 {
 	// string path = servers.getRoot() + '/' + servers.getIndex();
@@ -48,6 +66,7 @@ int eventLoop(int *listen_fd, const ServerConfig &servers)
 	poll_fds.fds.push_back(pfd);
 	std::string fRequest{};
 	Request request;
+	Response response;
 	while (1)
 	{
 		pollfd client_pfd;
@@ -97,39 +116,27 @@ int eventLoop(int *listen_fd, const ServerConfig &servers)
 			}
 			else if (poll_fds.fds[i].revents & POLLOUT)
 			{
-				Response response(request);
+				response.setRequest(request);
 				response.composeResponse();
 				std::string fullResponse = response.getFullResponse();
-				int lenResponse = fullResponse.length();
-				const char *cFullResponse = fullResponse.c_str();
-				int n = send(poll_fds.fds[i].fd, cFullResponse, lenResponse, 0);
-				if (n == -1 || n == 0){
-					::perror("send");
+				response.setLenResponse(fullResponse.length());
+				response.setCString(fullResponse.c_str());
+				int returnValue = sendResponse(poll_fds.fds[i].fd, response);
+				if (returnValue == 0 || returnValue == -1){
 					close(poll_fds.fds[i].fd);
 					poll_fds.fds.erase(poll_fds.fds.begin() + i);
 					nfds--;
 					i--;
 					continue;
 				}
-				int totalSent = n;
-				while (totalSent < lenResponse)
-				{
-					n = send(poll_fds.fds[i].fd, cFullResponse + totalSent, lenResponse - totalSent, 0);
-					if (n == -1 || n == 0){
-						::perror("send");
-						close(poll_fds.fds[i].fd);
-						poll_fds.fds.erase(poll_fds.fds.begin() + i);
-						nfds--;
-						i--;
-						continue;
-					}
-					totalSent = totalSent + n;
+				else if (returnValue == 2){
+					close(poll_fds.fds[i].fd);
+					poll_fds.fds.erase(poll_fds.fds.begin() + i);
+					nfds--;
+					i--;
+					request.cleanRequest();
+					response.cleanResponse();
 				}
-				close(poll_fds.fds[i].fd);
-				poll_fds.fds.erase(poll_fds.fds.begin() + i);
-				nfds--;
-				i--;
-				request.cleanRequest();
 			}
 		}
 	}
@@ -169,7 +176,7 @@ int createSockAddr(int *listen_fd, struct addrinfo *result, const ServerConfig &
 			::perror("setsockopt");
 			continue;
 		}
-		if (::bind(*listen_fd, result->ai_addr, result->ai_addrlen) == -1)
+		if (bind(*listen_fd, result->ai_addr, result->ai_addrlen) == -1)
 		{
 			::perror("bind");
 			continue;
