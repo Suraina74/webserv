@@ -120,7 +120,7 @@ int eventLoop(int *listen_fd, const ServerConfig &currentServer)
 			else if (poll_fds.fds[i].revents & POLLOUT)
 			{
 				Request request(fullRequest);
-				request.extractElements();
+				request.extractElements(currentServer);
 				Response response(request);
 				response.composeResponse();
 				string fullResponse = response.getFullResponse();
