@@ -36,6 +36,10 @@ int receiveRequest(int clientFd, Request& request){
 }
 
 int sendResponse(int clientFd, Response& response){
+	response.composeResponse();
+	std::string fullResponse = response.getFullResponse();
+	response.setLenResponse(fullResponse.length());
+	response.setCString(fullResponse.c_str());
 	if (response.getBytesSent() < response.getLenResponse()){
 		int n = send(clientFd, response.getCFullResponse() + response.getBytesSent(), response.getLenResponse() - response.getBytesSent(), 0);
 		if (n == -1){
@@ -64,7 +68,6 @@ int eventLoop(int *listen_fd, const ServerConfig &servers)
 	pfd.events = POLLIN;
 	pfd.revents = 0;
 	poll_fds.fds.push_back(pfd);
-	std::string fRequest{};
 	Request request;
 	Response response;
 	while (1)
@@ -111,16 +114,13 @@ int eventLoop(int *listen_fd, const ServerConfig &servers)
 				else if (returnValue == 2){
 					request.parseBody();
 					//request.action?
+					// check request against config file. To see what server (check host header) applies and what location applies.
 					poll_fds.fds[i].events = POLLOUT;
 				}
 			}
 			else if (poll_fds.fds[i].revents & POLLOUT)
 			{
 				response.setRequest(request);
-				response.composeResponse();
-				std::string fullResponse = response.getFullResponse();
-				response.setLenResponse(fullResponse.length());
-				response.setCString(fullResponse.c_str());
 				int returnValue = sendResponse(poll_fds.fds[i].fd, response);
 				if (returnValue == 0 || returnValue == -1){
 					close(poll_fds.fds[i].fd);

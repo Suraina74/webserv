@@ -6,7 +6,9 @@ bool Request::validateRequestLine(){
 		Path = "www/404.html";
 		statusCode = PageNotFound;
 	}
-	// Nog wel kijken welke methods allowed zijn volgens config file.
+	// Nog wel kijken welke methods allowed zijn per html page volgens config file.
+	// If server does not implement a method at all -> 501 Not Implemented
+	// If server does implement the method, but according to the config file the method is not allowed for a specific HTML page. Then 405 Method Not Allowed.
 	// Methods mogen alleen bestaan uit bepaalde karakters. A-Z a-z 0-9 ! # $ % & ' * + - . ^ _ ` | ~
 	// Method must contain at least one character.
 	if (Method != "GET" && Method != "DELETE" && Method != "POST"){
@@ -30,6 +32,13 @@ bool Request::parseRequestLine(){
 		return false;
 	}
 	requestLine = requestTillHeaders.substr(0, endOfRequestLine);
+	// Check if max request line size is given in config file, anders wordt datgene waarmee moet worden compared die value van de config file.
+	size_t lenRL = requestLine.length();
+	if (lenRL >= MAX_REQUEST_LINE){
+		statusCode = URITooLong;
+		setStatusText(statusCode);
+		return false;
+	}
 	// Check of er 3 woorden in RL zitten.
 	std::stringstream ss(requestLine);
 	std::string word;

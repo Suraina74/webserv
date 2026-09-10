@@ -1,5 +1,6 @@
 #include "../inc/Request.hpp"
 
+// The parsed HTTP request is evaluated against the configuration after parsing.
 
 // 	// if (Method == "DELETE"){
 // 	// 	std::string uploadPlace = "www/uploads/" + fileName;
@@ -57,6 +58,8 @@ std::string Request::setStatusText(httpStatus status){
 			return "431 Request Header Fields Too Large";
 		case InternalServerError:
 			return "500 Internal Server Error";
+		case NotImplemented:
+			return "501 Not Implemented";
 		case HTTPVersionNotSupported:
 			return "505 HTTP Version Not Supported";
 	}
@@ -90,11 +93,6 @@ void Request::cleanRequest(){
 	fileContent = {};
 	statusCode = OK;
 }
-
-
-
-
-
 
 void Request::setRequest(std::string request){
 	fullRequest = request;

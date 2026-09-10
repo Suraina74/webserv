@@ -6,6 +6,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <map>
+#include <cstddef>
+
+constexpr std::size_t MAX_REQUEST_LINE = 8192;
 
 enum httpStatus{
 	OK = 200,
@@ -17,6 +20,7 @@ enum httpStatus{
 	URITooLong = 414,
 	RequestHeaderFieldsTooLarge = 431,
  	InternalServerError = 500,
+	NotImplemented = 501,
 	HTTPVersionNotSupported = 505
 };
 
@@ -45,7 +49,7 @@ class Request {
 		bool parseRequestLine();
 		bool validateRequestLine();
 		bool parseUntilHeaders(std::string hString);
-		void parseHeaders();
+		bool parseHeaders();
 		bool validateHeaders();
 		void parseBody();
 		void extractBody();
