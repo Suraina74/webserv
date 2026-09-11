@@ -1,5 +1,5 @@
-#include "../inc/EventLoop.hpp"
 #include "configParser/ServerConfig.hpp"
+#include "../inc/EventLoop.hpp"
 #include "../inc/Request.hpp"
 #include "../inc/Response.hpp"
 #include <cstring>
@@ -8,213 +8,217 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-std::string receiveRequest(int clientFd){
+int receiveRequest(int clientFd, Request& request){
 	char buffer[2048];
 	ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
 	if (n == -1)
 	{
 		::perror("recv");
-		return ("");
+		return -1;
 	}
 	else if (n == 0)
 	{
-		return ("");
+		return 0;
 	}
-	ssize_t bytesRead = n;
-	std::string messageUntillHeaders(buffer, n);
-	while (messageUntillHeaders.find("\r\n\r\n") == std::string::npos){
-		ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
-		if (n == -1)
-		{
-			::perror("recv");
-			return ("");
+	request.setBytesRead(request.getBytesRead() + n);
+	std::string part(buffer, n);
+	request.setRequest(request.getFullRequest() + part);
+	if (request.getFullRequest().find("\r\n\r\n") != std::string::npos && request.getHeaderBytes() == 0){
+		if ((request.parseUntilHeaders(request.getFullRequest())) == false){
+			return 2;
 		}
-		else if (n == 0)
-		{
-			return ("");
-		}
-		bytesRead = bytesRead + n;
-		std::string newMessage(buffer, n);
-		messageUntillHeaders = messageUntillHeaders + newMessage;
+		request.setHeaderBytes(request.getRequestTillHeaders().size());
 	}
-	ssize_t contentLength = getContentlength(messageUntillHeaders);
-	// Check on contentLength of het niet een -getal is of een heel groot getal.
-	ssize_t headerBytes = getBytesUntilHeaders(messageUntillHeaders);
-	std::string fullRequest = messageUntillHeaders;
-	if (contentLength){
-		while (bytesRead < (headerBytes + contentLength)){
-			ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
-			if (n == -1)
-			{
-				::perror("recv");
-				return ("");
-			}
-			else if (n == 0)
-			{
-				return ("");
-			}
-			bytesRead = bytesRead + n;
-			std::string newMessage(buffer, n);
-			fullRequest = fullRequest + newMessage;
-		}
+	if (request.getBytesRead() == request.getHeaderBytes() + request.getContentLength()){
+		return 2;
 	}
-	return fullRequest;
+	return 1;
 }
 
-int eventLoop(int *listen_fd, const ServerConfig &servers)
+int sendResponse(int clientFd, Response& response){
+	response.composeResponse();
+	std::string fullResponse = response.getFullResponse();
+	response.setLenResponse(fullResponse.length());
+	response.setCString(fullResponse.c_str());
+	if (response.getBytesSent() < response.getLenResponse()){
+		int n = send(clientFd, response.getCFullResponse() + response.getBytesSent(), response.getLenResponse() - response.getBytesSent(), 0);
+		if (n == -1){
+			::perror("send");
+			return -1;
+		}
+		else if (n == 0){
+			return 0;
+		}
+		response.setBytesSent(response.getBytesSent() + n);
+	}
+	if (response.getBytesSent() == response.getLenResponse()){
+		return 2;
+	}
+	return 1;
+}
+
+int eventLoop(const vector<int> &listenFds, const vector<ServerConfig> &servers)
 {
-	// string path = servers.getRoot() + '/' + servers.getIndex();
 	(void)servers;
 	EventLoop poll_fds;
-	pollfd pfd;
+	Request request;
+	Response response;
+	//setup listining sockets
+	for (size_t i = 0; i < listenFds.size(); ++i)
+	{
+		pollfd listen_socket;
 
-	pfd.fd = *listen_fd;
-	pfd.events = POLLIN;
-	pfd.revents = 0;
-	poll_fds.fds.push_back(pfd);
-	std::string fullRequest{};
+		listen_socket.fd = listenFds[i];
+		listen_socket.events = POLLIN;
+		listen_socket.revents = 0;
+
+		//why create a general list of fds when you can keep them seprate? just cleanup on both.
+		poll_fds.fds.push_back(listen_socket);
+		poll_fds.configIndexes.push_back(i);
+	}
 	while (1)
 	{
 		pollfd client_pfd;
 
-		int nfds = poll_fds.fds.size();
-		int ready = poll(poll_fds.fds.data(), nfds, 100);
+		size_t nfds = poll_fds.fds.size();
+		int ready = poll(poll_fds.fds.data(), nfds, TIMEOUT);
 		if (ready == -1)
 		{
 			::perror("poll");
 			return (1);
 		}
-		if (poll_fds.fds[0].revents & POLLIN)
+		for (size_t i = 0; i < nfds; i++)
 		{
-			client_pfd.fd = accept(*listen_fd, NULL, NULL);
-			if (client_pfd.fd == -1)
+			//begining of list is listining fds but I could instead use a list of listen fds todo this part..
+			if (i < listenFds.size())
 			{
-				::perror("accept");
-				return (1);
+				if (poll_fds.fds[i].revents & POLLIN)
+				{
+					client_pfd.fd = accept(listenFds[i], NULL, NULL);
+					if (client_pfd.fd == -1)
+					{
+						::perror("accept");
+						return (1);
+					}
+					client_pfd.events = POLLIN;
+					client_pfd.revents = 0;
+					poll_fds.fds.push_back(client_pfd);
+					poll_fds.configIndexes.push_back(i);
+					nfds++;
+				}
+				continue;
 			}
-			if (fcntl(*listen_fd, F_SETFL, O_NONBLOCK) == -1)
+			//client fds
+			if ((poll_fds.fds[i].revents & POLLIN))
+			{
+				int returnValue = receiveRequest(poll_fds.fds[i].fd, request);
+				if (returnValue == -1 || returnValue == 0){
+					close(poll_fds.fds[i].fd);
+					poll_fds.configIndexes.erase(poll_fds.configIndexes.begin() + i);
+					poll_fds.fds.erase(poll_fds.fds.begin() + i);
+					nfds--;
+					i--;
+					continue;
+				}
+				else if (returnValue == 2){
+					request.parseBody();
+					//request.action?
+					// check request against config file. To see what server (check host header) applies and what location applies.
+					poll_fds.fds[i].events = POLLOUT;
+				}
+			}
+			else if (poll_fds.fds[i].revents & POLLOUT)
+			{
+				response.setRequest(request);
+				int returnValue = sendResponse(poll_fds.fds[i].fd, response);
+				if (returnValue == 0 || returnValue == -1){
+					close(poll_fds.fds[i].fd);
+					poll_fds.fds.erase(poll_fds.fds.begin() + i);
+					poll_fds.configIndexes.erase(poll_fds.configIndexes.begin() + i);
+					nfds--;
+					i--;
+					continue;
+				}
+				else if (returnValue == 2){
+					close(poll_fds.fds[i].fd);
+					poll_fds.fds.erase(poll_fds.fds.begin() + i);
+					poll_fds.configIndexes.erase(poll_fds.configIndexes.begin() + i);
+					nfds--;
+					i--;
+					request.cleanRequest();
+					response.cleanResponse();
+				}
+			}
+		}
+	}
+	return (0);
+}
+
+vector<int> createSockAddr(struct addrinfo *result, const vector<ServerConfig> &server)
+{
+	vector<int>	listenFdsList;
+
+	for (size_t i = 0; i < server.size(); ++i)
+	{
+		struct addrinfo info;
+		struct addrinfo *ptr;
+
+		memset(&info, 0, sizeof(info));
+		info.ai_family = AF_INET;
+		info.ai_socktype = SOCK_STREAM;
+		string port = to_string(server[i].getPort());
+		if (getaddrinfo(server[i].getHost().c_str(), port.c_str(), &info, &result) != 0)
+		{
+			::perror("getaddrinfo");
+			break;
+		}
+		for (ptr = result; ptr != NULL; ptr = ptr->ai_next)
+		{
+			int listenFd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+			if (listenFd == -1)
+			{
+				::perror("socket");
+				continue;
+			}
+			if (fcntl(listenFd, F_SETFL, O_NONBLOCK) == -1)
 			{
 				::perror("fcntl");
 				continue;
 			}
-			client_pfd.events = POLLIN;
-			client_pfd.revents = 0;
-			poll_fds.fds.push_back(client_pfd);
-			nfds++;
-		}
-		for (int i = 1; i < nfds; i++)
-		{
-			if ((poll_fds.fds[i].revents & POLLIN))
+			int on = true;
+			if ((setsockopt(listenFd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on))) == -1)
 			{
-				fullRequest = receiveRequest(poll_fds.fds[i].fd);
-				if (fullRequest.empty()){
-					close(poll_fds.fds[i].fd);
-					poll_fds.fds.erase(poll_fds.fds.begin() + i);
-					nfds--;
-					i--;
-					continue;
-				}
-				poll_fds.fds[i].events = POLLOUT;
+				::perror("setsockopt");
+				continue;
 			}
-			else if (poll_fds.fds[i].revents & POLLOUT)
+			if (::bind(listenFd, ptr->ai_addr, ptr->ai_addrlen) == -1)
 			{
-				Request request(fullRequest);
-				request.extractElements();
-				Response response(request);
-				response.composeResponse();
-				std::string fullResponse = response.getFullResponse();
-				int lenResponse = fullResponse.length();
-				const char *cFullResponse = fullResponse.c_str();
-				int n = send(poll_fds.fds[i].fd, cFullResponse, lenResponse, 0);
-				if (n == -1 || n == 0){
-					::perror("send");
-					close(poll_fds.fds[i].fd);
-					poll_fds.fds.erase(poll_fds.fds.begin() + i);
-					nfds--;
-					i--;
-					continue;
-				}
-				int totalSent = n;
-				while (totalSent < lenResponse)
-				{
-					n = send(poll_fds.fds[i].fd, cFullResponse + totalSent, lenResponse - totalSent, 0);
-					if (n == -1 || n == 0){
-						::perror("send");
-						close(poll_fds.fds[i].fd);
-						poll_fds.fds.erase(poll_fds.fds.begin() + i);
-						nfds--;
-						i--;
-						continue;
-					}
-					totalSent = totalSent + n;
-				}
-				close(poll_fds.fds[i].fd);
-				poll_fds.fds.erase(poll_fds.fds.begin() + i);
-				nfds--;
-				i--;
+				::perror("bind");
+				continue;
 			}
+			listenFdsList.push_back(listenFd);
+			break;
 		}
 	}
-	return (0);
+	return (listenFdsList);
 }
 
-int createSockAddr(int *listen_fd, struct addrinfo *result, const ServerConfig &servers)
+int server(const vector<ServerConfig> &servers)
 {
-	struct addrinfo info;
-	struct addrinfo *ptr;
+	EventLoop eloop;
 
-	memset(&info, 0, sizeof(info));
-	info.ai_family = AF_INET;
-	info.ai_socktype = SOCK_STREAM;
-	// (char *)servers.getPort().c_str()
-	if (getaddrinfo(servers.getHost().c_str(), "8080", &info, &result) != 0)
+	eloop.result = nullptr;
+	eloop.listenFds = createSockAddr(eloop.result, servers);
+	for (size_t i = 0; i < eloop.listenFds.size(); i++)
 	{
-		::perror("getaddrinfo");
-		return (1);
+		if (listen(eloop.listenFds[i], 10) != 0)
+		{
+			::perror("listen");
+			return (1);
+		}
 	}
-	for (ptr = result; ptr != NULL; ptr = ptr->ai_next)
-	{
-		*listen_fd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
-		if (*listen_fd == -1)
-		{
-			::perror("socket");
-			continue;
-		}
-		if (fcntl(*listen_fd, F_SETFL, O_NONBLOCK) == -1)
-		{
-			::perror("fcntl");
-			continue;
-		}
-		int on = true;
-		if ((setsockopt(*listen_fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on))) == -1)
-		{
-			::perror("setsockopt");
-			continue;
-		}
-		if (::bind(*listen_fd, result->ai_addr, result->ai_addrlen) == -1)
-		{
-			::perror("bind");
-			continue;
-		}
-		break;
-	}
-	return (0);
+	return (eventLoop(eloop.listenFds, servers));
 }
 
-int	server(const ServerConfig &servers)
-{
-	struct addrinfo *result = nullptr;
-	int listen_fd = 0;
-
-	if (createSockAddr(&listen_fd, result, servers) != 0)
-		return (1);
-	freeaddrinfo(result);
-	if (listen(listen_fd, 10) != 0)
-	{
-		perror("listen");
-		return (1);
-	}
-	if (eventLoop(&listen_fd, servers))
-		return (1);
-	return (0);
-}
+//todos
+// Socket cleanup, error events, partial sends, and server-to-config mapping need work.

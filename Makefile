@@ -32,6 +32,8 @@ FLAGS = -Wall -Wextra -Werror -g -std=c++11
 
 SRC =	src/main.cpp \
 		src/Request.cpp \
+		src/parseRL.cpp \
+		src/parseHeaders.cpp \
 		src/Response.cpp \
 		src/EventLoop.cpp \
 		src/configParser/Config.cpp \

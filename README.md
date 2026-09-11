@@ -39,7 +39,8 @@ make
 ______________________
 
 # What does a server structure look like in its config
-Here is a complete example that covers essentially all the functionality your Webserv subject asks for.
+
+```
 Config
 │
 ├── ServerConfig
@@ -58,6 +59,7 @@ Config
 └── ServerConfig
     ├── ...
     └── Locations
+```
 In ./config/standard.config we included a complete server config example.
 the outer server{...} represents one website/server configuration. There could be multiple servers in a config file. 
 - Listen tells your server which port to listen on. 
@@ -68,6 +70,9 @@ the outer server{...} represents one website/server configuration. There could b
 - Client_max_body_size is specifically required so that an HTTP requestion wont exceed the configured limit.
 - Error_page tells the server what page to return when an error occurs.
 - Locations allows different URL paths of the same server to have different behavior/configuration.
+
+# Server part
+``` getsockaddr -> create listening socket -> bind socket addr to a port -> listen for incoming client connections -> accept incoming client connection on this listening sock -> poll loop to check which fds are ready -> read/write on ready fd(s)```
 
 # Understanding different functions
 socket()  →  outlet installed, no wiring yet
