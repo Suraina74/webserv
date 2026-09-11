@@ -43,6 +43,6 @@ public:
 	const vector<Location>& getLocations() const;
 };
 
-int server(const ServerConfig &servers);
-int eventLoop(int *sockfd, const ServerConfig &servers);
+int server(const ServerConfig &server);
+int eventLoop(int *sockfd, const ServerConfig &server);
 int createSockAddr(int *sockfd, struct addrinfo *result, const ServerConfig &servers);

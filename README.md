@@ -39,7 +39,8 @@ make
 ______________________
 
 # What does a server structure look like in its config
-Here is a complete example that covers essentially all the functionality your Webserv subject asks for.
+
+```
 Config
 │
 ├── ServerConfig
@@ -58,6 +59,7 @@ Config
 └── ServerConfig
     ├── ...
     └── Locations
+```
 In ./config/standard.config we included a complete server config example.
 the outer server{...} represents one website/server configuration. There could be multiple servers in a config file. 
 - Listen tells your server which port to listen on. 

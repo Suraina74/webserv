@@ -57,10 +57,8 @@ int sendResponse(int clientFd, Response& response){
 	return 1;
 }
 
-int eventLoop(int *listen_fd, const ServerConfig &servers)
+int eventLoop(int *listen_fd, const ServerConfig &server)
 {
-	// string path = servers.getRoot() + '/' + servers.getIndex();
-	(void)servers;
 	EventLoop poll_fds;
 	pollfd pfd;
 
@@ -143,16 +141,19 @@ int eventLoop(int *listen_fd, const ServerConfig &servers)
 	return (0);
 }
 
-int createSockAddr(int *listen_fd, struct addrinfo *result, const ServerConfig &servers)
+int createSockAddr(int *listen_fd, struct addrinfo *result, const ServerConfig &server)
 {
 	struct addrinfo info;
 	struct addrinfo *ptr;
 
+	int port_int = server.getPort();
+	string p = to_string(port_int);
+	const char *port = p.c_str();
+
 	memset(&info, 0, sizeof(info));
 	info.ai_family = AF_INET;
 	info.ai_socktype = SOCK_STREAM;
-	// (char *)servers.getPort().c_str()
-	if (getaddrinfo(servers.getHost().c_str(), "8080", &info, &result) != 0)
+	if (getaddrinfo(server.getHost().c_str(), port, &info, &result) != 0)
 	{
 		::perror("getaddrinfo");
 		return (1);
@@ -186,12 +187,12 @@ int createSockAddr(int *listen_fd, struct addrinfo *result, const ServerConfig &
 	return (0);
 }
 
-int	server(const ServerConfig &servers)
+int	server(const ServerConfig &server)
 {
 	struct addrinfo *result = nullptr;
 	int listen_fd = 0;
 
-	if (createSockAddr(&listen_fd, result, servers) != 0)
+	if (createSockAddr(&listen_fd, result, server) != 0)
 		return (1);
 	freeaddrinfo(result);
 	if (listen(listen_fd, 10) != 0)
@@ -199,7 +200,7 @@ int	server(const ServerConfig &servers)
 		perror("listen");
 		return (1);
 	}
-	if (eventLoop(&listen_fd, servers))
+	if (eventLoop(&listen_fd, server))
 		return (1);
 	return (0);
 }
