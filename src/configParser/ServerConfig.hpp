@@ -42,7 +42,3 @@ public:
 	const map<int, string> &getErrPages() const;
 	const vector<Location>& getLocations() const;
 };
-
-int server(const ServerConfig &server);
-int eventLoop(int *sockfd, const ServerConfig &server);
-int createSockAddr(int *sockfd, struct addrinfo *result, const ServerConfig &servers);
