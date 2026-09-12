@@ -2,6 +2,7 @@
 #include "../inc/ServerInfo.hpp"
 #include "../inc/Request.hpp"
 #include "../inc/Response.hpp"
+#include "../inc/Client.hpp"
 #include <cstring>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -73,6 +74,7 @@ int eventLoop(const vector<pollfd> &fds, const vector<ServerConfig> &servers)
 	ServerInfo serverData;
 	Request request;
 	Response response;
+	vector<Client> clients;
 	// setup listining sockets
 	for (size_t i = 0; i < fds.size(); ++i)
 	{
@@ -96,6 +98,7 @@ int eventLoop(const vector<pollfd> &fds, const vector<ServerConfig> &servers)
 		}
 		for (size_t i = 0; i < nfds; i++)
 		{
+			// i keeps index of listening sock
 			if (i < fds.size())
 			{
 				if (serverData.getFd()[i].revents & POLLIN)
@@ -109,6 +112,9 @@ int eventLoop(const vector<pollfd> &fds, const vector<ServerConfig> &servers)
 					client_pfd.events = POLLIN;
 					client_pfd.revents = 0;
 					serverData.getFd().push_back(client_pfd);
+					// assign client met z'n eigen fd
+					Client client(client_pfd.fd, request, response);
+					clients.push_back(client);
 					nfds++;
 				}
 				continue;
@@ -116,9 +122,12 @@ int eventLoop(const vector<pollfd> &fds, const vector<ServerConfig> &servers)
 			// client fds
 			if ((serverData.getFd()[i].revents & POLLIN))
 			{
-				int returnValue = receiveRequest(serverData.getFd()[i].fd, request);
+				Client clnt = clients[i - fds.size()];
+
+				int returnValue = receiveRequest(serverData.getFd()[i].fd, clnt.getRequest());
 				if (returnValue == -1 || returnValue == 0)
 				{
+					clients.erase(clients.begin() + i - fds.size());
 					close(serverData.getFd()[i].fd);
 					serverData.getFd().erase(serverData.getFd().begin() + i);
 					nfds--;
@@ -127,7 +136,7 @@ int eventLoop(const vector<pollfd> &fds, const vector<ServerConfig> &servers)
 				}
 				else if (returnValue == 2)
 				{
-					request.parseBody();
+					clnt.getRequest().parseBody();
 					// request.action?
 					//  check request against config file. To see what server (check host header) applies and what location applies.
 					serverData.getFd()[i].events = POLLOUT;
@@ -135,10 +144,13 @@ int eventLoop(const vector<pollfd> &fds, const vector<ServerConfig> &servers)
 			}
 			else if (serverData.getFd()[i].revents & POLLOUT)
 			{
-				response.setRequest(request);
-				int returnValue = sendResponse(serverData.getFd()[i].fd, response);
+				Client clnt = clients[i - fds.size()];
+				clnt.getResponse().setRequest(clnt.getRequest());
+				int returnValue = sendResponse(serverData.getFd()[i].fd, clnt.getResponse());
+				// std::cout << clnt.getResponse().getFullResponse();
 				if (returnValue == 0 || returnValue == -1)
 				{
+					clients.erase(clients.begin() + i - fds.size());
 					close(serverData.getFd()[i].fd);
 					serverData.getFd().erase(serverData.getFd().begin() + i);
 					nfds--;
@@ -147,12 +159,13 @@ int eventLoop(const vector<pollfd> &fds, const vector<ServerConfig> &servers)
 				}
 				else if (returnValue == 2)
 				{
+					clients.erase(clients.begin() + i - fds.size());
 					close(serverData.getFd()[i].fd);
 					serverData.getFd().erase(serverData.getFd().begin() + i);
 					nfds--;
 					i--;
-					request.cleanRequest();
-					response.cleanResponse();
+					// clnt.getRequest().cleanRequest();
+					// clnt.getResponse().cleanResponse();
 				}
 			}
 		}
@@ -232,11 +245,6 @@ void ServerInfo::setResult(struct addrinfo *setRes)
 	result = setRes;
 }
 
-void ServerInfo::setClient(vector<Client> setClient)
-{
-	clients = setClient;
-}
-
 void ServerInfo::setFd(vector<pollfd> setFd)
 {
 	fds = setFd;
@@ -245,11 +253,6 @@ void ServerInfo::setFd(vector<pollfd> setFd)
 struct addrinfo *ServerInfo::getResult()
 {
 	return (result);
-}
-
-vector<Client> ServerInfo::getClients()
-{
-	return (clients);
 }
 
 vector<pollfd> &ServerInfo::getFd()
