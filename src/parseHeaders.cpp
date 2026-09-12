@@ -1,6 +1,8 @@
 #include "../inc/Request.hpp"
 
 
+// Transfer encoding!!! Dan is er geen content-length!!
+
 bool Request::parseHeaders(){
 	int amountLines = 0;
 	for (size_t i = 0; i < requestTillHeaders.size(); i++){
@@ -66,6 +68,9 @@ bool Request::validateHeaders(){
 	// for (auto it = headerMap.begin(); it != headerMap.end(); it++){
 	// 	std::cout << it->first << it->second << std::endl;
 	// }
+
+	// Check headers that can't appear multiple times. Content length en host for example.
+	// Content length en transfer encoding mogen ook niet samen.
 
 	auto it = headerMap.find("content-length"); // if the key is not present, it returns end().
 	if (it != headerMap.end()){  //An iterator is a pointer-like object that allows traversing through the elements of a map.

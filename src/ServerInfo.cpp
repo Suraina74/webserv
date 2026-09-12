@@ -1,5 +1,5 @@
 #include "configParser/ServerConfig.hpp"
-#include "../inc/EventLoop.hpp"
+#include "../inc/ServerInfo.hpp"
 #include "../inc/Request.hpp"
 #include "../inc/Response.hpp"
 #include <cstring>
@@ -57,31 +57,30 @@ int sendResponse(int clientFd, Response& response){
 	return 1;
 }
 
-int eventLoop(const vector<int> &listenFds, const vector<ServerConfig> &servers)
+int eventLoop(const vector<pollfd> &fds, const vector<ServerConfig> &servers)
 {
 	(void)servers;
-	EventLoop poll_fds;
+	ServerInfo serverData;
 	Request request;
 	Response response;
 	//setup listining sockets
-	for (size_t i = 0; i < listenFds.size(); ++i)
+	for (size_t i = 0; i < fds.size(); ++i)
 	{
 		pollfd listen_socket;
 
-		listen_socket.fd = listenFds[i];
+		listen_socket.fd = fds[i].fd;
 		listen_socket.events = POLLIN;
 		listen_socket.revents = 0;
 
 		//why create a general list of fds when you can keep them seprate? just cleanup on both.
-		poll_fds.fds.push_back(listen_socket);
-		poll_fds.configIndexes.push_back(i);
+		serverData.fds.push_back(listen_socket);
 	}
 	while (1)
 	{
 		pollfd client_pfd;
 
-		size_t nfds = poll_fds.fds.size();
-		int ready = poll(poll_fds.fds.data(), nfds, TIMEOUT);
+		size_t nfds = serverData.fds.size();
+		int ready = poll(serverData.fds.data(), nfds, TIMEOUT);
 		if (ready == -1)
 		{
 			::perror("poll");
@@ -90,11 +89,11 @@ int eventLoop(const vector<int> &listenFds, const vector<ServerConfig> &servers)
 		for (size_t i = 0; i < nfds; i++)
 		{
 			//begining of list is listining fds but I could instead use a list of listen fds todo this part..
-			if (i < listenFds.size())
+			if (i < fds.size())
 			{
-				if (poll_fds.fds[i].revents & POLLIN)
+				if (serverData.fds[i].revents & POLLIN)
 				{
-					client_pfd.fd = accept(listenFds[i], NULL, NULL);
+					client_pfd.fd = accept(fds[i].fd, NULL, NULL);
 					if (client_pfd.fd == -1)
 					{
 						::perror("accept");
@@ -102,20 +101,18 @@ int eventLoop(const vector<int> &listenFds, const vector<ServerConfig> &servers)
 					}
 					client_pfd.events = POLLIN;
 					client_pfd.revents = 0;
-					poll_fds.fds.push_back(client_pfd);
-					poll_fds.configIndexes.push_back(i);
+					serverData.fds.push_back(client_pfd);
 					nfds++;
 				}
 				continue;
 			}
 			//client fds
-			if ((poll_fds.fds[i].revents & POLLIN))
+			if ((serverData.fds[i].revents & POLLIN))
 			{
-				int returnValue = receiveRequest(poll_fds.fds[i].fd, request);
+				int returnValue = receiveRequest(serverData.fds[i].fd, request);
 				if (returnValue == -1 || returnValue == 0){
-					close(poll_fds.fds[i].fd);
-					poll_fds.configIndexes.erase(poll_fds.configIndexes.begin() + i);
-					poll_fds.fds.erase(poll_fds.fds.begin() + i);
+					close(serverData.fds[i].fd);
+					serverData.fds.erase(serverData.fds.begin() + i);
 					nfds--;
 					i--;
 					continue;
@@ -124,25 +121,23 @@ int eventLoop(const vector<int> &listenFds, const vector<ServerConfig> &servers)
 					request.parseBody();
 					//request.action?
 					// check request against config file. To see what server (check host header) applies and what location applies.
-					poll_fds.fds[i].events = POLLOUT;
+					serverData.fds[i].events = POLLOUT;
 				}
 			}
-			else if (poll_fds.fds[i].revents & POLLOUT)
+			else if (serverData.fds[i].revents & POLLOUT)
 			{
 				response.setRequest(request);
-				int returnValue = sendResponse(poll_fds.fds[i].fd, response);
+				int returnValue = sendResponse(serverData.fds[i].fd, response);
 				if (returnValue == 0 || returnValue == -1){
-					close(poll_fds.fds[i].fd);
-					poll_fds.fds.erase(poll_fds.fds.begin() + i);
-					poll_fds.configIndexes.erase(poll_fds.configIndexes.begin() + i);
+					close(serverData.fds[i].fd);
+					serverData.fds.erase(serverData.fds.begin() + i);
 					nfds--;
 					i--;
 					continue;
 				}
 				else if (returnValue == 2){
-					close(poll_fds.fds[i].fd);
-					poll_fds.fds.erase(poll_fds.fds.begin() + i);
-					poll_fds.configIndexes.erase(poll_fds.configIndexes.begin() + i);
+					close(serverData.fds[i].fd);
+					serverData.fds.erase(serverData.fds.begin() + i);
 					nfds--;
 					i--;
 					request.cleanRequest();
@@ -154,9 +149,9 @@ int eventLoop(const vector<int> &listenFds, const vector<ServerConfig> &servers)
 	return (0);
 }
 
-vector<int> createSockAddr(struct addrinfo *result, const vector<ServerConfig> &server)
+vector<pollfd> createSockAddr(struct addrinfo *result, const vector<ServerConfig> &server)
 {
-	vector<int>	listenFdsList;
+	vector<pollfd>	listenFdsList;
 
 	for (size_t i = 0; i < server.size(); ++i)
 	{
@@ -174,24 +169,25 @@ vector<int> createSockAddr(struct addrinfo *result, const vector<ServerConfig> &
 		}
 		for (ptr = result; ptr != NULL; ptr = ptr->ai_next)
 		{
-			int listenFd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
-			if (listenFd == -1)
+			pollfd listenFd;
+			listenFd.fd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+			if (listenFd.fd == -1)
 			{
 				::perror("socket");
 				continue;
 			}
-			if (fcntl(listenFd, F_SETFL, O_NONBLOCK) == -1)
+			if (fcntl(listenFd.fd, F_SETFL, O_NONBLOCK) == -1)
 			{
 				::perror("fcntl");
 				continue;
 			}
 			int on = true;
-			if ((setsockopt(listenFd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on))) == -1)
+			if ((setsockopt(listenFd.fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on))) == -1)
 			{
 				::perror("setsockopt");
 				continue;
 			}
-			if (::bind(listenFd, ptr->ai_addr, ptr->ai_addrlen) == -1)
+			if (::bind(listenFd.fd, ptr->ai_addr, ptr->ai_addrlen) == -1)
 			{
 				::perror("bind");
 				continue;
@@ -205,20 +201,41 @@ vector<int> createSockAddr(struct addrinfo *result, const vector<ServerConfig> &
 
 int server(const vector<ServerConfig> &servers)
 {
-	EventLoop eloop;
+	ServerInfo eloop;
 
 	eloop.result = nullptr;
-	eloop.listenFds = createSockAddr(eloop.result, servers);
-	for (size_t i = 0; i < eloop.listenFds.size(); i++)
+	eloop.fds = createSockAddr(eloop.result, servers);
+	for (size_t i = 0; i < eloop.fds.size(); i++)
 	{
-		if (listen(eloop.listenFds[i], 10) != 0)
+		if (listen(eloop.fds[i].fd, 10) != 0)
 		{
 			::perror("listen");
 			return (1);
 		}
 	}
-	return (eventLoop(eloop.listenFds, servers));
+	return (eventLoop(eloop.fds, servers));
 }
+
+// void ServerInfo::setResult(struct addrinfo *res){
+// 	result = res;
+// }
+// void ServerInfo::setClient(Client client){
+	
+// }
+// void ServerInfo::setFd(pollfd fd){
+
+// }
+
+// struct addrinfo ServerInfo::getResult(){
+
+// }
+// vector<Client> ServerInfo::getClients(){
+
+// }
+// vector<pollfd> ServerInfo::getFds(){
+
+// }
+
 
 //todos
 // Socket cleanup, error events, partial sends, and server-to-config mapping need work.
