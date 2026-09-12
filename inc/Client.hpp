@@ -4,10 +4,15 @@
 
 class Client{
 	private:
-		pollfd		fd;
+		int		fd;
 		Request		request;
 		Response	response;
 	public:
-		Client(){}
+		Client(int filedesc, const Request& req, const Response& resp) : fd(filedesc), request(req), response(resp){}
 		~Client(){}
+
+		int getFd();
+		Request& getRequest();
+		Response& getResponse();
+
 };

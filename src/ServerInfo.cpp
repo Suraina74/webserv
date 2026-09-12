@@ -2,13 +2,15 @@
 #include "../inc/ServerInfo.hpp"
 #include "../inc/Request.hpp"
 #include "../inc/Response.hpp"
+#include "../inc/Client.hpp"
 #include <cstring>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 
-int receiveRequest(int clientFd, Request& request){
+int receiveRequest(int clientFd, Request &request)
+{
 	char buffer[2048];
 	ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
 	if (n == -1)
@@ -23,8 +25,10 @@ int receiveRequest(int clientFd, Request& request){
 	request.setBytesRead(request.getBytesRead() + n);
 	std::string part(buffer, n);
 	request.setRequest(request.getFullRequest() + part);
-	if (request.getFullRequest().find("\r\n\r\n") != std::string::npos && request.getHeaderBytes() == 0){
-		if ((request.parseUntilHeaders(request.getFullRequest())) == false){
+	if (request.getFullRequest().find("\r\n\r\n") != std::string::npos && request.getHeaderBytes() == 0)
+	{
+		if ((request.parseUntilHeaders(request.getFullRequest())) == false)
+		{
 			return 2;
 		}
 		request.setHeaderBytes(request.getRequestTillHeaders().size());
@@ -36,23 +40,28 @@ int receiveRequest(int clientFd, Request& request){
 	return 1;
 }
 
-int sendResponse(int clientFd, Response& response){
+int sendResponse(int clientFd, Response &response)
+{
 	response.composeResponse();
 	std::string fullResponse = response.getFullResponse();
 	response.setLenResponse(fullResponse.length());
 	response.setCString(fullResponse.c_str());
-	if (response.getBytesSent() < response.getLenResponse()){
+	if (response.getBytesSent() < response.getLenResponse())
+	{
 		int n = send(clientFd, response.getCFullResponse() + response.getBytesSent(), response.getLenResponse() - response.getBytesSent(), 0);
-		if (n == -1){
+		if (n == -1)
+		{
 			::perror("send");
 			return -1;
 		}
-		else if (n == 0){
+		else if (n == 0)
+		{
 			return 0;
 		}
 		response.setBytesSent(response.getBytesSent() + n);
 	}
-	if (response.getBytesSent() == response.getLenResponse()){
+	if (response.getBytesSent() == response.getLenResponse())
+	{
 		return 2;
 	}
 	return 1;
@@ -61,10 +70,12 @@ int sendResponse(int clientFd, Response& response){
 int eventLoop(const vector<pollfd> &fds, const vector<ServerConfig> &servers)
 {
 	(void)servers;
+
 	ServerInfo serverData;
 	Request request;
 	Response response;
-	//setup listining sockets
+	vector<Client> clients;
+	// setup listining sockets
 	for (size_t i = 0; i < fds.size(); ++i)
 	{
 		pollfd listen_socket;
@@ -72,16 +83,14 @@ int eventLoop(const vector<pollfd> &fds, const vector<ServerConfig> &servers)
 		listen_socket.fd = fds[i].fd;
 		listen_socket.events = POLLIN;
 		listen_socket.revents = 0;
-
-		//why create a general list of fds when you can keep them seprate? just cleanup on both.
-		serverData.fds.push_back(listen_socket);
+		serverData.getFd().push_back(listen_socket);
 	}
 	while (1)
 	{
 		pollfd client_pfd;
+		size_t nfds = serverData.getFd().size();
+		int ready = poll(serverData.getFd().data(), nfds, TIMEOUT);
 
-		size_t nfds = serverData.fds.size();
-		int ready = poll(serverData.fds.data(), nfds, TIMEOUT);
 		if (ready == -1)
 		{
 			::perror("poll");
@@ -89,10 +98,10 @@ int eventLoop(const vector<pollfd> &fds, const vector<ServerConfig> &servers)
 		}
 		for (size_t i = 0; i < nfds; i++)
 		{
-			//begining of list is listining fds but I could instead use a list of listen fds todo this part..
+			// i keeps index of listening sock
 			if (i < fds.size())
 			{
-				if (serverData.fds[i].revents & POLLIN)
+				if (serverData.getFd()[i].revents & POLLIN)
 				{
 					client_pfd.fd = accept(fds[i].fd, NULL, NULL);
 					if (client_pfd.fd == -1)
@@ -102,47 +111,54 @@ int eventLoop(const vector<pollfd> &fds, const vector<ServerConfig> &servers)
 					}
 					client_pfd.events = POLLIN;
 					client_pfd.revents = 0;
-					serverData.fds.push_back(client_pfd);
+					serverData.getFd().push_back(client_pfd);
+					Client client(client_pfd.fd, request, response);
+					clients.push_back(client);
 					nfds++;
 				}
 				continue;
 			}
-			//client fds
-			if ((serverData.fds[i].revents & POLLIN))
+			// client fds
+			if ((serverData.getFd()[i].revents & POLLIN))
 			{
-				int returnValue = receiveRequest(serverData.fds[i].fd, request);
-				if (returnValue == -1 || returnValue == 0){
-					close(serverData.fds[i].fd);
-					serverData.fds.erase(serverData.fds.begin() + i);
+				int returnValue = receiveRequest(serverData.getFd()[i].fd, clients[i - fds.size()].getRequest());
+				if (returnValue == -1 || returnValue == 0)
+				{
+					clients.erase(clients.begin() + i - fds.size());
+					close(serverData.getFd()[i].fd);
+					serverData.getFd().erase(serverData.getFd().begin() + i);
 					nfds--;
 					i--;
 					continue;
 				}
-				else if (returnValue == 2){
-					request.parseBody();
-					//request.action?
-					// check request against config file. To see what server (check host header) applies and what location applies.
-					serverData.fds[i].events = POLLOUT;
+				else if (returnValue == 2)
+				{
+					clients[i - fds.size()].getRequest().parseBody();
+					// request.action?
+					//  check request against config file. To see what server (check host header) applies and what location applies.
+					serverData.getFd()[i].events = POLLOUT;
 				}
 			}
-			else if (serverData.fds[i].revents & POLLOUT)
+			else if (serverData.getFd()[i].revents & POLLOUT)
 			{
-				response.setRequest(request);
-				int returnValue = sendResponse(serverData.fds[i].fd, response);
-				if (returnValue == 0 || returnValue == -1){
-					close(serverData.fds[i].fd);
-					serverData.fds.erase(serverData.fds.begin() + i);
+				clients[i - fds.size()].getResponse().setRequest(clients[i - fds.size()].getRequest());
+				int returnValue = sendResponse(serverData.getFd()[i].fd, clients[i - fds.size()].getResponse());
+				if (returnValue == 0 || returnValue == -1)
+				{
+					clients.erase(clients.begin() + i - fds.size());
+					close(serverData.getFd()[i].fd);
+					serverData.getFd().erase(serverData.getFd().begin() + i);
 					nfds--;
 					i--;
 					continue;
 				}
-				else if (returnValue == 2){
-					close(serverData.fds[i].fd);
-					serverData.fds.erase(serverData.fds.begin() + i);
+				else if (returnValue == 2)
+				{
+					clients.erase(clients.begin() + i - fds.size());
+					close(serverData.getFd()[i].fd);
+					serverData.getFd().erase(serverData.getFd().begin() + i);
 					nfds--;
 					i--;
-					request.cleanRequest();
-					response.cleanResponse();
 				}
 			}
 		}
@@ -152,7 +168,7 @@ int eventLoop(const vector<pollfd> &fds, const vector<ServerConfig> &servers)
 
 vector<pollfd> createSockAddr(struct addrinfo *result, const vector<ServerConfig> &server)
 {
-	vector<pollfd>	listenFdsList;
+	vector<pollfd> listenFdsList;
 
 	for (size_t i = 0; i < server.size(); ++i)
 	{
@@ -204,39 +220,38 @@ int server(const vector<ServerConfig> &servers)
 {
 	ServerInfo eloop;
 
-	eloop.result = nullptr;
-	eloop.fds = createSockAddr(eloop.result, servers);
-	for (size_t i = 0; i < eloop.fds.size(); i++)
+	eloop.setResult(nullptr);
+	eloop.setFd(createSockAddr(eloop.getResult(), servers));
+	for (size_t i = 0; i < eloop.getFd().size(); i++)
 	{
-		if (listen(eloop.fds[i].fd, 10) != 0)
+		if (listen(eloop.getFd()[i].fd, 10) != 0)
 		{
 			::perror("listen");
 			return (1);
 		}
 	}
-	return (eventLoop(eloop.fds, servers));
+	return (eventLoop(eloop.getFd(), servers));
 }
 
-// void ServerInfo::setResult(struct addrinfo *res){
-// 	result = res;
-// }
-// void ServerInfo::setClient(Client client){
-	
-// }
-// void ServerInfo::setFd(pollfd fd){
+void ServerInfo::setResult(struct addrinfo *setRes)
+{
+	result = setRes;
+}
 
-// }
+void ServerInfo::setFd(vector<pollfd> setFd)
+{
+	fds = setFd;
+}
 
-// struct addrinfo ServerInfo::getResult(){
+struct addrinfo *ServerInfo::getResult()
+{
+	return (result);
+}
 
-// }
-// vector<Client> ServerInfo::getClients(){
+vector<pollfd> &ServerInfo::getFd()
+{
+	return (fds);
+}
 
-// }
-// vector<pollfd> ServerInfo::getFds(){
-
-// }
-
-
-//todos
-// Socket cleanup, error events, partial sends, and server-to-config mapping need work.
+// todos
+//  Socket cleanup, error events, partial sends, and server-to-config mapping need work - wip.

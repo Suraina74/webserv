@@ -36,6 +36,7 @@ SRC =	src/main.cpp \
 		src/parseHeaders.cpp \
 		src/Response.cpp \
 		src/ServerInfo.cpp \
+		src/Client.cpp \
 		src/configParser/Config.cpp \
 		src/configParser/ConfigLocationAttri.cpp \
 		src/configParser/Location.cpp \
