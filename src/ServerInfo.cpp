@@ -112,7 +112,6 @@ int eventLoop(const vector<pollfd> &fds, const vector<ServerConfig> &servers)
 					client_pfd.events = POLLIN;
 					client_pfd.revents = 0;
 					serverData.getFd().push_back(client_pfd);
-					// assign client met z'n eigen fd
 					Client client(client_pfd.fd, request, response);
 					clients.push_back(client);
 					nfds++;
@@ -122,9 +121,7 @@ int eventLoop(const vector<pollfd> &fds, const vector<ServerConfig> &servers)
 			// client fds
 			if ((serverData.getFd()[i].revents & POLLIN))
 			{
-				Client clnt = clients[i - fds.size()];
-
-				int returnValue = receiveRequest(serverData.getFd()[i].fd, clnt.getRequest());
+				int returnValue = receiveRequest(serverData.getFd()[i].fd, clients[i - fds.size()].getRequest());
 				if (returnValue == -1 || returnValue == 0)
 				{
 					clients.erase(clients.begin() + i - fds.size());
@@ -136,7 +133,7 @@ int eventLoop(const vector<pollfd> &fds, const vector<ServerConfig> &servers)
 				}
 				else if (returnValue == 2)
 				{
-					clnt.getRequest().parseBody();
+					clients[i - fds.size()].getRequest().parseBody();
 					// request.action?
 					//  check request against config file. To see what server (check host header) applies and what location applies.
 					serverData.getFd()[i].events = POLLOUT;
@@ -144,10 +141,8 @@ int eventLoop(const vector<pollfd> &fds, const vector<ServerConfig> &servers)
 			}
 			else if (serverData.getFd()[i].revents & POLLOUT)
 			{
-				Client clnt = clients[i - fds.size()];
-				clnt.getResponse().setRequest(clnt.getRequest());
-				int returnValue = sendResponse(serverData.getFd()[i].fd, clnt.getResponse());
-				// std::cout << clnt.getResponse().getFullResponse();
+				clients[i - fds.size()].getResponse().setRequest(clients[i - fds.size()].getRequest());
+				int returnValue = sendResponse(serverData.getFd()[i].fd, clients[i - fds.size()].getResponse());
 				if (returnValue == 0 || returnValue == -1)
 				{
 					clients.erase(clients.begin() + i - fds.size());
@@ -164,8 +159,6 @@ int eventLoop(const vector<pollfd> &fds, const vector<ServerConfig> &servers)
 					serverData.getFd().erase(serverData.getFd().begin() + i);
 					nfds--;
 					i--;
-					// clnt.getRequest().cleanRequest();
-					// clnt.getResponse().cleanResponse();
 				}
 			}
 		}
