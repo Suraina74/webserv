@@ -4,7 +4,7 @@
 
 class Client{
 	private:
-		pollfd		fd;
+		// pollfd		fd;
 		Request		request;
 		Response	response;
 	public:

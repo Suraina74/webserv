@@ -10,19 +10,19 @@ using namespace std;
 
 class ServerInfo
 {
-	private:
-		
-	public:
-		vector<Client> clients;
-		struct addrinfo *result;
-		vector<pollfd> fds;
-		void setResult(struct addrinfo *res);
-		void setClient(Client client);
-		void setFd(pollfd fd);
+private:
+	vector<Client> clients;
+	struct addrinfo *result;
+	vector<pollfd> fds;
 
-		struct addrinfo getResult();
-		vector<Client> getClients();
-		vector<pollfd> getFds();
+public:
+	void setResult(struct addrinfo *setRes);
+	void setClient(vector<Client> setClient);
+	void setFd(vector<pollfd> setFd);
+
+	struct addrinfo *getResult();
+	vector<Client> getClients();
+	vector<pollfd> &getFd();
 };
 
 int server(const vector<ServerConfig> &servers);
