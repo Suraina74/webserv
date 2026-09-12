@@ -1,5 +1,5 @@
 #include "configParser/Config.hpp"
-#include "../inc/EventLoop.hpp"
+#include "../inc/ServerInfo.hpp"
 
 int main(int ac, char **av)
 {
