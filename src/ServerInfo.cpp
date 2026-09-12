@@ -29,7 +29,8 @@ int receiveRequest(int clientFd, Request& request){
 		}
 		request.setHeaderBytes(request.getRequestTillHeaders().size());
 	}
-	if (request.getBytesRead() == request.getHeaderBytes() + request.getContentLength()){
+	// Er kan ook chunked transfer encoding zijn. Dan is er geen content length;
+	if ((request.getContentLength()) && (request.getBytesRead() == request.getHeaderBytes() + request.getContentLength())){
 		return 2;
 	}
 	return 1;

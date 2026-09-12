@@ -58,6 +58,7 @@ int Response::composeResponse()
 	ss >> sizeOfBody;
 	contentLength = contentLength + sizeOfBody + "\r\n";
 	std::string connection = "Connection: close\r\n\r\n";
+	// Geen content length meesturen als het gaat om chunked transfer encoding.
 	fullResponse = statusLine + contentType + contentLength + connection + body;
 	return 0;
 }

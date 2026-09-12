@@ -1,6 +1,6 @@
 #include "../inc/Request.hpp"
 
-
+// Check headers in body?
 // Transfer encoding!!! Dan is er geen content-length!!
 
 bool Request::parseHeaders(){
@@ -73,6 +73,12 @@ bool Request::validateHeaders(){
 	// Content length en transfer encoding mogen ook niet samen.
 
 	auto it = headerMap.find("content-length"); // if the key is not present, it returns end().
+	auto itr = headerMap.find("transfer-encoding");
+	if (it != headerMap.end() && itr != headerMap.end()){ // If both content-length and transfer encoding
+		statusCode = BadRequest;
+		statusText = setStatusText(statusCode);
+		return false;
+	}
 	if (it != headerMap.end()){  //An iterator is a pointer-like object that allows traversing through the elements of a map.
 		std::string contentLenStr = it->second; // first = key, second = value of a map.
 		if (checkIfOnlyNumbers(contentLenStr) == false){
@@ -82,6 +88,9 @@ bool Request::validateHeaders(){
 		}
 		std::stringstream ss(contentLenStr);
 		ss >> contentLength;
+	}
+	else if (itr != headerMap.end()){ // transfer-encoding gevonden
+		
 	}
 	if (contentLength < 0){
 		statusCode = BadRequest;
