@@ -33,8 +33,11 @@ int receiveRequest(int clientFd, Request &request)
 		}
 		request.setHeaderBytes(request.getRequestTillHeaders().size());
 	}
+	if (request.getChunked() == true && request.getFullRequest().find("0\r\n\r\n") != std::string::npos){
+		return 2;
+	}
 	// Er kan ook chunked transfer encoding zijn. Dan is er geen content length;
-	if (request.getBytesRead() == request.getHeaderBytes() + request.getContentLength()){
+	else if (request.getBytesRead() == request.getHeaderBytes() + request.getContentLength()){
 		return 2;
 	}
 	return 1;

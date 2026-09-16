@@ -71,8 +71,15 @@ bool Request::validateHeaders(){
 
 	// Check headers that can't appear multiple times. Content length en host for example.
 	// Content length en transfer encoding mogen ook niet samen.
+	// Headers can only be made up of certain characters. Can be anything voor de rest?
 
 	auto it = headerMap.find("content-length"); // if the key is not present, it returns end().
+	auto itr = headerMap.find("transfer-encoding");
+	if (it != headerMap.end() && itr != headerMap.end()){
+		statusCode = BadRequest;
+		statusText = setStatusText(statusCode);
+		return false;
+	}
 	if (it != headerMap.end()){  //An iterator is a pointer-like object that allows traversing through the elements of a map.
 		std::string contentLenStr = it->second; // first = key, second = value of a map.
 		if (checkIfOnlyNumbers(contentLenStr) == false){
@@ -82,17 +89,25 @@ bool Request::validateHeaders(){
 		}
 		std::stringstream ss(contentLenStr);
 		ss >> contentLength;
+		if (contentLength < 0){
+			statusCode = BadRequest;
+			statusText = setStatusText(statusCode);
+			return false;
+		}
 	}
-	if (contentLength < 0){
-		statusCode = BadRequest;
+	else if (itr != headerMap.end()){
+		if (itr->second == "chunked"){
+			chunked = true;
+		}
+		else{
+			statusCode = NotImplemented;
+			statusText = setStatusText(statusCode);
+			return false;
+		}
 	}
 	// if (contentLength > body size in config file){
 	//	statusCode = RequestHeaderFieldsTooLarge;
 	// }
-	if (statusCode != OK){
-		statusText = setStatusText(statusCode);
-		return false;
-	}
 	return true;
 }
 

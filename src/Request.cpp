@@ -11,10 +11,26 @@
 // 	// 	}
 // 	// }
 
+void Request::extractChunkedBody(){
+	int startBody = fullRequest.find("\r\n\r\n") + 4;
+	int endBody = fullRequest.find("0\r\n\r\n");
+	std::string chunkedBody = fullRequest.substr(startBody, endBody - startBody);
+	int amountLines = 0;
+	for (int i = 0; i < chunkedBody.length(); i++){
+		if (chunkedBody[i] == '\r'){
+			amountLines++;
+		}
+	}
+	int startLine = 0;
+	while (chunkedBody.find("\r\n", startLine) != std::string::npos){
+
+	}
+}
+
+
 
 void Request::extractBody(){
-	int startBody = fullRequest.find("\r\n\r\n");
-	startBody += 4;
+	int startBody = fullRequest.find("\r\n\r\n") + 4;
 	Body = fullRequest.substr(startBody, contentLength);
 }
 
@@ -73,25 +89,9 @@ void Request::parseBody(){
 		addFile();
 		statusText = setStatusText(statusCode);
 	}
-}
-
-void Request::cleanRequest(){
-	fullRequest = {};
-	requestTillHeaders = {};
-	headerBytes = {};
-	partialRequest = {};
-	bytesRead = {};
-	requestLine = {};
-	headerMap = {};
-	contentLength = {};
-	Method = {};
-	Protocol = {};
-	Path = {};
-	statusText = "200 OK";
-	Body = {};
-	fileName = {};
-	fileContent = {};
-	statusCode = OK;
+	else if (chunked == true){
+		extractChunkedBody();
+	}
 }
 
 void Request::setRequest(std::string request){
@@ -137,6 +137,22 @@ ssize_t Request::getBytesRead(){
 ssize_t Request::getHeaderBytes(){
 	return headerBytes;
 }
+
+bool Request::getChunked(){
+	return chunked;
+}
+
+// POST /upload HTTP/1.1
+// Host: example.com
+// Transfer-Encoding: chunked
+// Content-Type: text/plain
+// \r\n\r\n
+// 5\r\n
+// Hello\r\n
+// 6\r\n
+//  World\r\n
+// 0\r\n
+// \r\n
 
 // GET / HTTP/1.1 niets na /
 // GET /index.html HTTP/1.1 specifieke html page na /

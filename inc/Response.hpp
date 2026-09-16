@@ -18,7 +18,6 @@ class Response
 		Response(){}
 		~Response(){}
 		int composeResponse();
-		void cleanResponse();
 
 		void setRequest(Request r);
 		void setLenResponse(int length);

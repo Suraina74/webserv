@@ -35,6 +35,7 @@ class Request {
 		std::string	requestLine{};
 		std::map<std::string, std::string> headerMap{};
 		ssize_t		contentLength{};
+		bool		chunked = false;
 		std::string Method{};
 		std::string Protocol{};
 		std::string Path{};
@@ -56,7 +57,7 @@ class Request {
 		void extractBody();
 		void extractFileElements();
 		void addFile();
-		void cleanRequest();
+		void extractChunkedBody();
 
 		std::string setStatusText(httpStatus status);
 		void setRequest(std::string request);
@@ -72,6 +73,7 @@ class Request {
 		std::string getRequestTillHeaders();
 		ssize_t getHeaderBytes();
 		ssize_t getBytesRead();
+		bool getChunked();
 };
 
 
