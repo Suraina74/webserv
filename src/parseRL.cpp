@@ -2,7 +2,7 @@
 
 bool Request::validateRequestLine(){
 	// Nog wel kijken welke html pages allowed zijn volgens config file.
-	if (Path != "www/index.html" && Path != "www/uploads.html"){
+	if ((Method == "GET" || Method == "POST") && Path != "www/index.html" && Path != "www/uploads.html"){
 		Path = "www/404.html";
 		statusCode = PageNotFound;
 	}

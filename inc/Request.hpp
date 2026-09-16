@@ -33,12 +33,13 @@ class Request {
 		std::string partialRequest{};
 		ssize_t     bytesRead{};
 		std::string	requestLine{};
-		std::map<std::string, std::string> headerMap{};
-		ssize_t		contentLength{};
-		bool		chunked = false;
 		std::string Method{};
 		std::string Protocol{};
 		std::string Path{};
+		std::map<std::string, std::string> headerMap{};
+		ssize_t		contentLength{};
+		bool		chunked = false;
+		std::string	boundary{};
 		std::string	statusText = "200 OK";
 		std::string	Body{};
 		std::string fileName{};
@@ -55,9 +56,10 @@ class Request {
 		bool validateHeaders();
 		void parseBody();
 		void extractBody();
+		void extractChunkedBody();
+		void postAndDelete();
 		void extractFileElements();
 		void addFile();
-		void extractChunkedBody();
 
 		std::string setStatusText(httpStatus status);
 		void setRequest(std::string request);

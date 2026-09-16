@@ -36,7 +36,6 @@ int receiveRequest(int clientFd, Request &request)
 	if (request.getChunked() == true && request.getFullRequest().find("0\r\n\r\n") != std::string::npos){
 		return 2;
 	}
-	// Er kan ook chunked transfer encoding zijn. Dan is er geen content length;
 	else if (request.getBytesRead() == request.getHeaderBytes() + request.getContentLength()){
 		return 2;
 	}
@@ -137,7 +136,7 @@ int eventLoop(const vector<pollfd> &fds, const vector<ServerConfig> &servers)
 				else if (returnValue == 2)
 				{
 					clients[i - fds.size()].getRequest().parseBody();
-					// request.action?
+					clients[i - fds.size()].getRequest().postAndDelete();
 					//  check request against config file. To see what server (check host header) applies and what location applies.
 					serverData.getFd()[i].events = POLLOUT;
 				}

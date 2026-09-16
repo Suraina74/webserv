@@ -95,6 +95,9 @@ bool Request::validateHeaders(){
 			return false;
 		}
 	}
+	// if (contentLength > body size in config file){
+	//	statusCode = RequestHeaderFieldsTooLarge;
+	// }
 	else if (itr != headerMap.end()){
 		if (itr->second == "chunked"){
 			chunked = true;
@@ -105,9 +108,12 @@ bool Request::validateHeaders(){
 			return false;
 		}
 	}
-	// if (contentLength > body size in config file){
-	//	statusCode = RequestHeaderFieldsTooLarge;
-	// }
+	auto itrt = headerMap.find("content-type");
+	if (itrt != headerMap.end()){
+		std::string str = itrt->second;
+		size_t begin = str.find("boundary=") + 9;
+		boundary = str.substr(begin, (str.length() - begin));	
+	}
 	return true;
 }
 

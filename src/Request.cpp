@@ -1,33 +1,39 @@
 #include "../inc/Request.hpp"
 
 // The parsed HTTP request is evaluated against the configuration after parsing.
-
-// 	// if (Method == "DELETE"){
-// 	// 	std::string uploadPlace = "www/uploads/" + fileName;
-// 	// 	const char *cUploadPlace = uploadPlace.c_str();
-// 	// 	int status = remove(cUploadPlace);
-// 	// 	if (status != 0) {
-//     //     	std::cout << "Error deleting file" << std::endl;
-// 	// 	}
-// 	// }
+// Body ook validaten!
+// Per belangrijke header kijken wat mag of niet.
+// Boundary in extractFileElements
+// Kijken of filename niet leeg is.. 
 
 void Request::extractChunkedBody(){
-	int startBody = fullRequest.find("\r\n\r\n") + 4;
-	int endBody = fullRequest.find("0\r\n\r\n");
+	size_t startBody = fullRequest.find("\r\n\r\n") + 4;
+	if (startBody == std::string::npos){
+		statusCode = BadRequest;
+	}
+	size_t endBody = fullRequest.find("0\r\n\r\n");
+	if (endBody == std::string::npos){
+		statusCode = BadRequest;
+	}
 	std::string chunkedBody = fullRequest.substr(startBody, endBody - startBody);
 	int amountLines = 0;
-	for (int i = 0; i < chunkedBody.length(); i++){
+	for (size_t i = 0; i < chunkedBody.length(); i++){
 		if (chunkedBody[i] == '\r'){
 			amountLines++;
 		}
 	}
-	int startLine = 0;
-	while (chunkedBody.find("\r\n", startLine) != std::string::npos){
-
+	int start = 0;
+	for (int i = 0; i < amountLines; i++){
+		int end = chunkedBody.find("\r\n", start);
+		if (i % 2 == 0){
+			start = end + 2;
+			continue;
+		}
+		std::string part = chunkedBody.substr(start, end - start);
+		Body += part;
+		start = end + 2;
 	}
 }
-
-
 
 void Request::extractBody(){
 	int startBody = fullRequest.find("\r\n\r\n") + 4;
@@ -36,14 +42,27 @@ void Request::extractBody(){
 
 void Request::extractFileElements(){
 	size_t startFilename = Body.find("filename=\"");
+	if (startFilename == std::string::npos){
+		statusCode = BadRequest;
+	}
 	startFilename += 10;
 	size_t endFilename = Body.find('\"', startFilename);
+	if (endFilename == std::string::npos){
+		statusCode = BadRequest;
+	}
 	fileName = Body.substr(startFilename, (endFilename - startFilename));
 
 	size_t startOfFileContent = Body.find("\r\n\r\n");
+	if (startOfFileContent == std::string::npos){
+		statusCode = BadRequest;
+	}
 	startOfFileContent += 4;
 	size_t endOfFileContent = Body.find("\r\n------WebKit");
+	if (endOfFileContent == std::string::npos){
+		statusCode = BadRequest;
+	}
 	fileContent = Body.substr(startOfFileContent, endOfFileContent - startOfFileContent);
+	cout << fileContent;
 }
 
 void Request::addFile(){
@@ -52,6 +71,32 @@ void Request::addFile(){
 	std::ofstream file(uploadPlace, std::ios::binary);
 	file << fileContent;
 	file.close();
+}
+
+void Request::parseBody(){
+	if (contentLength && statusCode == OK){
+		extractBody();
+	}
+	else if (chunked == true && statusCode == OK){
+		extractChunkedBody();
+	}
+	statusText = setStatusText(statusCode);
+}
+
+void Request::postAndDelete(){
+	if (Method == "POST"){
+		extractFileElements();
+		addFile();
+	}
+	if (Method == "DELETE"){ //  curl -X DELETE localhost:8080/uploads/cat.png;
+		std::string uploadPlace = Path;
+		const char *cUploadPlace = uploadPlace.c_str();
+		int status = remove(cUploadPlace);
+		if (status != 0) {
+        	statusCode = BadRequest;
+			statusText = setStatusText(statusCode);
+		}
+	}
 }
 
 std::string Request::setStatusText(httpStatus status){
@@ -78,19 +123,6 @@ std::string Request::setStatusText(httpStatus status){
 			return "501 Not Implemented";
 		case HTTPVersionNotSupported:
 			return "505 HTTP Version Not Supported";
-	}
-}
-
-void Request::parseBody(){
-	// Als het gaat om chuncked transfer, dan is er alleen geen contentLength, maar kan nog steeds wel een body zijn.
-	if (contentLength && statusCode == OK){
-		extractBody();
-		extractFileElements();
-		addFile();
-		statusText = setStatusText(statusCode);
-	}
-	else if (chunked == true){
-		extractChunkedBody();
 	}
 }
 
@@ -141,18 +173,6 @@ ssize_t Request::getHeaderBytes(){
 bool Request::getChunked(){
 	return chunked;
 }
-
-// POST /upload HTTP/1.1
-// Host: example.com
-// Transfer-Encoding: chunked
-// Content-Type: text/plain
-// \r\n\r\n
-// 5\r\n
-// Hello\r\n
-// 6\r\n
-//  World\r\n
-// 0\r\n
-// \r\n
 
 // GET / HTTP/1.1 niets na /
 // GET /index.html HTTP/1.1 specifieke html page na /
