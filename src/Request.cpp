@@ -2,11 +2,12 @@
 
 // The parsed HTTP request is evaluated against the configuration after parsing.
 // Body ook validaten!
-// Per belangrijke header kijken wat mag of niet.
-// Boundary in extractFileElements
+// Per belangrijke header kijken wat mag of niet. Content Length, Transfer encoding:chunked, Content Type, Host
+// Validate headers in body of Post request?
 // Kijken of filename niet leeg is.. 
 
 void Request::extractChunkedBody(){
+	// A chunk can be multiple lines....
 	size_t startBody = fullRequest.find("\r\n\r\n") + 4;
 	if (startBody == std::string::npos){
 		statusCode = BadRequest;
@@ -23,6 +24,17 @@ void Request::extractChunkedBody(){
 		}
 	}
 	int start = 0;
+	int end = chunkedBody.find("\r\n", start);
+	while(end != std::string::npos){
+		std::string chunkSizeString = chunkedBody.substr(0, end);
+		int chunkSize;
+		std::stringstream ss(chunkSizeString);
+		ss >> chunkSize;
+		ss.str("");
+		ss.clear();
+	}
+	/// HIER GEBLEVEN!!!
+
 	for (int i = 0; i < amountLines; i++){
 		int end = chunkedBody.find("\r\n", start);
 		if (i % 2 == 0){
@@ -33,10 +45,14 @@ void Request::extractChunkedBody(){
 		Body += part;
 		start = end + 2;
 	}
+	cout << Body << endl;
 }
 
 void Request::extractBody(){
-	int startBody = fullRequest.find("\r\n\r\n") + 4;
+	size_t startBody = fullRequest.find("\r\n\r\n") + 4;
+	if (startBody == std::string::npos){
+		statusCode = BadRequest;
+	}
 	Body = fullRequest.substr(startBody, contentLength);
 }
 
@@ -57,12 +73,12 @@ void Request::extractFileElements(){
 		statusCode = BadRequest;
 	}
 	startOfFileContent += 4;
-	size_t endOfFileContent = Body.find("\r\n------WebKit");
+	size_t endOfFileContent = Body.find(boundary + "--");
 	if (endOfFileContent == std::string::npos){
 		statusCode = BadRequest;
 	}
+	endOfFileContent -= 2;
 	fileContent = Body.substr(startOfFileContent, endOfFileContent - startOfFileContent);
-	cout << fileContent;
 }
 
 void Request::addFile(){
@@ -76,19 +92,22 @@ void Request::addFile(){
 void Request::parseBody(){
 	if (contentLength && statusCode == OK){
 		extractBody();
+		statusText = setStatusText(statusCode);
 	}
 	else if (chunked == true && statusCode == OK){
 		extractChunkedBody();
+		statusText = setStatusText(statusCode);
 	}
-	statusText = setStatusText(statusCode);
 }
 
 void Request::postAndDelete(){
-	if (Method == "POST"){
+	cout << fullRequest << endl;
+	if (Method == "POST" && statusCode == OK){
 		extractFileElements();
 		addFile();
+		statusText = setStatusText(statusCode);
 	}
-	if (Method == "DELETE"){ //  curl -X DELETE localhost:8080/uploads/cat.png;
+	if (Method == "DELETE" && statusCode == OK){ //  curl -X DELETE localhost:8080/uploads/cat.png;
 		std::string uploadPlace = Path;
 		const char *cUploadPlace = uploadPlace.c_str();
 		int status = remove(cUploadPlace);
@@ -115,6 +134,8 @@ std::string Request::setStatusText(httpStatus status){
 			return "413 Content Too Large";
 		case URITooLong:
 			return "414 URI Too Long";
+		case UnsupportedMediaType:
+			return "415 Unsupported Media Type";
 		case RequestHeaderFieldsTooLarge:
 			return "431 Request Header Fields Too Large";
 		case InternalServerError:
@@ -173,29 +194,3 @@ ssize_t Request::getHeaderBytes(){
 bool Request::getChunked(){
 	return chunked;
 }
-
-// GET / HTTP/1.1 niets na /
-// GET /index.html HTTP/1.1 specifieke html page na /
-// GET /favicon.ico HTTP/1.1
-// POST /delete.html HTTP/1.1 met body filename=
-
-// Content-Length: 695\r\n
-
-//Lijst van html pages maken. Array of strings met de namen en dan kijken of the html page na / in de lijst staat.
-//Als er niets na / komt, dan moet de index page worden getoond
-
-// Met GET weet je dat je alleen de gevraagde html page als string moet meegeven aan send.
-// Met POST moet er ook nog iets worden gedaan met de file (wat in de body staat).
-
-// Met GET een string returnen met de html page waarom wordt gevraagd.
-
-// recv can receive the request in parts, but this is not HTTP chunked transfer encoding.
-
-// HTTP chunked transfer encoding is only used when the sender explicitly uses:
-// Transfer-Encoding: chunked
-// But we use content-length, this is a sign that it is not using HTTP chunked transfer encoding. The receiver should receive content-length bytes after the header section.
-
-// Eerst volledige request krijgen met recv.
-// Dan alle elementen eruithalen (parsen).
-// Dan valideren.
-// Dan kijken wat response moet zijn.

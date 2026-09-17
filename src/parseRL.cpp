@@ -39,7 +39,6 @@ bool Request::parseRequestLine(){
 		setStatusText(statusCode);
 		return false;
 	}
-	// Check of er 3 woorden in RL zitten.
 	std::stringstream ss(requestLine);
 	std::string word;
 	int amountWords = 0;
@@ -51,7 +50,6 @@ bool Request::parseRequestLine(){
 		setStatusText(statusCode);
 		return false;
 	}
-	// Check of er maar 1 space tussen de elements in request line en ook geen andere soorten whitespace in RL;
 	int spaces = 0;
 	for (size_t i = 0; i < requestLine.size(); i++){
 		if(isspace(requestLine[i])){
@@ -68,6 +66,7 @@ bool Request::parseRequestLine(){
 		setStatusText(statusCode);
 		return false;
 	}
+	ss.str("");
 	ss.clear();
 	ss.str(requestLine);
 	ss >> Method >> Path >> Protocol;
@@ -75,7 +74,6 @@ bool Request::parseRequestLine(){
 	if (Path == "www/"){
 		Path = "www/index.html";
 	}
-	// Iets doen voor favicon.
 	if (validateRequestLine() == false){
 		return false;
 	}

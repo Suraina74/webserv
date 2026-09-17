@@ -19,6 +19,7 @@ enum httpStatus{
 	RequestTimeout = 408,
 	ContentTooLarge = 413,
 	URITooLong = 414,
+	UnsupportedMediaType = 415,
 	RequestHeaderFieldsTooLarge = 431,
  	InternalServerError = 500,
 	NotImplemented = 501,
@@ -54,6 +55,8 @@ class Request {
 		bool parseUntilHeaders(std::string hString);
 		bool parseHeaders();
 		bool validateHeaders();
+		bool checkPostHeaders();
+		bool checkContentType();
 		void parseBody();
 		void extractBody();
 		void extractChunkedBody();
