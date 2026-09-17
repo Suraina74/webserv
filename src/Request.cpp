@@ -17,35 +17,42 @@ void Request::extractChunkedBody(){
 		statusCode = BadRequest;
 	}
 	std::string chunkedBody = fullRequest.substr(startBody, endBody - startBody);
-	int amountLines = 0;
-	for (size_t i = 0; i < chunkedBody.length(); i++){
-		if (chunkedBody[i] == '\r'){
-			amountLines++;
-		}
-	}
+	// int amountLines = 0;
+	// for (size_t i = 0; i < chunkedBody.length(); i++){
+	// 	if (chunkedBody[i] == '\r'){
+	// 		amountLines++;
+	// 	}
+	// }
 	int start = 0;
-	int end = chunkedBody.find("\r\n", start);
-	while(end != std::string::npos){
-		std::string chunkSizeString = chunkedBody.substr(0, end);
+	// 5\r\n
+	// Hello\r\n
+	// 2\r\n
+	// hi\r\n
+	while (chunkedBody[start] != '0'){
+		int end = chunkedBody.find("\r\n", start);
+		std::string chunkSizeString = chunkedBody.substr(start, end - start);
 		int chunkSize;
 		std::stringstream ss(chunkSizeString);
-		ss >> chunkSize;
+		ss >> std::hex >>chunkSize;
 		ss.str("");
 		ss.clear();
+		Body += chunkedBody.substr((end + 2), chunkSize);
+		start = end + 2 + chunkSize + 2;
 	}
+
 	/// HIER GEBLEVEN!!!
 
-	for (int i = 0; i < amountLines; i++){
-		int end = chunkedBody.find("\r\n", start);
-		if (i % 2 == 0){
-			start = end + 2;
-			continue;
-		}
-		std::string part = chunkedBody.substr(start, end - start);
-		Body += part;
-		start = end + 2;
-	}
-	cout << Body << endl;
+	// for (int i = 0; i < amountLines; i++){
+	// 	int end = chunkedBody.find("\r\n", start);
+	// 	if (i % 2 == 0){
+	// 		start = end + 2;
+	// 		continue;
+	// 	}
+	// 	std::string part = chunkedBody.substr(start, end - start);
+	// 	Body += part;
+	// 	start = end + 2;
+	// }
+	// cout << Body << endl;
 }
 
 void Request::extractBody(){
@@ -101,7 +108,6 @@ void Request::parseBody(){
 }
 
 void Request::postAndDelete(){
-	cout << fullRequest << endl;
 	if (Method == "POST" && statusCode == OK){
 		extractFileElements();
 		addFile();
