@@ -38,7 +38,7 @@ class Request {
 		std::string Method{};
 		std::string Protocol{};
 		std::string Path{};
-		std::map<std::string, std::string> headerMap{};
+		std::unordered_multimap<std::string, std::string> headerMap{};
 		size_t		contentLength{};
 		bool		chunked = false;
 		std::string	boundary{};
