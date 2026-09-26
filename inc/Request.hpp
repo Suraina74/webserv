@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <map>
 #include <cstddef>
+#include <cctype>
 
 constexpr std::size_t MAX_REQUEST_LINE = 8192;
 
@@ -30,15 +31,15 @@ class Request {
 	private:
 		std::string fullRequest{};
 		std::string requestTillHeaders{};
-		ssize_t 	headerBytes{};
+		size_t 	headerBytes{};
 		std::string partialRequest{};
-		ssize_t     bytesRead{};
+		size_t     bytesRead{};
 		std::string	requestLine{};
 		std::string Method{};
 		std::string Protocol{};
 		std::string Path{};
 		std::map<std::string, std::string> headerMap{};
-		ssize_t		contentLength{};
+		size_t		contentLength{};
 		bool		chunked = false;
 		std::string	boundary{};
 		std::string	statusText = "200 OK";
@@ -66,18 +67,18 @@ class Request {
 
 		std::string setStatusText(httpStatus status);
 		void setRequest(std::string request);
-		void setBytesRead(ssize_t bytes);
-		void setHeaderBytes(ssize_t bytes);
+		void setBytesRead(size_t bytes);
+		void setHeaderBytes(size_t bytes);
 
-		ssize_t getContentLength();
+		size_t getContentLength();
 		std::string getPath();
 		std::string getMethod();
 		httpStatus  getStatusCode();
 		std::string getStatusText();
 		std::string getFullRequest();
 		std::string getRequestTillHeaders();
-		ssize_t getHeaderBytes();
-		ssize_t getBytesRead();
+		size_t getHeaderBytes();
+		size_t getBytesRead();
 		bool getChunked();
 };
 

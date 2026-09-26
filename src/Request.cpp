@@ -6,6 +6,15 @@
 // Validate headers in body of Post request?
 // Kijken of filename niet leeg is.. 
 
+bool checkIfHex(std::string chunkSize){
+	for (size_t i = 0; i < chunkSize.length(); i++){
+		if (!isxdigit(chunkSize[i])){
+			return false;
+		}
+	}
+	return true;
+}
+
 void Request::extractChunkedBody(){
 	size_t startBody = fullRequest.find("\r\n\r\n") + 4;
 	if (startBody == std::string::npos){
@@ -15,18 +24,32 @@ void Request::extractChunkedBody(){
 	if (endBody == std::string::npos){
 		statusCode = BadRequest;
 	}
+	endBody += 1;
 	std::string chunkedBody = fullRequest.substr(startBody, endBody - startBody);
 	int start = 0;
+	std::string part{};
+	size_t allChunkSizes{};
 	while (1){
 		int end = chunkedBody.find("\r\n", start);
 		std::string chunkSizeString = chunkedBody.substr(start, end - start);
+		// Check if the chunksizestring consists of characters that are allowed as hex:
+		if (checkIfHex(chunkSizeString) == false){
+			statusCode = BadRequest;
+			return ;
+		}
 		std::stringstream ss(chunkSizeString);
-		int chunkSize{};
+		size_t chunkSize{};
 		ss >> std::hex >> chunkSize;
 		ss.str("");
 		ss.clear();
+		allChunkSizes += chunkSize;
+		if (allChunkSizes > bytesRead){
+			statusCode = BadRequest;
+			break ;
+		}
 		if (chunkSize != 0){
-			Body += chunkedBody.substr((end + 2), chunkSize);;
+			part = chunkedBody.substr((end + 2), chunkSize);
+			Body += part;
 			start = end + 2 + chunkSize + 2;
 		}
 		else{
@@ -54,7 +77,6 @@ void Request::extractFileElements(){
 		statusCode = BadRequest;
 	}
 	fileName = Body.substr(startFilename, (endFilename - startFilename));
-
 	size_t startOfFileContent = Body.find("\r\n\r\n");
 	if (startOfFileContent == std::string::npos){
 		statusCode = BadRequest;
@@ -64,7 +86,6 @@ void Request::extractFileElements(){
 	if (endOfFileContent == std::string::npos){
 		statusCode = BadRequest;
 	}
-	endOfFileContent -= 2;
 	fileContent = Body.substr(startOfFileContent, endOfFileContent - startOfFileContent);
 }
 
@@ -139,15 +160,15 @@ void Request::setRequest(std::string request){
 	fullRequest = request;
 }
 
-void Request::setBytesRead(ssize_t bytes){
+void Request::setBytesRead(size_t bytes){
 	bytesRead = bytes;
 }
 
-void Request::setHeaderBytes(ssize_t bytes){
+void Request::setHeaderBytes(size_t bytes){
 	headerBytes = bytes;
 }
 
-ssize_t Request::getContentLength(){
+size_t Request::getContentLength(){
 	return contentLength;
 }
 std::string Request::getPath(){
@@ -171,11 +192,11 @@ std::string Request::getRequestTillHeaders(){
 	return requestTillHeaders;
 }
 
-ssize_t Request::getBytesRead(){
+size_t Request::getBytesRead(){
 	return bytesRead;
 }
 
-ssize_t Request::getHeaderBytes(){
+size_t Request::getHeaderBytes(){
 	return headerBytes;
 }
 

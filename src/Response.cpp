@@ -3,7 +3,7 @@
 int Response::composeResponse()
 {
 	statusLine = statusLine + " " + request.getStatusText() + "\r\n";
-	ssize_t bytesRead = 0;
+	size_t bytesRead = 0;
 	if (request.getStatusCode() != OK && request.getStatusCode() != PageNotFound){
 		body = R"(
 			<!DOCTYPE html>
