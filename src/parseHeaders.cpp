@@ -1,5 +1,16 @@
 #include "../inc/Request.hpp"
 
+bool allowedCharsInKey(std::string key){
+	std::string allowedChars = "!#$%&'*+-.^_`|~";
+	for (size_t i = 0; i < key.length(); i++){
+		if (!(key[i] >= 'a' && key[i] <= 'z') && !(key[i] >= 'A' && key[i] <= 'Z') \
+		&& !(key[i] >= '0' && key[i] <= '9') && allowedChars.find(key[i]) == std::string::npos){
+			return false;
+		}
+	}
+	return true;
+}
+
 bool Request::parseHeaders(){
 	int amountLines = 0;
 	for (size_t i = 0; i < requestTillHeaders.size(); i++){
@@ -29,6 +40,10 @@ bool Request::parseHeaders(){
 				statusCode = BadRequest;
 				return false;
 			}
+			if (allowedCharsInKey(key) == false){
+				statusCode = BadRequest;
+				return false;
+			}
 			// Normalize header name:
 			for (size_t i = 0; i < key.length(); i++){
 				key[i] = std::tolower(key[i]);
@@ -49,18 +64,6 @@ bool Request::parseHeaders(){
 	return true;
 }
 
-bool checkIfOnlyNumbers(std::string string){
-	if (string.empty()){
-		return false;
-	}
-	for (size_t i = 0; i < string.size(); i++){
-		if (!isdigit(string[i])){
-			return false;
-		}
-	}
-	return true;
-}
-
 bool checkIfDoubles(std::string headerName, unordered_multimap<std::string, std::string> map){
 	int count = 0;
 	for (auto it = map.begin(); it != map.end(); it++){
@@ -70,6 +73,24 @@ bool checkIfDoubles(std::string headerName, unordered_multimap<std::string, std:
 	}
 	if (count > 1){
 		return false;
+	}
+	return true;
+}
+
+bool validateBoundary(std::string boundary){
+	std::string allowedChars = "()'+_,-./:=? ";
+	size_t boundaryLen = boundary.length();
+	if (boundary.back() == ' '){
+		return false;
+	}
+	if (boundaryLen == 0 || boundaryLen > 70){
+		return false;
+	}
+	for (size_t i = 0; i < boundaryLen; i++){
+		if (!(boundary[i] >= 'a' && boundary[i] <= 'z') && !(boundary[i] >= 'A' && boundary[i] <= 'Z') \
+		&& !(boundary[i] >= '0' && boundary[i] <= '9') && allowedChars.find(boundary[i]) == std::string::npos){
+			return false;
+		}
 	}
 	return true;
 }
@@ -93,11 +114,31 @@ bool Request::checkContentType(){
 		}
 		begin += 9;
 		boundary = str.substr(begin, (str.length() - begin));
+		if (boundary.front() == '"' && boundary.back() == '"'){
+			boundary.erase(0, 1);
+			boundary.pop_back();
+		}
+		if (validateBoundary(boundary) == false){
+			statusCode = BadRequest;
+			return false;
+		}
 		boundary = "--" + boundary;
 	}
 	else if (itCt == headerMap.end()){
 		statusCode = BadRequest;
 		return false;
+	}
+	return true;
+}
+
+bool checkIfOnlyNumbers(std::string string){
+	if (string.empty()){
+		return false;
+	}
+	for (size_t i = 0; i < string.size(); i++){
+		if (!isdigit(string[i])){
+			return false;
+		}
 	}
 	return true;
 }
@@ -144,6 +185,7 @@ bool Request::checkPostHeaders(){
 		}
 	}
 	else{
+		contentLength = 0;
 		statusCode = BadRequest;
 		return false;
 	}
@@ -154,7 +196,6 @@ bool Request::checkPostHeaders(){
 }
 
 bool Request::validateHeaders(){
-	// Headers can only be made up of certain characters. Can be anything voor de rest?
 	// Kijken of de host een bestaande host is volgens config file.
 	auto itHost = headerMap.find("host");
 	if (itHost == headerMap.end()){

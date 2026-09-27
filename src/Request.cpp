@@ -3,7 +3,6 @@
 // The parsed HTTP request is evaluated against the configuration after parsing.
 // Body ook validaten!
 // Per belangrijke header kijken wat mag of niet. Content Length, Transfer encoding:chunked, Content Type, Host
-// Validate headers in body of Post request?
 // Kijken of filename niet leeg is.. 
 
 bool checkIfHex(std::string chunkSize){
@@ -98,6 +97,11 @@ void Request::addFile(){
 }
 
 void Request::parseBody(){
+	if (contentLength + headerBytes > bytesRead){
+		statusCode = BadRequest;
+		statusText = setStatusText(statusCode);
+		return ;
+	}
 	if (contentLength && statusCode == OK){
 		extractBody();
 		statusText = setStatusText(statusCode);
