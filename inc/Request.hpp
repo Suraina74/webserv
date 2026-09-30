@@ -44,6 +44,7 @@ class Request {
 		std::string	boundary{};
 		std::string	statusText = "200 OK";
 		std::string	Body{};
+		std::map<std::string, std::string> partHeaderMap{};
 		std::string fileName{};
 		std::string fileContent{};
 		httpStatus  statusCode = OK;
@@ -56,11 +57,15 @@ class Request {
 		bool parseUntilHeaders(std::string hString);
 		bool parseHeaders();
 		bool validateHeaders();
+		bool actionsOnKey(std::string& key);
+		bool allowedCharsInKey(std::string key);
+		bool actionsOnValue(std::string& value);
 		bool checkPostHeaders();
 		bool checkContentType();
 		void parseBody();
 		void extractBody();
 		void extractChunkedBody();
+		void validateBody();
 		void postAndDelete();
 		void extractFileElements();
 		void addFile();
@@ -99,6 +104,5 @@ class Request {
 // Content-Type: application/octet-stream
 
 // helloooo
-
 
 // ------WebKitFormBoundarydRcwfbvAQ3EKmZuB--

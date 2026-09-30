@@ -1,12 +1,49 @@
 #include "../inc/Request.hpp"
 
-bool allowedCharsInKey(std::string key){
+bool Request::allowedCharsInKey(std::string key){
 	std::string allowedChars = "!#$%&'*+-.^_`|~";
 	for (size_t i = 0; i < key.length(); i++){
 		if (!(key[i] >= 'a' && key[i] <= 'z') && !(key[i] >= 'A' && key[i] <= 'Z') \
 		&& !(key[i] >= '0' && key[i] <= '9') && allowedChars.find(key[i]) == std::string::npos){
 			return false;
 		}
+	}
+	return true;
+}
+
+bool Request::actionsOnKey(std::string& key){
+	if (key.empty()){
+		statusCode = BadRequest;
+		return false;
+	}
+	if (key.find(' ') != std::string::npos){
+		statusCode = BadRequest;
+		return false;
+	}
+	if (allowedCharsInKey(key) == false){
+		statusCode = BadRequest;
+		return false;
+	}
+	// Normalize header name:
+	for (size_t i = 0; i < key.length(); i++){
+		key[i] = std::tolower(key[i]);
+	}
+	return true;
+}
+
+bool Request::actionsOnValue(std::string& value){
+	size_t findNotSpace;
+	if (value[0] == ' '){
+		findNotSpace = value.find_first_not_of(' ');
+		value.erase(0, findNotSpace); // delete N characters starting from pos 0.
+	}
+	if (value[value.length() - 1] == ' '){
+		findNotSpace = value.find_last_not_of(' ');
+		value.erase(findNotSpace + 1); // delete everything from pos findNotSpace + 1 onwards.
+	}
+	if (value.find('\r') != std::string::npos || value.find('\n') != std::string::npos || value.find('\0') != std::string::npos){
+		statusCode = BadRequest;
+		return false;
 	}
 	return true;
 }
@@ -30,32 +67,12 @@ bool Request::parseHeaders(){
 			statusCode = BadRequest;
 			return false;
 		}
-		else{
-			key = line.substr(0, findColon);
-			if (key.empty()){
-				statusCode = BadRequest;
-				return false;
-			}
-			if (key.find(' ') != std::string::npos){
-				statusCode = BadRequest;
-				return false;
-			}
-			if (allowedCharsInKey(key) == false){
-				statusCode = BadRequest;
-				return false;
-			}
-			// Normalize header name:
-			for (size_t i = 0; i < key.length(); i++){
-				key[i] = std::tolower(key[i]);
-			}
-			value = line.substr(findColon + 1, line.length() - key.length() + 1);
-			size_t findNotSpace = value.find_first_not_of(' ');
-			value.erase(0, findNotSpace); // delete N characters starting from pos 0.
-			findNotSpace = value.find_last_not_of(' ');
-			value.erase(findNotSpace + 1); // delete everything from pos findNotSpace + 1 onwards.
+		key = line.substr(0, findColon);
+		if (actionsOnKey(key) == false){
+			return false;
 		}
-		if (value.find('\r') != std::string::npos || value.find('\n') != std::string::npos || value.find('\0') != std::string::npos){
-			statusCode = BadRequest;
+		value = line.substr(findColon + 1, line.length() - key.length() + 1);
+		if (actionsOnValue(value) == false){
 			return false;
 		}
 		headerMap.insert({key, value});

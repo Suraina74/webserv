@@ -58,11 +58,112 @@ void Request::extractChunkedBody(){
 }
 
 void Request::extractBody(){
-	size_t startBody = fullRequest.find("\r\n\r\n") + 4;
+	size_t startBody = fullRequest.find("\r\n\r\n");
 	if (startBody == std::string::npos){
 		statusCode = BadRequest;
 	}
+	startBody += 4;
 	Body = fullRequest.substr(startBody, contentLength);
+}
+
+bool checkIfDoubles(map<std::string, std::string> map){
+	int countCD = 0;
+	int countCT = 0;
+	for (auto it = map.begin(); it != map.end(); it++){
+		if (it->first == "content-disposition"){
+			countCD++;
+		}
+		else if (it->first == "content-type"){
+			countCT++;
+		}
+	}
+	if (countCD > 1 || countCT > 1){
+		return false;
+	}
+	return true;
+}
+
+void Request::validateBody(){
+	size_t pos = Body.find(boundary + "\r\n");
+	if (pos == std::string::npos || pos != 0){
+		statusCode = BadRequest;
+		return;
+	}
+	size_t start = boundary.length() + 2;
+	size_t blankLine = Body.find("\r\n\r\n");
+	if (blankLine == std::string::npos){
+		statusCode = BadRequest;
+		return;
+	}
+	std::string key, value;
+	while (1){
+		size_t end = Body.find("\r\n", start);
+		std::string partHeader = Body.substr(start, end - start);
+		size_t colon = partHeader.find(':');
+		if (colon == std::string::npos){
+			statusCode = BadRequest;
+			return;
+		}
+		key = partHeader.substr(0, colon);
+		if (actionsOnKey(key) == false){
+			return;
+		}
+		value = partHeader.substr(colon + 1, partHeader.length() - key.length() + 1);
+		if (actionsOnValue(value) == false){
+			return;
+		}
+		partHeaderMap.insert({key, value});
+		start = end + 2;
+		if (end == blankLine){
+			break;
+		}
+	}
+	auto it = partHeaderMap.find("content-disposition");
+	if (it == partHeaderMap.end()){
+		statusCode = BadRequest;
+		return;
+	}
+	std::string valueCT = it->second;
+	// form-data name="filename"; filename="cat.jpg"
+	// Alle onderdelen van content disposition in een vector zetten.
+	
+	// size_t locName = valueCT.find("name");
+	// if (locName == std::string::npos){
+	// 	statusCode = BadRequest;
+	// 	return;	
+	// }
+	// size_t locSemicolon = valueCT.find(';', locName);
+	// if (locSemicolon == std::string::npos){
+	// 	statusCode = BadRequest;
+	// 	return;
+	// }
+	// std::string name = valueCT.substr(locName, locSemicolon - locName);
+	if (checkIfDoubles(partHeaderMap) == false){
+		statusCode = BadRequest;
+		return;
+	}
+	// for (auto it = partHeaderMap.begin(); it != partHeaderMap.end(); it++){
+	// 	cout << it->first << " " << it->second << endl;
+	// }
+}
+
+void Request::parseBody(){
+	if (contentLength && statusCode == OK){
+		extractBody();
+		statusText = setStatusText(statusCode);
+		if (statusCode == OK){
+			validateBody();
+			statusText = setStatusText(statusCode);
+		}
+	}
+	else if (chunked == true && statusCode == OK){
+		extractChunkedBody();
+		statusText = setStatusText(statusCode);
+		if (statusCode == OK){
+			validateBody();
+			statusText = setStatusText(statusCode);
+		}
+	}
 }
 
 void Request::extractFileElements(){
@@ -81,7 +182,7 @@ void Request::extractFileElements(){
 		statusCode = BadRequest;
 	}
 	startOfFileContent += 4;
-	size_t endOfFileContent = Body.find(boundary + "--");
+	size_t endOfFileContent = Body.find("\r\n" + boundary + "--");
 	if (endOfFileContent == std::string::npos){
 		statusCode = BadRequest;
 	}
@@ -94,22 +195,6 @@ void Request::addFile(){
 	std::ofstream file(uploadPlace, std::ios::binary);
 	file << fileContent;
 	file.close();
-}
-
-void Request::parseBody(){
-	if (contentLength + headerBytes > bytesRead){
-		statusCode = BadRequest;
-		statusText = setStatusText(statusCode);
-		return ;
-	}
-	if (contentLength && statusCode == OK){
-		extractBody();
-		statusText = setStatusText(statusCode);
-	}
-	else if (chunked == true && statusCode == OK){
-		extractChunkedBody();
-		statusText = setStatusText(statusCode);
-	}
 }
 
 void Request::postAndDelete(){
