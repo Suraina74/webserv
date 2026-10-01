@@ -124,9 +124,20 @@ void Request::validateBody(){
 		return;
 	}
 	std::string valueCT = it->second;
+	std::string part{};
+	// Misschien toch een map?
+	vector<std::string> contentDispos{};
+	stringstream ss(valueCT);
+	while (getline(ss, part, ';')){
+		contentDispos.push_back(part);
+	}
+	for (size_t it = 0; it < contentDispos.size(); it++){
+		cout << contentDispos[it] << endl;
+	}
 	// form-data name="filename"; filename="cat.jpg"
 	// Alle onderdelen van content disposition in een vector zetten.
-	
+	// Must have form-data and name in it.
+
 	// size_t locName = valueCT.find("name");
 	// if (locName == std::string::npos){
 	// 	statusCode = BadRequest;
