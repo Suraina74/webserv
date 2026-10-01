@@ -8,7 +8,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-int receiveRequest(int clientFd, Request& request){
+int receiveRequest(int clientFd, Request& request)
+{
 	char buffer[2048];
 	ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
 	if (n == -1)
@@ -35,7 +36,8 @@ int receiveRequest(int clientFd, Request& request){
 	return 1;
 }
 
-int sendResponse(int clientFd, Response& response){
+int sendResponse(int clientFd, Response& response)
+{
 	response.composeResponse();
 	std::string fullResponse = response.getFullResponse();
 	response.setLenResponse(fullResponse.length());
@@ -149,15 +151,20 @@ int eventLoop(const vector<pollfd> &fds, const vector<ServerConfig> &servers)
 	return (0);
 }
 
-vector<pollfd> createSockAddr(struct addrinfo *result, const vector<ServerConfig> &server)
+//FIX: moved struct addrinfo *result; from ServerInfo class to local variable inside createSockAddr()
+//because it is just a assisting variable not needed elsewhere.
+vector<pollfd> createSockAddr(const vector<ServerConfig> &server)
 {
+	//suggestion:change para name server to serverList for clarity
 	vector<pollfd>	listenFdsList;
-
+	struct addrinfo *result;
+	//Outter for loop scans through serverList
 	for (size_t i = 0; i < server.size(); ++i)
 	{
-		struct addrinfo info;
+		struct addrinfo info; 
 		struct addrinfo *ptr;
-
+	
+		result = nullptr;
 		memset(&info, 0, sizeof(info));
 		info.ai_family = AF_INET;
 		info.ai_socktype = SOCK_STREAM;
@@ -167,10 +174,14 @@ vector<pollfd> createSockAddr(struct addrinfo *result, const vector<ServerConfig
 			::perror("getaddrinfo");
 			break;
 		}
+		//getaddrinfo fills result with a list of potential fitting addr
+		//Inner for loop scans the result of addr list until it finds 
+		//a fitting fd for the current server
 		for (ptr = result; ptr != NULL; ptr = ptr->ai_next)
 		{
 			pollfd listenFd;
-			listenFd.fd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+			//FIX:use ptr instead of result to update scanning
+			listenFd.fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
 			if (listenFd.fd == -1)
 			{
 				::perror("socket");
@@ -179,22 +190,27 @@ vector<pollfd> createSockAddr(struct addrinfo *result, const vector<ServerConfig
 			if (fcntl(listenFd.fd, F_SETFL, O_NONBLOCK) == -1)
 			{
 				::perror("fcntl");
+				close(listenFd.fd);//FIX: added close() to prevent fd leak
 				continue;
 			}
 			int on = true;
 			if ((setsockopt(listenFd.fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on))) == -1)
 			{
 				::perror("setsockopt");
+				close(listenFd.fd);
 				continue;
 			}
 			if (::bind(listenFd.fd, ptr->ai_addr, ptr->ai_addrlen) == -1)
 			{
 				::perror("bind");
+				close(listenFd.fd);
 				continue;
 			}
 			listenFdsList.push_back(listenFd);
 			break;
 		}
+		//FIX:free occupying space from result as it is no longer needed
+		freeaddrinfo(result);
 	}
 	return (listenFdsList);
 }
@@ -203,39 +219,20 @@ int server(const vector<ServerConfig> &servers)
 {
 	ServerInfo eloop;
 
-	eloop.result = nullptr;
-	eloop.fds = createSockAddr(eloop.result, servers);
+	//eloop.fds holds the listening sockets, one per server block in the config. 
+	//They never receive request data and never send responses. 
+	//Their only job is to tell you that a new client is trying to connect.
+	eloop.fds = createSockAddr(servers);
 	for (size_t i = 0; i < eloop.fds.size(); i++)
 	{
 		if (listen(eloop.fds[i].fd, 10) != 0)
 		{
 			::perror("listen");
+			//FIX: this for loop closes all listen fds when there listen() fails
+			for (size_t j = 0; j < eloop.fds.size(); j++)
+				close(eloop.fds[j].fd);
 			return (1);
 		}
 	}
 	return (eventLoop(eloop.fds, servers));
 }
-
-// void ServerInfo::setResult(struct addrinfo *res){
-// 	result = res;
-// }
-// void ServerInfo::setClient(Client client){
-	
-// }
-// void ServerInfo::setFd(pollfd fd){
-
-// }
-
-// struct addrinfo ServerInfo::getResult(){
-
-// }
-// vector<Client> ServerInfo::getClients(){
-
-// }
-// vector<pollfd> ServerInfo::getFds(){
-
-// }
-
-
-//todos
-// Socket cleanup, error events, partial sends, and server-to-config mapping need work.

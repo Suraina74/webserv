@@ -9,7 +9,8 @@
 #include <map>
 #include <cstddef>
 
-constexpr std::size_t MAX_REQUEST_LINE = 8192;
+constexpr size_t MAX_REQUEST_LINE = 8192;
+using namespace std;
 
 enum httpStatus{
 	OK = 200,
@@ -25,23 +26,24 @@ enum httpStatus{
 	HTTPVersionNotSupported = 505
 };
 
-class Request {
+class Request
+{
 	private:
-		std::string fullRequest{};
-		std::string requestTillHeaders{};
+		string fullRequest{};
+		string requestTillHeaders{};
 		ssize_t 	headerBytes{};
-		std::string partialRequest{};
+		string partialRequest{};
 		ssize_t     bytesRead{};
-		std::string	requestLine{};
-		std::map<std::string, std::string> headerMap{};
+		string	requestLine{};
+		map<string, string> headerMap{};
 		ssize_t		contentLength{};
-		std::string Method{};
-		std::string Protocol{};
-		std::string Path{};
-		std::string	statusText = "200 OK";
-		std::string	Body{};
-		std::string fileName{};
-		std::string fileContent{};
+		string Method{};
+		string Protocol{};
+		string Path{};
+		string	statusText = "200 OK";
+		string	Body{};
+		string fileName{};
+		string fileContent{};
 		httpStatus  statusCode = OK;
 
 	public:
@@ -49,7 +51,7 @@ class Request {
 		~Request(){}
 		bool parseRequestLine();
 		bool validateRequestLine();
-		bool parseUntilHeaders(std::string hString);
+		bool parseUntilHeaders(string hString);
 		bool parseHeaders();
 		bool validateHeaders();
 		void parseBody();
@@ -58,18 +60,18 @@ class Request {
 		void addFile();
 		void cleanRequest();
 
-		std::string setStatusText(httpStatus status);
-		void setRequest(std::string request);
+		string setStatusText(httpStatus status);
+		void setRequest(string request);
 		void setBytesRead(ssize_t bytes);
 		void setHeaderBytes(ssize_t bytes);
 
 		ssize_t getContentLength();
-		std::string getPath();
-		std::string getMethod();
+		string getPath();
+		string getMethod();
 		httpStatus  getStatusCode();
-		std::string getStatusText();
-		std::string getFullRequest();
-		std::string getRequestTillHeaders();
+		string getStatusText();
+		string getFullRequest();
+		string getRequestTillHeaders();
 		ssize_t getHeaderBytes();
 		ssize_t getBytesRead();
 };

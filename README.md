@@ -84,8 +84,8 @@ accept()  →  something plugs in, connection now active
 [NGINX](https://nginx.org/en/docs/beginners_guide.html)
 [Beej's Guide to Network Programming](https://beej.us/guide/bgnet/html/#system-calls-or-bust)
 [The Linux Programming inTerface](https://broman.dev/download/The%20Linux%20Programming%20Interface.pdf)
-[rfc9110](https://datatracker.ietf.org/doc/html/rfc9110)
-[rfc9112](https://datatracker.ietf.org/doc/html/rfc9112)
+[rfc9110/HTTP Semantics](https://datatracker.ietf.org/doc/html/rfc9110)
+[rfc9112:HTTP/1.1](https://datatracker.ietf.org/doc/html/rfc9112)
 [HTTP:The Definitive Guide](https://github.com/oxidation99/MyBooks-1/blob/master/HTTP%20The%20%20Definitive%20Guide.pdf)
-
+[rfc3875:CGI](https://datatracker.ietf.org/doc/html/rfc3875)
 # How is AI used

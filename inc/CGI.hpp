@@ -8,7 +8,6 @@ class CGI
 		//serv socket
 	public:
 		CGI();
-		CGI(const CGI& other);
-		CGI& operator=(const CGI& other);
 		~CGI();
+		
 };

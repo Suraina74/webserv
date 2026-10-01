@@ -13,8 +13,7 @@ class ServerInfo
 	private:
 		
 	public:
-		vector<Client> clients;
-		struct addrinfo *result;
+		map<int, Client> clients;
 		vector<pollfd> fds;
 		void setResult(struct addrinfo *res);
 		void setClient(Client client);
@@ -27,4 +26,4 @@ class ServerInfo
 
 int server(const vector<ServerConfig> &servers);
 int eventLoop(const vector<int> &sockfds, const vector<ServerConfig> &servers);
-vector<pollfd> createSockAddr(struct addrinfo *result, const vector<ServerConfig> &servers);
+vector<pollfd> createSockAddr(const vector<ServerConfig> &server);

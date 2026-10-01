@@ -1,13 +1,23 @@
+#pragma once
 #include "../inc/Request.hpp"
 #include "../inc/Response.hpp"
 #include <poll.h>
 
-class Client{
+using namespace std;
+
+class Client
+{
 	private:
-		//pollfd		fd;
-		Request		request;
-		Response	response;
+		int					fd;
+		const ServerConfig	*server;
+		Request				request;
+		Response			response;
 	public:
-		Client(){}
-		~Client(){}
+		Client();
+		Client(int fd, const ServerConfig *server);
+		~Client();
+		int				getFd();
+		ServerConfig	&getClientServer();
+		Request& 		getRequest();
+		Response&		getResponse();
 };
