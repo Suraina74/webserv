@@ -9,8 +9,10 @@
 #include <map>
 #include <cstddef>
 #include <cctype>
+#include <unordered_map>
 
 constexpr std::size_t MAX_REQUEST_LINE = 8192;
+// Max Body size
 
 enum httpStatus{
 	OK = 200,
@@ -45,6 +47,7 @@ class Request {
 		std::string	statusText = "200 OK";
 		std::string	Body{};
 		std::map<std::string, std::string> partHeaderMap{};
+		unordered_multimap<std::string, std::string> contentDisposMap{};
 		std::string fileName{};
 		std::string fileContent{};
 		httpStatus  statusCode = OK;

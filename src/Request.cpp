@@ -3,7 +3,8 @@
 // The parsed HTTP request is evaluated against the configuration after parsing.
 // Body ook validaten!
 // Per belangrijke header kijken wat mag of niet. Content Length, Transfer encoding:chunked, Content Type, Host
-// Kijken of filename niet leeg is.. 
+// Kijken of filename niet leeg is..
+// Kijken of alle lines in request eindigen met /r/n. if /r see if next is /n.
 
 bool checkIfHex(std::string chunkSize){
 	for (size_t i = 0; i < chunkSize.length(); i++){
@@ -125,16 +126,60 @@ void Request::validateBody(){
 	}
 	std::string valueCT = it->second;
 	std::string part{};
-	// Misschien toch een map?
-	vector<std::string> contentDispos{};
+	vector<std::string> contentDisVector{};
 	stringstream ss(valueCT);
 	while (getline(ss, part, ';')){
-		contentDispos.push_back(part);
+		size_t findNotSpace;
+		if (part[0] == ' '){
+			findNotSpace = part.find_first_not_of(' ');
+			part.erase(0, findNotSpace);
+		}
+		if (part[part.length() - 1] == ' '){
+			findNotSpace = part.find_last_not_of(' ');
+			part.erase(findNotSpace + 1);
 	}
-	for (size_t it = 0; it < contentDispos.size(); it++){
-		cout << contentDispos[it] << endl;
+		contentDisVector.push_back(part);
 	}
-	// form-data name="filename"; filename="cat.jpg"
+	// Kijken of form-data op 1e plek zit.
+	if (contentDisVector[0] != "form-data"){
+		statusCode = BadRequest;
+		return ;
+	}
+	for (size_t it = 0; it < contentDisVector.size(); it++){
+		part = contentDisVector[it];
+		if (part.find('=') == std::string::npos){
+			// Key lower case maken.
+			for (size_t i = 0; i < part.length(); i++){
+				part[i] = std::tolower(part[i]);
+			}
+			contentDisposMap.insert({part, ""});
+		}
+		else{
+			size_t equalSign = part.find('=');
+			key = part.substr(0, equalSign);
+			// Key lower case maken.
+			for (size_t i = 0; i < key.length(); i++){
+				key[i] = std::tolower(key[i]);
+			}
+			if (part[equalSign + 1] == '"' && part.back() == '"'){
+				part.erase(0, 1);
+				part.pop_back();
+			}
+			size_t startValue = equalSign + 1;
+			value = part.substr(startValue, part.size() - startValue);
+			contentDisposMap.insert({key, value});
+		}
+	}
+	auto itName = contentDisposMap.find("name");
+	if (itName == contentDisposMap.end()){
+		statusCode = BadRequest;
+		return ;
+	}
+	// Dubbele dingen checken in content disposition.
+
+
+
+	// form-data; name="filename"; filename="cat.jpg"
 	// Alle onderdelen van content disposition in een vector zetten.
 	// Must have form-data and name in it.
 
