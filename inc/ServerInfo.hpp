@@ -10,8 +10,8 @@ using namespace std;
 class ServerInfo
 {
 private:
-	struct addrinfo *result;
-	vector<pollfd> fds;
+	struct addrinfo *_result;
+	vector<pollfd> _fds;
 public:
 	void setResult(struct addrinfo *setRes);
 	void setFd(vector<pollfd> setFd);

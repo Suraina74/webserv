@@ -196,23 +196,27 @@ vector<pollfd> createSockAddr(struct addrinfo *result, const vector<ServerConfig
 			if (fcntl(listenFd.fd, F_SETFL, O_NONBLOCK) == -1)
 			{
 				::perror("fcntl");
+				close(listenFd.fd);
 				continue;
 			}
 			int on = true;
 			if ((setsockopt(listenFd.fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on))) == -1)
 			{
 				::perror("setsockopt");
+				close(listenFd.fd);
 				continue;
 			}
 			if (::bind(listenFd.fd, ptr->ai_addr, ptr->ai_addrlen) == -1)
 			{
 				::perror("bind");
+				close(listenFd.fd);
 				continue;
 			}
 			listenFdsList.push_back(listenFd);
 			break;
 		}
 	}
+	freeaddrinfo(result);
 	return (listenFdsList);
 }
 
@@ -227,6 +231,8 @@ int server(const vector<ServerConfig> &servers)
 		if (listen(eloop.getFd()[i].fd, 10) != 0)
 		{
 			::perror("listen");
+			for (size_t j = 0; j < eloop.getFd().size(); j++)
+				close(eloop.getFd()[j].fd);
 			return (1);
 		}
 	}
@@ -235,22 +241,22 @@ int server(const vector<ServerConfig> &servers)
 
 void ServerInfo::setResult(struct addrinfo *setRes)
 {
-	result = setRes;
+	_result = setRes;
 }
 
 void ServerInfo::setFd(vector<pollfd> setFd)
 {
-	fds = setFd;
+	_fds = setFd;
 }
 
 struct addrinfo *ServerInfo::getResult()
 {
-	return (result);
+	return (_result);
 }
 
 vector<pollfd> &ServerInfo::getFd()
 {
-	return (fds);
+	return (_fds);
 }
 
 // todos
