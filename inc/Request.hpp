@@ -8,9 +8,11 @@
 #include <unistd.h>
 #include <map>
 #include <cstddef>
+#include <cctype>
+#include <unordered_map>
 
-constexpr size_t MAX_REQUEST_LINE = 8192;
-using namespace std;
+constexpr std::size_t MAX_REQUEST_LINE = 8192;
+// Max Body size
 
 enum httpStatus{
 	OK = 200,
@@ -20,6 +22,7 @@ enum httpStatus{
 	RequestTimeout = 408,
 	ContentTooLarge = 413,
 	URITooLong = 414,
+	UnsupportedMediaType = 415,
 	RequestHeaderFieldsTooLarge = 431,
  	InternalServerError = 500,
 	NotImplemented = 501,
@@ -29,21 +32,25 @@ enum httpStatus{
 class Request
 {
 	private:
-		string fullRequest{};
-		string requestTillHeaders{};
-		ssize_t 	headerBytes{};
-		string partialRequest{};
-		ssize_t     bytesRead{};
-		string	requestLine{};
-		map<string, string> headerMap{};
-		ssize_t		contentLength{};
-		string Method{};
-		string Protocol{};
-		string Path{};
-		string	statusText = "200 OK";
-		string	Body{};
-		string fileName{};
-		string fileContent{};
+		std::string fullRequest{};
+		std::string requestTillHeaders{};
+		size_t 	headerBytes{};
+		std::string partialRequest{};
+		size_t     bytesRead{};
+		std::string	requestLine{};
+		std::string Method{};
+		std::string Protocol{};
+		std::string Path{};
+		std::unordered_multimap<std::string, std::string> headerMap{};
+		size_t		contentLength{};
+		bool		chunked = false;
+		std::string	boundary{};
+		std::string	statusText = "200 OK";
+		std::string	Body{};
+		std::map<std::string, std::string> partHeaderMap{};
+		unordered_multimap<std::string, std::string> contentDisposMap{};
+		std::string fileName{};
+		std::string fileContent{};
 		httpStatus  statusCode = OK;
 
 	public:
@@ -54,26 +61,34 @@ class Request
 		bool parseUntilHeaders(string hString);
 		bool parseHeaders();
 		bool validateHeaders();
+		bool actionsOnKey(std::string& key);
+		bool allowedCharsInKey(std::string key);
+		bool actionsOnValue(std::string& value);
+		bool checkPostHeaders();
+		bool checkContentType();
 		void parseBody();
 		void extractBody();
+		void extractChunkedBody();
+		void validateBody();
+		void postAndDelete();
 		void extractFileElements();
 		void addFile();
-		void cleanRequest();
 
-		string setStatusText(httpStatus status);
-		void setRequest(string request);
-		void setBytesRead(ssize_t bytes);
-		void setHeaderBytes(ssize_t bytes);
+		std::string setStatusText(httpStatus status);
+		void setRequest(std::string request);
+		void setBytesRead(size_t bytes);
+		void setHeaderBytes(size_t bytes);
 
-		ssize_t getContentLength();
-		string getPath();
-		string getMethod();
+		size_t getContentLength();
+		std::string getPath();
+		std::string getMethod();
 		httpStatus  getStatusCode();
-		string getStatusText();
-		string getFullRequest();
-		string getRequestTillHeaders();
-		ssize_t getHeaderBytes();
-		ssize_t getBytesRead();
+		std::string getStatusText();
+		std::string getFullRequest();
+		std::string getRequestTillHeaders();
+		size_t getHeaderBytes();
+		size_t getBytesRead();
+		bool getChunked();
 };
 
 
@@ -93,6 +108,5 @@ class Request
 // Content-Type: application/octet-stream
 
 // helloooo
-
 
 // ------WebKitFormBoundarydRcwfbvAQ3EKmZuB--

@@ -2,8 +2,8 @@
 #include <poll.h>
 #include <vector>
 #include <iostream>
-#include "../inc/Client.hpp"
 #include "../src/configParser/ServerConfig.hpp"
+#include "Client.hpp"
 #define TIMEOUT 60
 
 using namespace std;
@@ -19,9 +19,8 @@ class ServerInfo
 		void setClient(Client client);
 		void setFd(pollfd fd);
 
-		struct addrinfo getResult();
-		vector<Client> getClients();
-		vector<pollfd> getFds();
+	struct addrinfo *getResult();
+	vector<pollfd> &getFd();
 };
 
 int server(const vector<ServerConfig> &servers);

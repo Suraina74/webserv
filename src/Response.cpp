@@ -3,7 +3,7 @@
 int Response::composeResponse()
 {
 	statusLine = statusLine + " " + request.getStatusText() + "\r\n";
-	ssize_t bytesRead = 0;
+	size_t bytesRead = 0;
 	if (request.getStatusCode() != OK && request.getStatusCode() != PageNotFound){
 		body = R"(
 			<!DOCTYPE html>
@@ -60,18 +60,6 @@ int Response::composeResponse()
 	std::string connection = "Connection: close\r\n\r\n";
 	fullResponse = statusLine + contentType + contentLength + connection + body;
 	return 0;
-}
-
-void Response::cleanResponse(){
-	request = {};
-	statusLine = "HTTP/1.1";
-	contentType = "Content-Type: text/html\r\n";
-	contentLength = "Content-Length: ";
-	body = {};
-	fullResponse = {};
-	lenResponse = {};
-	cFullResponse = {};
-	bytesSent = {};
 }
 
 void Response::setRequest(Request r){
