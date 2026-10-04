@@ -187,7 +187,7 @@ vector<pollfd> createSockAddr(struct addrinfo *result, const vector<ServerConfig
 		for (ptr = result; ptr != NULL; ptr = ptr->ai_next)
 		{
 			pollfd listenFd;
-			listenFd.fd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+			listenFd.fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
 			if (listenFd.fd == -1)
 			{
 				::perror("socket");
@@ -258,6 +258,3 @@ vector<pollfd> &ServerInfo::getFd()
 {
 	return (_fds);
 }
-
-// todos
-//  Socket cleanup, error events, partial sends, and server-to-config mapping need work - wip.
