@@ -9,7 +9,7 @@ class Client
 {
 	private:
 		int					_fd;
-		const ServerConfig	*_server;
+		const ServerConfig*	_server;
 		Request				_request;
 		Response			_response;
 
@@ -17,8 +17,8 @@ class Client
 		Client();
 		Client(int fd, const ServerConfig *server, Request request, Response response);
 		~Client();
-		int			getFd();
-		ServerConfig	&getClientServer();
-		Request& 		getRequest();
-		Response&		getResponse();
+		int				getClientFd();
+		const ServerConfig& getClientServer();
+		Request& 			getRequest();
+		Response&			getResponse();
 };
