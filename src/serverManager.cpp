@@ -10,26 +10,20 @@ int receiveRequest(int clientFd, Request &request)
 		return -1;
 	}
 	else if (n == 0)
-	{
 		return 0;
-	}
 	request.setBytesRead(request.getBytesRead() + n);
 	std::string part(buffer, n);
 	request.setRequest(request.getFullRequest() + part);
 	if (request.getFullRequest().find("\r\n\r\n") != std::string::npos && request.getHeaderBytes() == 0)
 	{
 		if ((request.parseUntilHeaders(request.getFullRequest())) == false)
-		{
 			return 2;
-		}
 		request.setHeaderBytes(request.getRequestTillHeaders().size());
 	}
-	if (request.getChunked() == true && request.getFullRequest().find("0\r\n\r\n") != std::string::npos){
+	if (request.getChunked() == true && request.getFullRequest().find("0\r\n\r\n") != std::string::npos)
 		return 2;
-	}
-	else if (request.getBytesRead() == request.getHeaderBytes() + request.getContentLength()){
+	else if (request.getBytesRead() == request.getHeaderBytes() + request.getContentLength())
 		return 2;
-	}
 	return 1;
 }
 
@@ -48,15 +42,11 @@ int sendResponse(int clientFd, Response &response)
 			return -1;
 		}
 		else if (n == 0)
-		{
 			return 0;
-		}
 		response.setBytesSent(response.getBytesSent() + n);
 	}
 	if (response.getBytesSent() == response.getLenResponse())
-	{
 		return 2;
-	}
 	return 1;
 }
 
@@ -65,7 +55,7 @@ int sendResponse(int clientFd, Response &response)
 vector<pollfd> createSockAddr(const vector<ServerConfig> &server)
 {
 	//suggestion:change para name server to serverList for clarity
-	vector<pollfd>	listenFdsList;
+	vector<pollfd>	listenFds;
 	struct addrinfo *result;
 	//Outter for loop scans through serverList
 	for (size_t i = 0; i < server.size(); ++i)
@@ -115,13 +105,13 @@ vector<pollfd> createSockAddr(const vector<ServerConfig> &server)
 				close(listenFd.fd);
 				continue;
 			}
-			listenFdsList.push_back(listenFd);
+			listenFds.push_back(listenFd);
 			break;
 		}
 		//FIX:free occupying space from result as it is no longer needed
 		freeaddrinfo(result);
 	}
-	return (listenFdsList);
+	return (listenFds);
 }
 
 int server(const vector<ServerConfig> &servers)
@@ -131,18 +121,18 @@ int server(const vector<ServerConfig> &servers)
 	//eloop.fds holds the listening sockets, one per server block in the config. 
 	//They never receive request data and never send responses. 
 	//Their only job is to tell you that a new client is trying to connect.
-	eloop.setFds(createSockAddr(servers));
-	for (size_t i = 0; i < eloop.getFds().size(); i++)
+	eloop.setPfds(createSockAddr(servers));
+	for (size_t i = 0; i < eloop.getPfds().size(); i++)
 	{
-		if (listen(eloop.getFds()[i].fd, 10) != 0)
+		if (listen(eloop.getPfds()[i].fd, 10) != 0)
 		{
 			::perror("listen");
 			//FIX: this for loop closes all listen fds when there listen() fails
-			for (size_t j = 0; j < eloop.getFds().size(); j++)
-				close(eloop.getFds()[j].fd);
+			for (size_t j = 0; j < eloop.getPfds().size(); j++)
+				close(eloop.getPfds()[j].fd);
 			return (1);
 		}
 	}
-	return (eventLoop(eloop.getFds(), servers));
+	return (eventLoop(eloop.getPfds(), servers));
 }
 

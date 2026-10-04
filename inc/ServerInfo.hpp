@@ -11,13 +11,13 @@ using namespace std;
 class ServerInfo
 {
 	private:
-		vector<pollfd> _fds;
+		vector<pollfd> _pfds;
 		
 	public:
 		ServerInfo();
 		~ServerInfo();
 		map<int, Client> clients;
-		void setFds(vector<pollfd> setFds);
-		vector<pollfd> &getFds();
+		void setPfds(vector<pollfd> setPfds);
+		vector<pollfd> &getPfds();
 		Client &getClient();
 };

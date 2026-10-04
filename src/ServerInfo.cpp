@@ -4,12 +4,12 @@ ServerInfo::ServerInfo(){}
 
 ServerInfo::~ServerInfo(){}
 
-void ServerInfo::setFds(vector<pollfd> setFds)
+void ServerInfo::setPfds(vector<pollfd> setPfds)
 {
-	_fds = setFds;
+	_pfds = setPfds;
 }
 
-vector<pollfd> &ServerInfo::getFds()
+vector<pollfd> &ServerInfo::getPfds()
 {
-	return (_fds);
+	return (_pfds);
 }
