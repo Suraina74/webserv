@@ -1,4 +1,4 @@
-#include "Config.hpp"
+#include "../../inc/Config.hpp"
 #include <algorithm>
 
 void Config::parseLocPath(string& val, Location& loc, int lineNum)

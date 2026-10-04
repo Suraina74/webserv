@@ -1,8 +1,10 @@
 #include "../inc/Request.hpp"
 
-bool Request::validateRequestLine(){
+bool Request::validateRequestLine()
+{
 	// Nog wel kijken welke html pages allowed zijn volgens config file.
-	if ((Method == "GET" || Method == "POST") && Path != "www/index.html" && Path != "www/uploads.html"){
+	if ((Method == "GET" || Method == "POST") && Path != "www/index.html" && Path != "www/uploads.html")
+	{
 		Path = "www/404.html";
 		statusCode = PageNotFound;
 		return false;
@@ -12,51 +14,60 @@ bool Request::validateRequestLine(){
 	// If server does implement the method, but according to the config file the method is not allowed for a specific HTML page. Then 405 Method Not Allowed.
 	// Methods mogen alleen bestaan uit bepaalde karakters. A-Z a-z 0-9 ! # $ % & ' * + - . ^ _ ` | ~
 	// Method must contain at least one character.
-	if (Method != "GET" && Method != "DELETE" && Method != "POST"){
+	if (Method != "GET" && Method != "DELETE" && Method != "POST")
+	{
 		statusCode = NotImplemented;
 		return false;
 	}
-	if (Protocol != "HTTP/1.1"){
+	if (Protocol != "HTTP/1.1")
+	{
 		statusCode = HTTPVersionNotSupported;
 		return false;
 	}
 	return true;
 }
 
-bool Request::parseRequestLine(){
+bool Request::parseRequestLine()
+{
 	size_t endOfRequestLine = requestTillHeaders.find("\r\n"); // CRLF is: carriage return(\r) line feed (\n)
-	if (endOfRequestLine == std::string::npos){
+	if (endOfRequestLine == std::string::npos)
+	{
 		statusCode = BadRequest;
 		return false;
 	}
 	requestLine = requestTillHeaders.substr(0, endOfRequestLine);
 	// Check if max request line size is given in config file, anders wordt datgene waarmee moet worden compared die value van de config file.
 	size_t lenRL = requestLine.length();
-	if (lenRL >= MAX_REQUEST_LINE){
+	if (lenRL >= MAX_REQUEST_LINE)
+	{
 		statusCode = URITooLong;
 		return false;
 	}
 	std::stringstream ss(requestLine);
 	std::string word;
 	int amountWords = 0;
-	while (ss >> word){
+	while (ss >> word)
 		amountWords++;
-	}
-	if (amountWords != 3){
+	if (amountWords != 3)
+	{
 		statusCode = BadRequest;
 		return false;
 	}
 	int spaces = 0;
-	for (size_t i = 0; i < requestLine.size(); i++){
-		if(isspace(requestLine[i])){
-			if (requestLine[i] != ' '){
+	for (size_t i = 0; i < requestLine.size(); i++)
+	{
+		if(isspace(requestLine[i]))
+		{
+			if (requestLine[i] != ' ')
+			{
 				statusCode = BadRequest;
 				return false;
 			}
 			spaces++;
 		}
 	}
-	if (spaces != 2){
+	if (spaces != 2)
+	{
 		statusCode = BadRequest;
 		return false;
 	}
@@ -65,11 +76,9 @@ bool Request::parseRequestLine(){
 	ss.str(requestLine);
 	ss >> Method >> Path >> Protocol;
 	Path = "www" + Path;
-	if (Path == "www/"){
+	if (Path == "www/")
 		Path = "www/index.html";
-	}
-	if (validateRequestLine() == false){
+	if (validateRequestLine() == false)
 		return false;
-	}
 	return true;
 }

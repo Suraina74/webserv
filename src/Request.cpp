@@ -6,162 +6,171 @@
 // Kijken of filename niet leeg is..
 // Kijken of alle lines in request eindigen met /r/n. if /r see if next is /n.
 
-bool checkIfHex(std::string chunkSize){
-	for (size_t i = 0; i < chunkSize.length(); i++){
-		if (!isxdigit(chunkSize[i])){
+bool checkIfHex(string chunkSize)
+{
+	for (size_t i = 0; i < chunkSize.length(); i++)
+	{
+		if (!isxdigit(chunkSize[i]))
 			return false;
-		}
 	}
 	return true;
 }
 
-void Request::extractChunkedBody(){
+void Request::extractChunkedBody()
+{
 	size_t startBody = fullRequest.find("\r\n\r\n") + 4;
-	if (startBody == std::string::npos){
+	if (startBody == string::npos)
 		statusCode = BadRequest;
-	}
 	size_t endBody = fullRequest.find("0\r\n\r\n");
-	if (endBody == std::string::npos){
+	if (endBody == string::npos)
 		statusCode = BadRequest;
-	}
 	endBody += 1;
-	std::string chunkedBody = fullRequest.substr(startBody, endBody - startBody);
+	string chunkedBody = fullRequest.substr(startBody, endBody - startBody);
 	int start = 0;
-	std::string part{};
+	string part{};
 	size_t allChunkSizes{};
 	while (1){
 		int end = chunkedBody.find("\r\n", start);
-		std::string chunkSizeString = chunkedBody.substr(start, end - start);
+		string chunkSizeString = chunkedBody.substr(start, end - start);
 		// Check if the chunksizestring consists of characters that are allowed as hex:
-		if (checkIfHex(chunkSizeString) == false){
+		if (checkIfHex(chunkSizeString) == false)
+		{
 			statusCode = BadRequest;
 			return ;
 		}
-		std::stringstream ss(chunkSizeString);
+		stringstream ss(chunkSizeString);
 		size_t chunkSize{};
-		ss >> std::hex >> chunkSize;
+		ss >> hex >> chunkSize;
 		ss.str("");
 		ss.clear();
 		allChunkSizes += chunkSize;
-		if (allChunkSizes > bytesRead){
+		if (allChunkSizes > bytesRead)
+		{
 			statusCode = BadRequest;
 			break ;
 		}
-		if (chunkSize != 0){
+		if (chunkSize != 0)
+		{
 			part = chunkedBody.substr((end + 2), chunkSize);
 			Body += part;
 			start = end + 2 + chunkSize + 2;
 		}
-		else{
+		else
 			break;
-		}
 	}
 }
 
-void Request::extractBody(){
+void Request::extractBody()
+{
 	size_t startBody = fullRequest.find("\r\n\r\n");
-	if (startBody == std::string::npos){
+	if (startBody == string::npos)
 		statusCode = BadRequest;
-	}
 	startBody += 4;
 	Body = fullRequest.substr(startBody, contentLength);
 }
 
-bool checkIfDoubles(map<std::string, std::string> map){
+bool checkIfDoubles(map<string, string> map)
+{
 	int countCD = 0;
 	int countCT = 0;
-	for (auto it = map.begin(); it != map.end(); it++){
-		if (it->first == "content-disposition"){
+	for (auto it = map.begin(); it != map.end(); it++)
+	{
+		if (it->first == "content-disposition")
 			countCD++;
-		}
-		else if (it->first == "content-type"){
+		else if (it->first == "content-type")
 			countCT++;
-		}
 	}
-	if (countCD > 1 || countCT > 1){
+	if (countCD > 1 || countCT > 1)
 		return false;
-	}
 	return true;
 }
 
 void Request::validateBody(){
 	size_t pos = Body.find(boundary + "\r\n");
-	if (pos == std::string::npos || pos != 0){
+	if (pos == string::npos || pos != 0)
+	{
 		statusCode = BadRequest;
 		return;
 	}
 	size_t start = boundary.length() + 2;
 	size_t blankLine = Body.find("\r\n\r\n");
-	if (blankLine == std::string::npos){
+	if (blankLine == string::npos)
+	{
 		statusCode = BadRequest;
 		return;
 	}
-	std::string key, value;
-	while (1){
+	string key, value;
+	while (1)
+	{
 		size_t end = Body.find("\r\n", start);
-		std::string partHeader = Body.substr(start, end - start);
+		string partHeader = Body.substr(start, end - start);
 		size_t colon = partHeader.find(':');
-		if (colon == std::string::npos){
+		if (colon == string::npos)
+		{
 			statusCode = BadRequest;
 			return;
 		}
 		key = partHeader.substr(0, colon);
-		if (actionsOnKey(key) == false){
+		if (actionsOnKey(key) == false)
 			return;
-		}
 		value = partHeader.substr(colon + 1, partHeader.length() - key.length() + 1);
-		if (actionsOnValue(value) == false){
+		if (actionsOnValue(value) == false)
 			return;
-		}
 		partHeaderMap.insert({key, value});
 		start = end + 2;
-		if (end == blankLine){
+		if (end == blankLine)
 			break;
-		}
 	}
 	auto it = partHeaderMap.find("content-disposition");
-	if (it == partHeaderMap.end()){
+	if (it == partHeaderMap.end())
+	{
 		statusCode = BadRequest;
 		return;
 	}
-	std::string valueCT = it->second;
-	std::string part{};
-	vector<std::string> contentDisVector{};
+	string valueCT = it->second;
+	string part{};
+	vector<string> contentDisVector{};
 	stringstream ss(valueCT);
-	while (getline(ss, part, ';')){
+	while (getline(ss, part, ';'))
+	{
 		size_t findNotSpace;
-		if (part[0] == ' '){
+		if (part[0] == ' ')
+		{
 			findNotSpace = part.find_first_not_of(' ');
 			part.erase(0, findNotSpace);
 		}
-		if (part[part.length() - 1] == ' '){
+		if (part[part.length() - 1] == ' ')
+		{
 			findNotSpace = part.find_last_not_of(' ');
 			part.erase(findNotSpace + 1);
-	}
+		}
 		contentDisVector.push_back(part);
 	}
 	// Kijken of form-data op 1e plek zit.
-	if (contentDisVector[0] != "form-data"){
+	if (contentDisVector[0] != "form-data")
+	{
 		statusCode = BadRequest;
 		return ;
 	}
-	for (size_t it = 0; it < contentDisVector.size(); it++){
+	for (size_t it = 0; it < contentDisVector.size(); it++)
+	{
 		part = contentDisVector[it];
-		if (part.find('=') == std::string::npos){
+		if (part.find('=') == string::npos)
+		{
 			// Key lower case maken.
-			for (size_t i = 0; i < part.length(); i++){
+			for (size_t i = 0; i < part.length(); i++)
 				part[i] = std::tolower(part[i]);
-			}
 			contentDisposMap.insert({part, ""});
 		}
-		else{
+		else
+		{
 			size_t equalSign = part.find('=');
 			key = part.substr(0, equalSign);
 			// Key lower case maken.
-			for (size_t i = 0; i < key.length(); i++){
+			for (size_t i = 0; i < key.length(); i++)
 				key[i] = std::tolower(key[i]);
-			}
-			if (part[equalSign + 1] == '"' && part.back() == '"'){
+			if (part[equalSign + 1] == '"' && part.back() == '"')
+			{
 				part.erase(0, 1);
 				part.pop_back();
 			}
@@ -171,7 +180,8 @@ void Request::validateBody(){
 		}
 	}
 	auto itName = contentDisposMap.find("name");
-	if (itName == contentDisposMap.end()){
+	if (itName == contentDisposMap.end())
+	{
 		statusCode = BadRequest;
 		return ;
 	}
@@ -184,16 +194,16 @@ void Request::validateBody(){
 	// Must have form-data and name in it.
 
 	// size_t locName = valueCT.find("name");
-	// if (locName == std::string::npos){
+	// if (locName == string::npos){
 	// 	statusCode = BadRequest;
 	// 	return;	
 	// }
 	// size_t locSemicolon = valueCT.find(';', locName);
-	// if (locSemicolon == std::string::npos){
+	// if (locSemicolon == string::npos){
 	// 	statusCode = BadRequest;
 	// 	return;
 	// }
-	// std::string name = valueCT.substr(locName, locSemicolon - locName);
+	// string name = valueCT.substr(locName, locSemicolon - locName);
 	if (checkIfDoubles(partHeaderMap) == false){
 		statusCode = BadRequest;
 		return;
@@ -203,77 +213,85 @@ void Request::validateBody(){
 	// }
 }
 
-void Request::parseBody(){
-	if (contentLength && statusCode == OK){
+void Request::parseBody()
+{
+	if (contentLength && statusCode == OK)
+	{
 		extractBody();
 		statusText = setStatusText(statusCode);
-		if (statusCode == OK){
+		if (statusCode == OK)
+		{
 			validateBody();
 			statusText = setStatusText(statusCode);
 		}
 	}
-	else if (chunked == true && statusCode == OK){
+	else if (chunked == true && statusCode == OK)
+	{
 		extractChunkedBody();
 		statusText = setStatusText(statusCode);
-		if (statusCode == OK){
+		if (statusCode == OK)
+		{
 			validateBody();
 			statusText = setStatusText(statusCode);
 		}
 	}
 }
 
-void Request::extractFileElements(){
+void Request::extractFileElements()
+{
 	size_t startFilename = Body.find("filename=\"");
-	if (startFilename == std::string::npos){
+	if (startFilename == string::npos)
 		statusCode = BadRequest;
-	}
 	startFilename += 10;
 	size_t endFilename = Body.find('\"', startFilename);
-	if (endFilename == std::string::npos){
+	if (endFilename == string::npos)
 		statusCode = BadRequest;
-	}
 	fileName = Body.substr(startFilename, (endFilename - startFilename));
 	size_t startOfFileContent = Body.find("\r\n\r\n");
-	if (startOfFileContent == std::string::npos){
+	if (startOfFileContent == string::npos)
 		statusCode = BadRequest;
-	}
 	startOfFileContent += 4;
 	size_t endOfFileContent = Body.find("\r\n" + boundary + "--");
-	if (endOfFileContent == std::string::npos){
+	if (endOfFileContent == string::npos)
 		statusCode = BadRequest;
-	}
 	fileContent = Body.substr(startOfFileContent, endOfFileContent - startOfFileContent);
 }
 
-void Request::addFile(){
+void Request::addFile()
+{
 	// Vanuit config halen waar files moeten worden opgeslagen.
-	std::string uploadPlace = "www/uploads/" + fileName;
+	string uploadPlace = "www/uploads/" + fileName;
 	std::ofstream file(uploadPlace, std::ios::binary);
 	file << fileContent;
 	file.close();
 }
 
-void Request::postAndDelete(){
-	if (Method == "POST" && statusCode == OK){
+void Request::postAndDelete()
+{
+	if (Method == "POST" && statusCode == OK)
+	{
 		extractFileElements();
 		statusText = setStatusText(statusCode);
-		if (statusCode == OK){
+		if (statusCode == OK)
 			addFile();
-		}
 	}
-	if (Method == "DELETE" && statusCode == OK){ //  curl -X DELETE localhost:8080/uploads/cat.png;
-		std::string uploadPlace = Path;
+	if (Method == "DELETE" && statusCode == OK)
+	{ //  curl -X DELETE localhost:8080/uploads/cat.png;
+		string uploadPlace = Path;
 		const char *cUploadPlace = uploadPlace.c_str();
 		int status = remove(cUploadPlace);
-		if (status != 0) {
+		if (status != 0) 
+		{
         	statusCode = BadRequest;
 			statusText = setStatusText(statusCode);
 		}
 	}
 }
 
-std::string Request::setStatusText(httpStatus status){
-	switch (status){
+string Request::setStatusText(httpStatus status)
+{
+	switch (status)
+	{
 		case OK:
 			return "200 OK";
 		case BadRequest:
@@ -301,50 +319,63 @@ std::string Request::setStatusText(httpStatus status){
 	}
 }
 
-void Request::setRequest(std::string request){
+void Request::setRequest(string request)
+{
 	fullRequest = request;
 }
 
-void Request::setBytesRead(size_t bytes){
+void Request::setBytesRead(size_t bytes)
+{
 	bytesRead = bytes;
 }
 
-void Request::setHeaderBytes(size_t bytes){
+void Request::setHeaderBytes(size_t bytes)
+{
 	headerBytes = bytes;
 }
 
-size_t Request::getContentLength(){
+size_t Request::getContentLength()
+{
 	return contentLength;
 }
-std::string Request::getPath(){
+string Request::getPath()
+{
 	return Path;
 }
-std::string Request::getMethod(){
+string Request::getMethod()
+{
 	return Method;
 }
-httpStatus Request::getStatusCode(){
+httpStatus Request::getStatusCode()
+{
 	return statusCode;
 }
-std::string Request::getStatusText(){
+string Request::getStatusText()
+{
 	return statusText;
 }
 
-std::string Request::getFullRequest(){
+string Request::getFullRequest()
+{
 	return fullRequest;
 }
 
-std::string Request::getRequestTillHeaders(){
+string Request::getRequestTillHeaders()
+{
 	return requestTillHeaders;
 }
 
-size_t Request::getBytesRead(){
+size_t Request::getBytesRead()
+{
 	return bytesRead;
 }
 
-size_t Request::getHeaderBytes(){
+size_t Request::getHeaderBytes()
+{
 	return headerBytes;
 }
 
-bool Request::getChunked(){
+bool Request::getChunked()
+{
 	return chunked;
 }

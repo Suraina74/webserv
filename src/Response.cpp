@@ -4,7 +4,8 @@ int Response::composeResponse()
 {
 	statusLine = statusLine + " " + request.getStatusText() + "\r\n";
 	size_t bytesRead = 0;
-	if (request.getStatusCode() != OK && request.getStatusCode() != PageNotFound){
+	if (request.getStatusCode() != OK && request.getStatusCode() != PageNotFound)
+	{
 		body = R"(
 			<!DOCTYPE html>
 			<html lang="en">
@@ -31,7 +32,8 @@ int Response::composeResponse()
 			)";
 			bytesRead = body.size();
 		}
-	else{
+	else
+	{
 		std::string path = request.getPath();
 		const char *cPath = path.c_str();
 		int fd = open(cPath, O_RDONLY);
@@ -62,19 +64,23 @@ int Response::composeResponse()
 	return 0;
 }
 
-void Response::setRequest(Request r){
+void Response::setRequest(Request r)
+{
 	request = r;
 }
 
-void Response::setCString(const char* cString){
+void Response::setCString(const char* cString)
+{
 	cFullResponse = cString;
 }
 
-void Response::setLenResponse(int length){
+void Response::setLenResponse(int length)
+{
 	lenResponse = length;
 }
 
-void Response::setBytesSent(int bytes){
+void Response::setBytesSent(int bytes)
+{
 	bytesSent = bytes;
 }
 
@@ -83,7 +89,8 @@ std::string Response::getFullResponse()
 	return fullResponse;
 }
 
-const char* Response::getCFullResponse(){
+const char* Response::getCFullResponse()
+{
 	return cFullResponse;
 }
 
@@ -92,6 +99,7 @@ int Response::getLenResponse()
 	return lenResponse;
 }
 
-int Response::getBytesSent(){
+int Response::getBytesSent()
+{
 	return bytesSent;
 }

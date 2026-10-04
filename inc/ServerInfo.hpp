@@ -2,7 +2,7 @@
 #include <poll.h>
 #include <vector>
 #include <iostream>
-#include "../src/configParser/ServerConfig.hpp"
+#include "ServerConfig.hpp"
 #include "Client.hpp"
 #define TIMEOUT 60
 
