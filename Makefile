@@ -31,6 +31,7 @@ CC = c++
 FLAGS = -Wall -Wextra -Werror -g -std=c++11
 
 SRC =	src/main.cpp \
+		src/setServer.cpp \
 		src/Request.cpp \
 		src/parseRL.cpp \
 		src/parseHeaders.cpp \

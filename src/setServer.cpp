@@ -1,13 +1,4 @@
-#include "configParser/ServerConfig.hpp"
-#include "../inc/ServerInfo.hpp"
-#include "../inc/Request.hpp"
-#include "../inc/Response.hpp"
-#include "../inc/Client.hpp"
-#include <cstring>
-#include <sys/socket.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+#include "../inc/main.hpp"
 
 int receiveRequest(int clientFd, Request &request)
 {
@@ -84,13 +75,13 @@ int eventLoop(const vector<pollfd> &fds, const vector<ServerConfig> &servers)
 		listen_socket.fd = fds[i].fd;
 		listen_socket.events = POLLIN;
 		listen_socket.revents = 0;
-		serverData.getFd().push_back(listen_socket);
+		serverData.getFds().push_back(listen_socket);
 	}
 	while (1)
 	{
 		pollfd client_pfd;
-		size_t nfds = serverData.getFd().size();
-		int ready = poll(serverData.getFd().data(), nfds, TIMEOUT);
+		size_t nfds = serverData.getFds().size();
+		int ready = poll(serverData.getFds().data(), nfds, TIMEOUT);
 
 		if (ready == -1)
 		{
@@ -102,7 +93,7 @@ int eventLoop(const vector<pollfd> &fds, const vector<ServerConfig> &servers)
 			// i keeps index of listening sock
 			if (i < fds.size())
 			{
-				if (serverData.getFd()[i].revents & POLLIN)
+				if (serverData.getFds()[i].revents & POLLIN)
 				{
 					client_pfd.fd = accept(fds[i].fd, NULL, NULL);
 					if (client_pfd.fd == -1)
@@ -112,7 +103,7 @@ int eventLoop(const vector<pollfd> &fds, const vector<ServerConfig> &servers)
 					}
 					client_pfd.events = POLLIN;
 					client_pfd.revents = 0;
-					serverData.getFd().push_back(client_pfd);
+					serverData.getFds().push_back(client_pfd);
 					Client client(client_pfd.fd, &servers[0], request, response);
 					clients.push_back(client);
 					nfds++;
@@ -120,14 +111,14 @@ int eventLoop(const vector<pollfd> &fds, const vector<ServerConfig> &servers)
 				continue;
 			}
 			// client fds
-			if ((serverData.getFd()[i].revents & POLLIN))
+			if ((serverData.getFds()[i].revents & POLLIN))
 			{
-				int returnValue = receiveRequest(serverData.getFd()[i].fd, clients[i - fds.size()].getRequest());
+				int returnValue = receiveRequest(serverData.getFds()[i].fd, clients[i - fds.size()].getRequest());
 				if (returnValue == -1 || returnValue == 0)
 				{
 					clients.erase(clients.begin() + i - fds.size());
-					close(serverData.getFd()[i].fd);
-					serverData.getFd().erase(serverData.getFd().begin() + i);
+					close(serverData.getFds()[i].fd);
+					serverData.getFds().erase(serverData.getFds().begin() + i);
 					nfds--;
 					i--;
 					continue;
@@ -137,18 +128,18 @@ int eventLoop(const vector<pollfd> &fds, const vector<ServerConfig> &servers)
 					clients[i - fds.size()].getRequest().parseBody();
 					clients[i - fds.size()].getRequest().postAndDelete();
 					//  check request against config file. To see what server (check host header) applies and what location applies.
-					serverData.getFd()[i].events = POLLOUT;
+					serverData.getFds()[i].events = POLLOUT;
 				}
 			}
-			else if (serverData.getFd()[i].revents & POLLOUT)
+			else if (serverData.getFds()[i].revents & POLLOUT)
 			{
 				clients[i - fds.size()].getResponse().setRequest(clients[i - fds.size()].getRequest());
-				int returnValue = sendResponse(serverData.getFd()[i].fd, clients[i - fds.size()].getResponse());
+				int returnValue = sendResponse(serverData.getFds()[i].fd, clients[i - fds.size()].getResponse());
 				if (returnValue == 0 || returnValue == -1)
 				{
 					clients.erase(clients.begin() + i - fds.size());
-					close(serverData.getFd()[i].fd);
-					serverData.getFd().erase(serverData.getFd().begin() + i);
+					close(serverData.getFds()[i].fd);
+					serverData.getFds().erase(serverData.getFds().begin() + i);
 					nfds--;
 					i--;
 					continue;
@@ -156,8 +147,8 @@ int eventLoop(const vector<pollfd> &fds, const vector<ServerConfig> &servers)
 				else if (returnValue == 2)
 				{
 					clients.erase(clients.begin() + i - fds.size());
-					close(serverData.getFd()[i].fd);
-					serverData.getFd().erase(serverData.getFd().begin() + i);
+					close(serverData.getFds()[i].fd);
+					serverData.getFds().erase(serverData.getFds().begin() + i);
 					nfds--;
 					i--;
 				}
@@ -238,18 +229,18 @@ int server(const vector<ServerConfig> &servers)
 	//eloop.fds holds the listening sockets, one per server block in the config. 
 	//They never receive request data and never send responses. 
 	//Their only job is to tell you that a new client is trying to connect.
-	eloop.fds = createSockAddr(servers);
-	for (size_t i = 0; i < eloop.fds.size(); i++)
+	eloop.setFds(createSockAddr(servers));
+	for (size_t i = 0; i < eloop.getFds().size(); i++)
 	{
-		if (listen(eloop.getFd()[i].fd, 10) != 0)
+		if (listen(eloop.getFds()[i].fd, 10) != 0)
 		{
 			::perror("listen");
 			//FIX: this for loop closes all listen fds when there listen() fails
-			for (size_t j = 0; j < eloop.fds.size(); j++)
-				close(eloop.fds[j].fd);
+			for (size_t j = 0; j < eloop.getFds().size(); j++)
+				close(eloop.getFds()[j].fd);
 			return (1);
 		}
 	}
-	return (eventLoop(eloop.getFd(), servers));
+	return (eventLoop(eloop.getFds(), servers));
 }
 

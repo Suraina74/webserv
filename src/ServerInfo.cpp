@@ -4,7 +4,7 @@ ServerInfo::ServerInfo(){}
 
 ServerInfo::~ServerInfo(){}
 
-void ServerInfo::setFd(vector<pollfd> setFds)
+void ServerInfo::setFds(vector<pollfd> setFds)
 {
 	_fds = setFds;
 }

@@ -17,8 +17,7 @@ class ServerInfo
 		ServerInfo();
 		~ServerInfo();
 		map<int, Client> clients;
-		void setFd(vector<pollfd> setFds);
+		void setFds(vector<pollfd> setFds);
 		vector<pollfd> &getFds();
 		Client &getClient();
 };
-
