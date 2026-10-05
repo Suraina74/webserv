@@ -16,6 +16,7 @@ class Response
 		int         lenResponse{};
 		const char* cFullResponse{};
 		int         bytesSent{};
+
 	public:
 		Response(){}
 		~Response(){}

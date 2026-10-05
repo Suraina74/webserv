@@ -34,11 +34,11 @@ public:
 	void addLocation(const Location &loc);
 
 	int getPort() const;
-	const string &getHost() const;
-	const string &getRoot() const;
-	const string &getIndex() const;
-	const string &getServerName() const;
-	const size_t &getBodySize() const;
-	const map<int, string> &getErrPages() const;
+	const string& getHost() const;
+	const string& getRoot() const;
+	const string& getIndex() const;
+	const string& getServerName() const;
+	const size_t& getBodySize() const;
+	const map<int, string>& getErrPages() const;
 	const vector<Location>& getLocations() const;
 };

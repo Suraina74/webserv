@@ -17,7 +17,7 @@ class Client
 		Client();
 		Client(int fd, const ServerConfig *server, Request request, Response response);
 		~Client();
-		int				getClientFd();
+		int					getClientFd();
 		const ServerConfig& getClientServer();
 		Request& 			getRequest();
 		Response&			getResponse();

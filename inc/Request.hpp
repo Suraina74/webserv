@@ -11,10 +11,11 @@
 #include <cctype>
 #include <unordered_map>
 
-constexpr std::size_t MAX_REQUEST_LINE = 8192;
+constexpr size_t MAX_REQUEST_LINE = 8192;
 // Max Body size
-
-enum httpStatus{
+using namespace std;
+enum httpStatus
+{
 	OK = 200,
 	BadRequest = 400,
 	PageNotFound = 404,
@@ -32,25 +33,25 @@ enum httpStatus{
 class Request
 {
 	private:
-		std::string fullRequest{};
-		std::string requestTillHeaders{};
+		string fullRequest{};
+		string requestTillHeaders{};
 		size_t 	headerBytes{};
-		std::string partialRequest{};
+		string partialRequest{};
 		size_t     bytesRead{};
-		std::string	requestLine{};
-		std::string Method{};
-		std::string Protocol{};
-		std::string Path{};
-		std::unordered_multimap<std::string, std::string> headerMap{};
+		string	requestLine{};
+		string Method{};
+		string Protocol{};
+		string Path{};
+		unordered_multimap<string, string> headerMap{};
 		size_t		contentLength{};
 		bool		chunked = false;
-		std::string	boundary{};
-		std::string	statusText = "200 OK";
-		std::string	Body{};
-		std::map<std::string, std::string> partHeaderMap{};
-		unordered_multimap<std::string, std::string> contentDisposMap{};
-		std::string fileName{};
-		std::string fileContent{};
+		string	boundary{};
+		string	statusText = "200 OK";
+		string	Body{};
+		map<string, string> partHeaderMap{};
+		unordered_multimap<string, string> contentDisposMap{};
+		string fileName{};
+		string fileContent{};
 		httpStatus  statusCode = OK;
 
 	public:
@@ -61,9 +62,9 @@ class Request
 		bool parseUntilHeaders(string hString);
 		bool parseHeaders();
 		bool validateHeaders();
-		bool actionsOnKey(std::string& key);
-		bool allowedCharsInKey(std::string key);
-		bool actionsOnValue(std::string& value);
+		bool actionsOnKey(string& key);
+		bool allowedCharsInKey(string key);
+		bool actionsOnValue(string& value);
 		bool checkPostHeaders();
 		bool checkContentType();
 		void parseBody();
@@ -74,18 +75,18 @@ class Request
 		void extractFileElements();
 		void addFile();
 
-		std::string setStatusText(httpStatus status);
-		void setRequest(std::string request);
+		string setStatusText(httpStatus status);
+		void setRequest(string request);
 		void setBytesRead(size_t bytes);
 		void setHeaderBytes(size_t bytes);
 
 		size_t getContentLength();
-		std::string getPath();
-		std::string getMethod();
+		string getPath();
+		string getMethod();
 		httpStatus  getStatusCode();
-		std::string getStatusText();
-		std::string getFullRequest();
-		std::string getRequestTillHeaders();
+		string getStatusText();
+		string getFullRequest();
+		string getRequestTillHeaders();
 		size_t getHeaderBytes();
 		size_t getBytesRead();
 		bool getChunked();

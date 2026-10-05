@@ -34,7 +34,7 @@ int Response::composeResponse()
 		}
 	else
 	{
-		std::string path = request.getPath();
+		string path = request.getPath();
 		const char *cPath = path.c_str();
 		int fd = open(cPath, O_RDONLY);
 		char buffer[2048];
@@ -43,23 +43,23 @@ int Response::composeResponse()
 			bytesRead = read(fd, buffer, sizeof(buffer));
 			if (bytesRead > 0)
 			{
-				std::string htmlPage(buffer, bytesRead);
+				string htmlPage(buffer, bytesRead);
 				body = htmlPage;
 			}
 			else
 			{
-				std::cout << "error" << std::endl;
+				cout << "error" << endl;
 				return 1;
 			}
 			close(fd);
 		}
 	}
-	std::string sizeOfBody;
-	std::stringstream ss;
+	string sizeOfBody;
+	stringstream ss;
 	ss << bytesRead;
 	ss >> sizeOfBody;
 	contentLength = contentLength + sizeOfBody + "\r\n";
-	std::string connection = "Connection: close\r\n\r\n";
+	string connection = "Connection: close\r\n\r\n";
 	fullResponse = statusLine + contentType + contentLength + connection + body;
 	return 0;
 }
@@ -84,7 +84,7 @@ void Response::setBytesSent(int bytes)
 	bytesSent = bytes;
 }
 
-std::string Response::getFullResponse()
+string Response::getFullResponse()
 {
 	return fullResponse;
 }

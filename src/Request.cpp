@@ -159,7 +159,7 @@ void Request::validateBody(){
 		{
 			// Key lower case maken.
 			for (size_t i = 0; i < part.length(); i++)
-				part[i] = std::tolower(part[i]);
+				part[i] = tolower(part[i]);
 			contentDisposMap.insert({part, ""});
 		}
 		else
@@ -168,7 +168,7 @@ void Request::validateBody(){
 			key = part.substr(0, equalSign);
 			// Key lower case maken.
 			for (size_t i = 0; i < key.length(); i++)
-				key[i] = std::tolower(key[i]);
+				key[i] = tolower(key[i]);
 			if (part[equalSign + 1] == '"' && part.back() == '"')
 			{
 				part.erase(0, 1);
@@ -261,7 +261,7 @@ void Request::addFile()
 {
 	// Vanuit config halen waar files moeten worden opgeslagen.
 	string uploadPlace = "www/uploads/" + fileName;
-	std::ofstream file(uploadPlace, std::ios::binary);
+	ofstream file(uploadPlace, ios::binary);
 	file << fileContent;
 	file.close();
 }

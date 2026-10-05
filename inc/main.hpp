@@ -14,7 +14,7 @@ using namespace std;
 
 int sendResponse(int clientFd, Response &response);
 int receiveRequest(int clientFd, Request &request);
-int eventLoop(const vector<pollfd> &fds, const vector<ServerConfig> &servers);
-vector<pollfd> createSockAddr(const vector<ServerConfig> &server);
+int eventLoop(ServerInfo &eloop);
+void createSockAddr(const vector<ServerConfig> &server, ServerInfo &eloop);
 int server(const vector<ServerConfig> &servers);
 

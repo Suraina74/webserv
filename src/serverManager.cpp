@@ -1,5 +1,10 @@
 #include "../inc/main.hpp"
 
+//return values:
+//-1 = recv() failed, close the client
+// 0 = client closed the connection, close the client
+// 1 = request not complete yet, keep reading on the next POLLIN
+// 2 = request complete (or header parse failed, error is in statusCode), switch to POLLOUT
 int receiveRequest(int clientFd, Request &request)
 {
 	char buffer[2048];
@@ -7,26 +12,31 @@ int receiveRequest(int clientFd, Request &request)
 	if (n == -1)
 	{
 		::perror("recv");
-		return -1;
+		return -1;	//recv error
 	}
 	else if (n == 0)
-		return 0;
+		return 0;	//client closed the connection
 	request.setBytesRead(request.getBytesRead() + n);
 	std::string part(buffer, n);
 	request.setRequest(request.getFullRequest() + part);
 	if (request.getFullRequest().find("\r\n\r\n") != std::string::npos && request.getHeaderBytes() == 0)
 	{
 		if ((request.parseUntilHeaders(request.getFullRequest())) == false)
-			return 2;
+			return 2;	//bad headers, stop reading and send the error response
 		request.setHeaderBytes(request.getRequestTillHeaders().size());
 	}
 	if (request.getChunked() == true && request.getFullRequest().find("0\r\n\r\n") != std::string::npos)
-		return 2;
+		return 2;	//last chunk received, request complete
 	else if (request.getBytesRead() == request.getHeaderBytes() + request.getContentLength())
-		return 2;
-	return 1;
+		return 2;	//headers + full body received, request complete
+	return 1;	//request incomplete, wait for more data
 }
 
+//return values:
+//-1 = send() failed, close the client
+// 0 = nothing was sent, close the client
+// 1 = response partly sent, send the rest on the next POLLOUT
+// 2 = response fully sent, close the client (Connection: close)
 int sendResponse(int clientFd, Response &response)
 {
 	response.composeResponse();
@@ -39,23 +49,22 @@ int sendResponse(int clientFd, Response &response)
 		if (n == -1)
 		{
 			::perror("send");
-			return -1;
+			return -1;	//send error
 		}
 		else if (n == 0)
-			return 0;
+			return 0;	//nothing sent
 		response.setBytesSent(response.getBytesSent() + n);
 	}
 	if (response.getBytesSent() == response.getLenResponse())
-		return 2;
-	return 1;
+		return 2;	//whole response sent
+	return 1;	//response partly sent, rest goes out on the next POLLOUT
 }
 
 //FIX: moved struct addrinfo *result; from ServerInfo class to local variable inside createSockAddr()
 //because it is just a assisting variable not needed elsewhere.
-vector<pollfd> createSockAddr(const vector<ServerConfig> &server)
+void createSockAddr(const vector<ServerConfig> &server, ServerInfo &eloop)
 {
 	//suggestion:change para name server to serverList for clarity
-	vector<pollfd>	listenFds;
 	struct addrinfo *result;
 	//Outter for loop scans through serverList
 	for (size_t i = 0; i < server.size(); ++i)
@@ -105,34 +114,37 @@ vector<pollfd> createSockAddr(const vector<ServerConfig> &server)
 				close(listenFd.fd);
 				continue;
 			}
-			listenFds.push_back(listenFd);
+			//remember which server block this listen fd belongs to
+			eloop.addListenFd(listenFd.fd, &server[i]);
 			break;
 		}
 		//FIX:free occupying space from result as it is no longer needed
 		freeaddrinfo(result);
 	}
-	return (listenFds);
 }
 
 int server(const vector<ServerConfig> &servers)
 {
 	ServerInfo eloop;
 
-	//eloop.fds holds the listening sockets, one per server block in the config. 
-	//They never receive request data and never send responses. 
+	//the listen fds go first in eloop's pfds, one per server block in the config.
+	//They never receive request data and never send responses.
 	//Their only job is to tell you that a new client is trying to connect.
-	eloop.setPfds(createSockAddr(servers));
-	for (size_t i = 0; i < eloop.getPfds().size(); i++)
+	createSockAddr(servers, eloop);
+	if (eloop.getListenCount() == 0)
+	{
+		cerr << "Error: no listening sockets could be created" << endl;
+		return (1);
+	}
+	for (size_t i = 0; i < eloop.getListenCount(); i++)
 	{
 		if (listen(eloop.getPfds()[i].fd, 10) != 0)
 		{
 			::perror("listen");
-			//FIX: this for loop closes all listen fds when there listen() fails
-			for (size_t j = 0; j < eloop.getPfds().size(); j++)
-				close(eloop.getPfds()[j].fd);
+			//FIX: closes all listen fds when listen() fails
+			eloop.closeAllFds();
 			return (1);
 		}
 	}
-	return (eventLoop(eloop.getPfds(), servers));
+	return (eventLoop(eloop));
 }
-
