@@ -6,11 +6,11 @@ class Response
 {
 	private:
 		Request 	request{};
-		std::string	statusLine = "HTTP/1.1";
-		std::string contentType = "Content-Type: text/html\r\n";
-		std::string contentLength = "Content-Length: ";
-		std::string body{};
-		std::string fullResponse{};
+		string	statusLine = "HTTP/1.1";
+		string contentType = "Content-Type: text/html\r\n";
+		string contentLength = "Content-Length: ";
+		string body{};
+		string fullResponse{};
 		int         lenResponse{};
 		const char* cFullResponse{};
 		int         bytesSent{};
@@ -24,7 +24,7 @@ class Response
 		void setCString(const char* cString);
 		void setBytesSent(int bytes);
 
-		std::string getFullResponse();
+		string getFullResponse();
 		const char* getCFullResponse();
 		int getLenResponse();
 		int getBytesSent();

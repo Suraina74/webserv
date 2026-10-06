@@ -49,7 +49,7 @@ void verifyNum(string sub, int lineNum)
 	{
 		octet = stoi(sub, &pos); 
 	}
-	catch(const std::exception& e)
+	catch(const exception& e)
 	{
     	throw runtime_error("Line " + to_string(lineNum) + ": Invalid octet number."); 
 	}

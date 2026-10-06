@@ -183,7 +183,7 @@ void Config::parse(const string &filename)
     	throw runtime_error("Config file contains no server block.");
 }
 
-const std::vector<ServerConfig>& Config::getServers() const
+const vector<ServerConfig>& Config::getServers() const
 {
 	return _servers;
 }

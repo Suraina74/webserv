@@ -34,6 +34,7 @@ SRC =	src/main.cpp \
 		src/Request.cpp \
 		src/parseRL.cpp \
 		src/parseHeaders.cpp \
+		src/parseBody.cpp \
 		src/Response.cpp \
 		src/ServerInfo.cpp \
 		src/Client.cpp \

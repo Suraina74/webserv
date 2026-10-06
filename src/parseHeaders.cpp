@@ -1,22 +1,22 @@
 #include "../inc/Request.hpp"
 
-bool Request::allowedCharsInKey(std::string key){
-	std::string allowedChars = "!#$%&'*+-.^_`|~";
+bool Request::allowedCharsInKey(string key){
+	string allowedChars = "!#$%&'*+-.^_`|~";
 	for (size_t i = 0; i < key.length(); i++){
 		if (!(key[i] >= 'a' && key[i] <= 'z') && !(key[i] >= 'A' && key[i] <= 'Z') \
-		&& !(key[i] >= '0' && key[i] <= '9') && allowedChars.find(key[i]) == std::string::npos){
+		&& !(key[i] >= '0' && key[i] <= '9') && allowedChars.find(key[i]) == string::npos){
 			return false;
 		}
 	}
 	return true;
 }
 
-bool Request::actionsOnKey(std::string& key){
+bool Request::actionsOnKey(string& key){
 	if (key.empty()){
 		statusCode = BadRequest;
 		return false;
 	}
-	if (key.find(' ') != std::string::npos){
+	if (key.find(' ') != string::npos){
 		statusCode = BadRequest;
 		return false;
 	}
@@ -26,12 +26,12 @@ bool Request::actionsOnKey(std::string& key){
 	}
 	// Normalize header name:
 	for (size_t i = 0; i < key.length(); i++){
-		key[i] = std::tolower(key[i]);
+		key[i] = tolower(key[i]);
 	}
 	return true;
 }
 
-bool Request::actionsOnValue(std::string& value){
+bool Request::actionsOnValue(string& value){
 	size_t findNotSpace;
 	if (value[0] == ' '){
 		findNotSpace = value.find_first_not_of(' ');
@@ -41,7 +41,7 @@ bool Request::actionsOnValue(std::string& value){
 		findNotSpace = value.find_last_not_of(' ');
 		value.erase(findNotSpace + 1); // delete everything from pos findNotSpace + 1 onwards.
 	}
-	if (value.find('\r') != std::string::npos || value.find('\n') != std::string::npos || value.find('\0') != std::string::npos){
+	if (value.find('\r') != string::npos || value.find('\n') != string::npos || value.find('\0') != string::npos){
 		statusCode = BadRequest;
 		return false;
 	}
@@ -60,10 +60,10 @@ bool Request::parseHeaders(){
 	int endLine = 0;
 	for (int i = 0; i < amountLines; i++){
 		endLine = requestTillHeaders.find("\r\n", startLine);
-		std::string line = requestTillHeaders.substr(startLine, endLine - startLine);
-		std::string key, value;
+		string line = requestTillHeaders.substr(startLine, endLine - startLine);
+		string key, value;
 		size_t findColon = line.find(':');
-		if (findColon == std::string::npos){
+		if (findColon == string::npos){
 			statusCode = BadRequest;
 			return false;
 		}
@@ -81,7 +81,7 @@ bool Request::parseHeaders(){
 	return true;
 }
 
-bool checkIfDoubles(std::string headerName, unordered_multimap<std::string, std::string> map){
+bool checkIfDoubleHeader(string headerName, unordered_multimap<string, string> map){
 	int count = 0;
 	for (auto it = map.begin(); it != map.end(); it++){
 		if (it->first == headerName){
@@ -94,8 +94,8 @@ bool checkIfDoubles(std::string headerName, unordered_multimap<std::string, std:
 	return true;
 }
 
-bool validateBoundary(std::string boundary){
-	std::string allowedChars = "()'+_,-./:=? ";
+bool validateBoundary(string boundary){
+	string allowedChars = "()'+_,-./:=? ";
 	size_t boundaryLen = boundary.length();
 	if (boundary.back() == ' '){
 		return false;
@@ -105,7 +105,7 @@ bool validateBoundary(std::string boundary){
 	}
 	for (size_t i = 0; i < boundaryLen; i++){
 		if (!(boundary[i] >= 'a' && boundary[i] <= 'z') && !(boundary[i] >= 'A' && boundary[i] <= 'Z') \
-		&& !(boundary[i] >= '0' && boundary[i] <= '9') && allowedChars.find(boundary[i]) == std::string::npos){
+		&& !(boundary[i] >= '0' && boundary[i] <= '9') && allowedChars.find(boundary[i]) == string::npos){
 			return false;
 		}
 	}
@@ -115,17 +115,17 @@ bool validateBoundary(std::string boundary){
 bool Request::checkContentType(){
 	auto itCt = headerMap.find("content-type");
 	if (itCt != headerMap.end()){
-		if (checkIfDoubles("content-type", headerMap) == false){
+		if (checkIfDoubleHeader("content-type", headerMap) == false){
 			statusCode = BadRequest;
 			return false;
 		}
-		std::string str = itCt->second;
-		if (str.find("multipart/form-data") == std::string::npos){
+		string str = itCt->second;
+		if (str.find("multipart/form-data") == string::npos){
 			statusCode = UnsupportedMediaType;
 			return false;
 		}
 		size_t begin = str.find("boundary=");
-		if (begin == std::string::npos){
+		if (begin == string::npos){
 			statusCode = BadRequest;
 			return false;
 		}
@@ -148,7 +148,7 @@ bool Request::checkContentType(){
 	return true;
 }
 
-bool checkIfOnlyNumbers(std::string string){
+bool checkIfOnlyNumbers(string string){
 	if (string.empty()){
 		return false;
 	}
@@ -169,16 +169,16 @@ bool Request::checkPostHeaders(){
 		return false;
 	}
 	if (itCl != headerMap.end()){  //An iterator is a pointer-like object that allows traversing through the elements of a map.
-		if (checkIfDoubles("content-length", headerMap) == false){
+		if (checkIfDoubleHeader("content-length", headerMap) == false){
 			statusCode = BadRequest;
 			return false;
 		}
-		std::string contentLenStr = itCl->second; // first = key, second = value of a map.
+		string contentLenStr = itCl->second; // first = key, second = value of a map.
 		if (checkIfOnlyNumbers(contentLenStr) == false){
 			statusCode = BadRequest;
 			return false;
 		}
-		std::stringstream ss(contentLenStr);
+		stringstream ss(contentLenStr);
 		ss >> contentLength;
 		if (contentLength < 0){
 			statusCode = BadRequest;
@@ -189,7 +189,7 @@ bool Request::checkPostHeaders(){
 	//	statusCode = RequestHeaderFieldsTooLarge;
 	// }
 	else if (itTe != headerMap.end()){
-		if (checkIfDoubles("transfer-encoding", headerMap) == false){
+		if (checkIfDoubleHeader("transfer-encoding", headerMap) == false){
 			statusCode = BadRequest;
 			return false;
 		}
@@ -219,7 +219,7 @@ bool Request::validateHeaders(){
 		statusCode = BadRequest;
 		return false;
 	}
-	if (checkIfDoubles("host", headerMap) == false){
+	if (checkIfDoubleHeader("host", headerMap) == false){
 		statusCode = BadRequest;
 		return false;
 	}
@@ -230,7 +230,7 @@ bool Request::validateHeaders(){
 	return true;
 }
 
-bool Request::parseUntilHeaders(std::string string){
+bool Request::parseUntilHeaders(string string){
 	int endHeaders = string.find("\r\n\r\n") + 4;
 	requestTillHeaders = string.substr(0, endHeaders);
 	if (parseRequestLine() == false){

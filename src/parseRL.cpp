@@ -25,7 +25,7 @@ bool Request::validateRequestLine(){
 
 bool Request::parseRequestLine(){
 	size_t endOfRequestLine = requestTillHeaders.find("\r\n"); // CRLF is: carriage return(\r) line feed (\n)
-	if (endOfRequestLine == std::string::npos){
+	if (endOfRequestLine == string::npos){
 		statusCode = BadRequest;
 		return false;
 	}
@@ -36,8 +36,8 @@ bool Request::parseRequestLine(){
 		statusCode = URITooLong;
 		return false;
 	}
-	std::stringstream ss(requestLine);
-	std::string word;
+	stringstream ss(requestLine);
+	string word;
 	int amountWords = 0;
 	while (ss >> word){
 		amountWords++;

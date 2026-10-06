@@ -75,7 +75,7 @@ const size_t& ServerConfig::getBodySize() const
 	return _maxBodySize;
 }
 
-const std::map<int, std::string>& ServerConfig::getErrPages() const
+const map<int, string>& ServerConfig::getErrPages() const
 {
     return _errPages;
 }

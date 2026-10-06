@@ -4,7 +4,7 @@
 
 class Client{
 	private:
-		int		fd;
+		int			fd;
 		Request		request;
 		Response	response;
 	public:

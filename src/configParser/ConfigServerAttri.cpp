@@ -180,7 +180,7 @@ void Config::parsePort(string& val, ServerConfig& server, int lineNum)
 	{
 		port = stoi(val, &pos);
 	}
-	catch(const std::exception& e)
+	catch(const exception& e)
 	{
     	throw runtime_error("Line " + to_string(lineNum) + ": Invalid port number."); 
 	}

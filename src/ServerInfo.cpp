@@ -23,9 +23,9 @@ int receiveRequest(int clientFd, Request &request)
 		return 0;
 	}
 	request.setBytesRead(request.getBytesRead() + n);
-	std::string part(buffer, n);
+	string part(buffer, n);
 	request.setRequest(request.getFullRequest() + part);
-	if (request.getFullRequest().find("\r\n\r\n") != std::string::npos && request.getHeaderBytes() == 0)
+	if (request.getFullRequest().find("\r\n\r\n") != string::npos && request.getHeaderBytes() == 0)
 	{
 		if ((request.parseUntilHeaders(request.getFullRequest())) == false)
 		{
@@ -33,7 +33,7 @@ int receiveRequest(int clientFd, Request &request)
 		}
 		request.setHeaderBytes(request.getRequestTillHeaders().size());
 	}
-	if (request.getChunked() == true && request.getFullRequest().find("0\r\n\r\n") != std::string::npos){
+	if (request.getChunked() == true && request.getFullRequest().find("0\r\n\r\n") != string::npos){
 		return 2;
 	}
 	else if (request.getBytesRead() == request.getHeaderBytes() + request.getContentLength()){
@@ -45,7 +45,7 @@ int receiveRequest(int clientFd, Request &request)
 int sendResponse(int clientFd, Response &response)
 {
 	response.composeResponse();
-	std::string fullResponse = response.getFullResponse();
+	string fullResponse = response.getFullResponse();
 	response.setLenResponse(fullResponse.length());
 	response.setCString(fullResponse.c_str());
 	if (response.getBytesSent() < response.getLenResponse())
