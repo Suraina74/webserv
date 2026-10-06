@@ -379,3 +379,8 @@ bool Request::getChunked()
 {
 	return chunked;
 }
+
+string Request::getBody()
+{
+	return Body;
+}

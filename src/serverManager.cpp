@@ -17,15 +17,15 @@ int receiveRequest(int clientFd, Request &request)
 	else if (n == 0)
 		return 0;	//client closed the connection
 	request.setBytesRead(request.getBytesRead() + n);
-	std::string part(buffer, n);
+	string part(buffer, n);
 	request.setRequest(request.getFullRequest() + part);
-	if (request.getFullRequest().find("\r\n\r\n") != std::string::npos && request.getHeaderBytes() == 0)
+	if (request.getFullRequest().find("\r\n\r\n") != string::npos && request.getHeaderBytes() == 0)
 	{
 		if ((request.parseUntilHeaders(request.getFullRequest())) == false)
 			return 2;	//bad headers, stop reading and send the error response
 		request.setHeaderBytes(request.getRequestTillHeaders().size());
 	}
-	if (request.getChunked() == true && request.getFullRequest().find("0\r\n\r\n") != std::string::npos)
+	if (request.getChunked() == true && request.getFullRequest().find("0\r\n\r\n") != string::npos)
 		return 2;	//last chunk received, request complete
 	else if (request.getBytesRead() == request.getHeaderBytes() + request.getContentLength())
 		return 2;	//headers + full body received, request complete

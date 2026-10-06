@@ -44,12 +44,11 @@ int eventLoop(ServerInfo &eloop)
 		{
 			//re-read getPfds()[i] after every push_back/erase, never keep a reference
 			int revents = eloop.getPfds()[i].revents;
-			int fd = eloop.getPfds()[i].fd;
-
-			Client &client = eloop.getClient(fd);
+			int clientFd = eloop.getPfds()[i].fd;
+			Client &client = eloop.getClient(clientFd);
 			if (revents & POLLIN)
 			{
-				int receivStatus = receiveRequest(fd, client.getRequest());
+				int receivStatus = receiveRequest(clientFd, client.getRequest());
 				if (receivStatus == -1 || receivStatus == 0)
 				{
 					eloop.removeClient(i);
@@ -59,6 +58,7 @@ int eventLoop(ServerInfo &eloop)
 				else if (receivStatus == 2)
 				{
 					client.getRequest().parseBody();
+					
 					client.getRequest().postAndDelete();
 					//  check request against config file. To see what server (check host header) applies and what location applies.
 					eloop.getPfds()[i].events = POLLOUT;
@@ -67,7 +67,7 @@ int eventLoop(ServerInfo &eloop)
 			else if (revents & POLLOUT)
 			{
 				client.getResponse().setRequest(client.getRequest());
-				int sendStatus = sendResponse(fd, client.getResponse());
+				int sendStatus = sendResponse(clientFd, client.getResponse());
 				if (sendStatus == 0 || sendStatus == -1 || sendStatus == 2)
 				{
 					eloop.removeClient(i);

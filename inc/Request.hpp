@@ -33,26 +33,26 @@ enum httpStatus
 class Request
 {
 	private:
-		string fullRequest{};
-		string requestTillHeaders{};
-		size_t 	headerBytes{};
-		string partialRequest{};
-		size_t     bytesRead{};
-		string	requestLine{};
-		string Method{};
-		string Protocol{};
-		string Path{};
-		unordered_multimap<string, string> headerMap{};
-		size_t		contentLength{};
-		bool		chunked = false;
-		string	boundary{};
-		string	statusText = "200 OK";
-		string	Body{};
-		map<string, string> partHeaderMap{};
-		unordered_multimap<string, string> contentDisposMap{};
-		string fileName{};
-		string fileContent{};
-		httpStatus  statusCode = OK;
+		string								fullRequest{};
+		string								requestTillHeaders{};
+		size_t								headerBytes{};
+		string								partialRequest{};
+		size_t								bytesRead{};
+		string								requestLine{};
+		string								Method{};
+		string								Protocol{};
+		string								Path{};
+		unordered_multimap<string, string>	headerMap{};
+		size_t								contentLength{};
+		bool								chunked = false;
+		string								boundary{};
+		string								statusText = "200 OK";
+		string								Body{};
+		map<string, string> 				partHeaderMap{};
+		unordered_multimap<string, string>	contentDisposMap{};
+		string								fileName{};
+		string								fileContent{};
+		httpStatus 							statusCode = OK;
 
 	public:
 		Request(){}
@@ -75,10 +75,10 @@ class Request
 		void extractFileElements();
 		void addFile();
 
-		string setStatusText(httpStatus status);
-		void setRequest(string request);
-		void setBytesRead(size_t bytes);
-		void setHeaderBytes(size_t bytes);
+		string	setStatusText(httpStatus status);
+		void	setRequest(string request);
+		void	setBytesRead(size_t bytes);
+		void	setHeaderBytes(size_t bytes);
 
 		size_t getContentLength();
 		string getPath();
@@ -90,6 +90,8 @@ class Request
 		size_t getHeaderBytes();
 		size_t getBytesRead();
 		bool getChunked();
+		
+		string getBody();
 };
 
 
