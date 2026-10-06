@@ -7,9 +7,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <map>
+#include <unordered_map>
 #include <cstddef>
 #include <cctype>
-#include <unordered_map>
 
 constexpr size_t MAX_REQUEST_LINE = 8192;
 // Max Body size
@@ -31,26 +31,27 @@ enum httpStatus{
 
 class Request {
 	private:
-		string fullRequest{};
-		string requestTillHeaders{};
-		size_t 	headerBytes{};
-		string partialRequest{};
-		size_t     bytesRead{};
-		string	requestLine{};
-		string Method{};
-		string Protocol{};
-		string Path{};
-		unordered_multimap<string, string> headerMap{};
-		size_t		contentLength{};
-		bool		chunked = false;
-		string	boundary{};
-		string	statusText = "200 OK";
-		string	Body{};
-		unordered_multimap<string, string> bodyHeaderMap{};
-		unordered_multimap<string, string> contentDisposMap{};
-		string fileName{};
-		string fileContent{};
-		httpStatus  statusCode = OK;
+		string 								fullRequest{};
+		string 								requestTillHeaders{};
+		size_t 								headerBytes{};
+		string 								partialRequest{};
+		size_t     							bytesRead{};
+		string								requestLine{};
+		string 								Method{};
+		string 								Protocol{};
+		string 								Path{};
+		unordered_multimap<string, string>	headerMap{};
+		unordered_multimap<string, string>	contentTypeMap{};
+		size_t								contentLength{};
+		bool								chunked = false;
+		string								boundary{};
+		string								statusText = "200 OK";
+		string								Body{};
+		unordered_multimap<string, string>	bodyHeaderMap{};
+		unordered_multimap<string, string>	contentDisposMap{};
+		string 								fileName{};
+		string 								fileContent{};
+		httpStatus  						statusCode = OK;
 
 	public:
 		Request(){}
@@ -60,6 +61,7 @@ class Request {
 		bool parseUntilHeaders(string hString);
 		bool parseHeaders();
 		bool validateHeaders();
+		bool makeMapOfHeader(unordered_multimap<string, string>& map, string header, string value);
 		bool actionsOnKey(string& key);
 		bool allowedCharsInKey(string key);
 		bool actionsOnValue(string& value);

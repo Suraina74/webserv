@@ -3,7 +3,7 @@
 int Response::composeResponse()
 {
 	statusLine = statusLine + " " + request.getStatusText() + "\r\n";
-	size_t bytesRead = 0;
+	int bytesRead = 0;
 	if (request.getStatusCode() != OK && request.getStatusCode() != PageNotFound){
 		body = R"(
 			<!DOCTYPE html>
@@ -44,12 +44,16 @@ int Response::composeResponse()
 				string htmlPage(buffer, bytesRead);
 				body = htmlPage;
 			}
-			else
+			else if (bytesRead == -1)
 			{
-				cout << "error" << endl;
+				::perror("read");
 				return 1;
 			}
 			close(fd);
+		}
+		else if (fd == -1){
+			::perror("open");
+			return 1;
 		}
 	}
 	string sizeOfBody;

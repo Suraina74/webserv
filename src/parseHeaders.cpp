@@ -1,5 +1,8 @@
 #include "../inc/Request.hpp"
 
+// Check on overflow/Underflow of content length.
+// Kijken of content-length niet groter is dan een bepaalde grootte.
+
 bool Request::allowedCharsInKey(string key){
 	string allowedChars = "!#$%&'*+-.^_`|~";
 	for (size_t i = 0; i < key.length(); i++){
@@ -24,7 +27,6 @@ bool Request::actionsOnKey(string& key){
 		statusCode = BadRequest;
 		return false;
 	}
-	// Normalize header name:
 	for (size_t i = 0; i < key.length(); i++){
 		key[i] = tolower(key[i]);
 	}
@@ -51,7 +53,7 @@ bool Request::actionsOnValue(string& value){
 bool Request::parseHeaders(){
 	int amountLines = 0;
 	for (size_t i = 0; i < requestTillHeaders.size(); i++){
-		if (requestTillHeaders[i] == '\r'){
+		if (requestTillHeaders[i] == '\r' && requestTillHeaders[i + 1] == '\n'){
 			amountLines++;
 		}
 	}
@@ -95,7 +97,7 @@ bool checkIfDoubleHeader(string headerName, unordered_multimap<string, string> m
 }
 
 bool validateBoundary(string boundary){
-	string allowedChars = "()'+_,-./:=? ";
+	string allowedChars = "()'+_,-./:=?";
 	size_t boundaryLen = boundary.length();
 	if (boundary.back() == ' '){
 		return false;
@@ -119,27 +121,25 @@ bool Request::checkContentType(){
 			statusCode = BadRequest;
 			return false;
 		}
+		if (itCt->second.empty()){
+			statusCode = BadRequest;
+			return false;
+		}
 		string str = itCt->second;
-		if (str.find("multipart/form-data") == string::npos){
-			statusCode = UnsupportedMediaType;
-			return false;
-		}
-		size_t begin = str.find("boundary=");
-		if (begin == string::npos){
+		if (makeMapOfHeader(contentTypeMap, "multipart/form-data", str) == false){
 			statusCode = BadRequest;
 			return false;
 		}
-		begin += 9;
-		boundary = str.substr(begin, (str.length() - begin));
-		if (boundary.front() == '"' && boundary.back() == '"'){
-			boundary.erase(0, 1);
-			boundary.pop_back();
-		}
-		if (validateBoundary(boundary) == false){
+		auto itBoundary = contentTypeMap.find("boundary");
+		if (itBoundary == contentTypeMap.end()){
 			statusCode = BadRequest;
 			return false;
 		}
-		boundary = "--" + boundary;
+		if (validateBoundary(itBoundary->second) == false){
+			statusCode = BadRequest;
+			return false;
+		}
+		boundary = "--" + itBoundary->second;
 	}
 	else if (itCt == headerMap.end()){
 		statusCode = BadRequest;
@@ -161,7 +161,6 @@ bool checkIfOnlyNumbers(string string){
 }
 
 bool Request::checkPostHeaders(){
-	// Kijken of content-length niet groter is dan een bepaalde grootte.
 	auto itCl = headerMap.find("content-length"); // if the key is not present, it returns end().
 	auto itTe = headerMap.find("transfer-encoding");
 	if (itCl != headerMap.end() && itTe != headerMap.end()){
@@ -184,10 +183,10 @@ bool Request::checkPostHeaders(){
 			statusCode = BadRequest;
 			return false;
 		}
+		// if (contentLength > allowed body size in config file){
+		//	statusCode = RequestHeaderFieldsTooLarge;
+		// }
 	}
-	// if (contentLength > allowed body size in config file){
-	//	statusCode = RequestHeaderFieldsTooLarge;
-	// }
 	else if (itTe != headerMap.end()){
 		if (checkIfDoubleHeader("transfer-encoding", headerMap) == false){
 			statusCode = BadRequest;
@@ -196,7 +195,11 @@ bool Request::checkPostHeaders(){
 		if (itTe->second == "chunked"){
 			chunked = true;
 		}
-		else{
+		else if (itTe->second.empty()){
+			statusCode = BadRequest;
+			return false;
+		}
+		else if (!(itTe->second.empty())){
 			statusCode = NotImplemented;
 			return false;
 		}
@@ -216,6 +219,10 @@ bool Request::validateHeaders(){
 	// Kijken of de host een bestaande host is volgens config file.
 	auto itHost = headerMap.find("host");
 	if (itHost == headerMap.end()){
+		statusCode = BadRequest;
+		return false;
+	}
+	if (itHost->second.empty()){
 		statusCode = BadRequest;
 		return false;
 	}

@@ -1,13 +1,5 @@
 #include "../inc/Request.hpp"
 
-// The parsed HTTP request is evaluated against the configuration after parsing.
-// Per belangrijke header kijken wat mag of niet. Content Length, Transfer encoding:chunked, Content Type, Host
-// Kijken of alle lines in request eindigen met /r/n. if /r see if next is /n.
-
-// Content type and filename in content disp. are optional.
-// Kijken of filename niet leeg is..
-// Ignore unknown headers in body.
-
 bool checkIfDoubles(unordered_multimap<string, string> map){
 	for (auto it = map.begin(); it != map.end(); it++){
 		string key = it->first;
@@ -24,10 +16,10 @@ bool checkIfDoubles(unordered_multimap<string, string> map){
 	return true;
 }
 
-bool Request::checkContentDisposition(string valueCD){
+bool Request::makeMapOfHeader(unordered_multimap<string, string>& map, string header, string headerValue){
 	string part{};
-	vector<string> contentDisVector{};
-	stringstream ss(valueCD);
+	vector<string> vector{};
+	stringstream ss(headerValue);
 	while (getline(ss, part, ';')){
 		size_t findNotSpace;
 		if (part[0] == ' '){
@@ -38,21 +30,22 @@ bool Request::checkContentDisposition(string valueCD){
 			findNotSpace = part.find_last_not_of(' ');
 			part.erase(findNotSpace + 1);
 		}
-		contentDisVector.push_back(part);
+		vector.push_back(part);
 	}
-	string firstElement = contentDisVector[0];
+	ss.str("");
+	ss.clear();
+	string firstElement = vector[0];
 	for (size_t i = 0; i < firstElement.length(); i++){
 		firstElement[i] = tolower(firstElement[i]);
 	}
-	if (firstElement != "form-data"){
-		statusCode = BadRequest;
+	if (firstElement != header){
 		return false;
 	}
 	string key, value;
-	for (size_t it = 0; it < contentDisVector.size(); it++){
-		part = contentDisVector[it];
+	for (size_t it = 0; it < vector.size(); it++){
+		part = vector[it];
 		if (part.find('=') == string::npos){
-			contentDisposMap.insert({part, ""});
+			map.insert({part, ""});
 		}
 		else{
 			size_t equalSign = part.find('=');
@@ -60,14 +53,28 @@ bool Request::checkContentDisposition(string valueCD){
 			for (size_t i = 0; i < key.length(); i++){
 				key[i] = tolower(key[i]);
 			}
-			if (part[equalSign + 1] == '"' && part.back() == '"'){
-				part.erase(0, 1);
-				part.pop_back();
-			}
 			size_t startValue = equalSign + 1;
 			value = part.substr(startValue, part.size() - startValue);
-			contentDisposMap.insert({key, value});
+			if (value.front() == '"' && value.back() == '"'){
+				value.erase(0, 1);
+				value.pop_back();
+			}
+			else if ((value.front() != '"' && value.back() == '"') || (value.front() == '"' && value.back() != '"')){
+				return false;
+			}
+			else if (value.find(' ') != string::npos){
+				return false;
+			}
+			map.insert({key, value});
 		}
+	}
+	return true;
+}
+
+bool Request::checkContentDisposition(string valueCD){
+	if (makeMapOfHeader(contentDisposMap, "form-data", valueCD) == false){
+		statusCode = BadRequest;
+		return false;
 	}
 	auto itName = contentDisposMap.find("name");
 	if (itName == contentDisposMap.end()){
@@ -87,7 +94,7 @@ void Request::validateBody(){
 		statusCode = BadRequest;
 		return;
 	}
-	size_t start = boundary.length() + 2;
+	size_t headerStart = boundary.length() + 2;
 	size_t blankLine = Body.find("\r\n\r\n");
 	if (blankLine == string::npos){
 		statusCode = BadRequest;
@@ -95,24 +102,31 @@ void Request::validateBody(){
 	}
 	string key, value;
 	while (1){
-		size_t end = Body.find("\r\n", start);
-		string bodyHeaders = Body.substr(start, end - start);
-		size_t colon = bodyHeaders.find(':');
+		size_t headerEnd = Body.find("\r\n", headerStart);
+		if (headerEnd == string::npos){
+			statusCode = BadRequest;
+			return;
+		}
+		string bodyHeader = Body.substr(headerStart, headerEnd - headerStart);
+		size_t colon = bodyHeader.find(':');
 		if (colon == string::npos){
 			statusCode = BadRequest;
 			return;
 		}
-		key = bodyHeaders.substr(0, colon);
+		key = bodyHeader.substr(0, colon);
+		for (size_t i = 0; i < key.length(); i++){
+			key[i] = tolower(key[i]);
+		}
 		if (actionsOnKey(key) == false){
 			return;
 		}
-		value = bodyHeaders.substr(colon + 1, bodyHeaders.length() - key.length() + 1);
+		value = bodyHeader.substr(colon + 1, bodyHeader.length() - key.length() + 1);
 		if (actionsOnValue(value) == false){
 			return;
 		}
 		bodyHeaderMap.insert({key, value});
-		start = end + 2;
-		if (end == blankLine){
+		headerStart = headerEnd + 2;
+		if (headerEnd == blankLine){
 			break;
 		}
 	}
@@ -130,12 +144,12 @@ void Request::validateBody(){
 		return;
 	}
 	size_t endBodyPos = Body.length();
-	size_t endBoundary = Body.find("\r\n" + boundary + "--");
+	size_t endBoundary = Body.find("\r\n" + boundary + "--" + "\r\n");
 	if (endBoundary == string::npos){
 		statusCode = BadRequest;
 		return;
 	}
-	endBoundary += (2 + boundary.length() + 2);
+	endBoundary += (2 + boundary.length() + 4);
 	if (endBoundary != endBodyPos){
 		statusCode = BadRequest;
 		return;
@@ -196,13 +210,13 @@ void Request::extractChunkedBody(){
 }
 
 void Request::extractBody(){
-	size_t startBody = fullRequest.find("\r\n\r\n");
+	size_t startBody = fullRequest.find("\r\n\r\n" + boundary + "\r\n");
 	if (startBody == string::npos){
 		statusCode = BadRequest;
         return;
 	}
 	startBody += 4;
-	Body = fullRequest.substr(startBody, (contentLength - 2));
+	Body = fullRequest.substr(startBody, contentLength);
 }
 
 void Request::parseBody(){

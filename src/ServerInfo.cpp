@@ -44,7 +44,9 @@ int receiveRequest(int clientFd, Request &request)
 
 int sendResponse(int clientFd, Response &response)
 {
-	response.composeResponse();
+	if (response.composeResponse() == 1){
+		return -1;
+	}
 	string fullResponse = response.getFullResponse();
 	response.setLenResponse(fullResponse.length());
 	response.setCString(fullResponse.c_str());
