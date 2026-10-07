@@ -57,9 +57,8 @@ int eventLoop(ServerInfo &eloop)
 				else if (receivStatus == 2)
 				{
 					client.getRequest().parseBody();
-					
+					//routing
 					client.getRequest().postAndDelete();
-					//  check request against config file. To see what server (check host header) applies and what location applies.
 					eloop.getPfds()[i].events = POLLOUT;
 				}
 			}
