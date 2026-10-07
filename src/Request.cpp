@@ -384,3 +384,9 @@ string Request::getBody()
 {
 	return Body;
 }
+
+//Change by Wenxuan
+string Request::getQuery()
+{
+    return queryString;
+}

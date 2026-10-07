@@ -1,6 +1,5 @@
 #include "../inc/main.hpp"
 
-
 void acceptClient(ServerInfo &eloop)
 {
 	//accept() creates/returns a new file descriptor for the newly connected client,

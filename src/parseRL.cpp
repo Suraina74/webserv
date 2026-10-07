@@ -43,8 +43,8 @@ bool Request::parseRequestLine()
 		statusCode = URITooLong;
 		return false;
 	}
-	std::stringstream ss(requestLine);
-	std::string word;
+	stringstream ss(requestLine);
+	string word;
 	int amountWords = 0;
 	while (ss >> word)
 		amountWords++;
@@ -75,6 +75,15 @@ bool Request::parseRequestLine()
 	ss.clear();
 	ss.str(requestLine);
 	ss >> Method >> Path >> Protocol;
+
+	//Change by Wenxuan
+	size_t queryPos = Path.find('?');
+	if (queryPos != string::npos)
+	{
+		queryString = Path.substr(queryPos + 1);
+		Path = Path.substr(0, queryPos);
+	}
+	//
 	Path = "www" + Path;
 	if (Path == "www/")
 		Path = "www/index.html";
