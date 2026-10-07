@@ -4,6 +4,7 @@ FLAGS = -Wall -Wextra -Werror -g -std=c++11
 
 SRC =	src/main.cpp \
 		src/serverManager.cpp \
+		src/CGI.cpp \
 		src/eventLoop.cpp \
 		src/Request.cpp \
 		src/parseRL.cpp \

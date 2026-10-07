@@ -33,65 +33,70 @@ enum httpStatus
 class Request
 {
 	private:
+		//useful data for running CGI and eventloop
+		string								Path{};
+		string								Method{};
+		string								requestLine{};
+		string								Protocol{};
+		unordered_multimap<string, string>	headerMap{};
+		string								Body{};
+		string								queryString{};//Change by Wenxuan
+		
+		//used by serverManager.cpp
+		httpStatus 							statusCode = OK;
+		size_t								contentLength{};
+		size_t								headerBytes{};
+		bool								chunked = false;
+		string								statusText = "200 OK";
+		
 		string								fullRequest{};
 		string								requestTillHeaders{};
-		size_t								headerBytes{};
 		string								partialRequest{};
 		size_t								bytesRead{};
-		string								requestLine{};
-		string								Method{};
-		string								Protocol{};
-		string								Path{};
-		unordered_multimap<string, string>	headerMap{};
-		size_t								contentLength{};
-		bool								chunked = false;
+		
 		string								boundary{};
-		string								statusText = "200 OK";
-		string								Body{};
 		map<string, string> 				partHeaderMap{};
 		unordered_multimap<string, string>	contentDisposMap{};
 		string								fileName{};
 		string								fileContent{};
-		httpStatus 							statusCode = OK;
 
 	public:
 		Request(){}
 		~Request(){}
-		bool parseRequestLine();
-		bool validateRequestLine();
-		bool parseUntilHeaders(string hString);
-		bool parseHeaders();
-		bool validateHeaders();
-		bool actionsOnKey(string& key);
-		bool allowedCharsInKey(string key);
-		bool actionsOnValue(string& value);
-		bool checkPostHeaders();
-		bool checkContentType();
-		void parseBody();
-		void extractBody();
-		void extractChunkedBody();
-		void validateBody();
-		void postAndDelete();
-		void extractFileElements();
-		void addFile();
-
+		bool	parseRequestLine();
+		bool	validateRequestLine();
+		bool	parseUntilHeaders(string hString);
+		bool	parseHeaders();
+		bool	validateHeaders();
+		bool	actionsOnKey(string& key);
+		bool	allowedCharsInKey(string key);
+		bool	actionsOnValue(string& value);
+		bool	checkPostHeaders();
+		bool	checkContentType();
+		void	parseBody();
+		void	extractBody();
+		void	extractChunkedBody();
+		void	validateBody();
+		void	postAndDelete();
+		void	extractFileElements();
+		void	addFile();
 		string	setStatusText(httpStatus status);
 		void	setRequest(string request);
 		void	setBytesRead(size_t bytes);
 		void	setHeaderBytes(size_t bytes);
+		bool	getChunked();
+		size_t	getHeaderBytes();
+		size_t	getBytesRead();
+		string	getRequestTillHeaders();
+		string	getFullRequest();
 
-		size_t getContentLength();
-		string getPath();
-		string getMethod();
+		size_t		getContentLength();//length of the request body
+		string		getPath();//path before '?'
+		string		getBody();//requestion body content
+		string		getQuery();//Change by Wenxuan
+		string		getMethod();
 		httpStatus  getStatusCode();
-		string getStatusText();
-		string getFullRequest();
-		string getRequestTillHeaders();
-		size_t getHeaderBytes();
-		size_t getBytesRead();
-		bool getChunked();
-		
-		string getBody();
+		string 		getStatusText();
 };
 
 
