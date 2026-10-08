@@ -27,10 +27,10 @@ class Response
 		void setCString(const char* cString);
 		void setBytesSent(int bytes);
 
-		string getFullResponse();
-		const char* getCFullResponse();
-		int getLenResponse();
-		int getBytesSent();
+		string getFullResponse() const;
+		const char* getCFullResponse() const;
+		int getLenResponse() const;
+		int getBytesSent() const;
 };
 
 

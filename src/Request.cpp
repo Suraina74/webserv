@@ -334,59 +334,66 @@ void Request::setHeaderBytes(size_t bytes)
 	headerBytes = bytes;
 }
 
-size_t Request::getContentLength()
+size_t Request::getContentLength() const
 {
 	return contentLength;
 }
-string Request::getPath()
+string Request::getPath() const
 {
 	return Path;
 }
-string Request::getMethod()
+string Request::getMethod() const
 {
 	return Method;
 }
-httpStatus Request::getStatusCode()
+httpStatus Request::getStatusCode() const
 {
 	return statusCode;
 }
-string Request::getStatusText()
+string Request::getStatusText() const
 {
 	return statusText;
 }
 
-string Request::getFullRequest()
+string Request::getFullRequest() const
 {
 	return fullRequest;
 }
 
-string Request::getRequestTillHeaders()
+string Request::getRequestTillHeaders() const
 {
 	return requestTillHeaders;
 }
 
-size_t Request::getBytesRead()
+size_t Request::getBytesRead() const
 {
 	return bytesRead;
 }
 
-size_t Request::getHeaderBytes()
+size_t Request::getHeaderBytes() const
 {
 	return headerBytes;
 }
 
-bool Request::getChunked()
+bool Request::getChunked() const
 {
 	return chunked;
 }
 
-string Request::getBody()
+string Request::getBody() const
 {
 	return Body;
 }
 
 //Change by Wenxuan
-string Request::getQuery()
+string Request::getQuery() const
 {
     return queryString;
+}
+void Request::setStatus(httpStatus status)
+{
+	statusCode = status;
+	statusText = setStatusText(status);
+	if (status == PageNotFound)
+		Path = "www/404.html";
 }

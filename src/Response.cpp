@@ -84,22 +84,22 @@ void Response::setBytesSent(int bytes)
 	bytesSent = bytes;
 }
 
-string Response::getFullResponse()
+string Response::getFullResponse() const
 {
 	return fullResponse;
 }
 
-const char* Response::getCFullResponse()
+const char* Response::getCFullResponse() const
 {
 	return cFullResponse;
 }
 
-int Response::getLenResponse()
+int Response::getLenResponse() const
 {
 	return lenResponse;
 }
 
-int Response::getBytesSent()
+int Response::getBytesSent() const
 {
 	return bytesSent;
 }

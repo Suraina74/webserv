@@ -81,22 +81,23 @@ class Request
 		void	extractFileElements();
 		void	addFile();
 		string	setStatusText(httpStatus status);
+		void	setStatus(httpStatus status);
 		void	setRequest(string request);
 		void	setBytesRead(size_t bytes);
 		void	setHeaderBytes(size_t bytes);
-		bool	getChunked();
-		size_t	getHeaderBytes();
-		size_t	getBytesRead();
-		string	getRequestTillHeaders();
-		string	getFullRequest();
+		bool	getChunked() const;
+		size_t	getHeaderBytes() const;
+		size_t	getBytesRead() const;
+		string	getRequestTillHeaders() const;
+		string	getFullRequest() const;
 
-		size_t		getContentLength();//length of the request body
-		string		getPath();//path before '?'
-		string		getBody();//requestion body content
-		string		getQuery();//Change by Wenxuan
-		string		getMethod();
-		httpStatus  getStatusCode();
-		string 		getStatusText();
+		size_t		getContentLength() const;//length of the request body
+		string		getPath() const;//path before '?'
+		string		getBody() const;//requestion body content
+		string		getQuery() const;//Change by Wenxuan
+		string		getMethod() const;
+		httpStatus  getStatusCode() const;
+		string 		getStatusText() const;
 };
 
 

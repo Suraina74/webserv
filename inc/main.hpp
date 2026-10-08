@@ -33,8 +33,9 @@ struct Route
 	string			redirectTo;   // R_REDIRECT only
 };
 
-const Location*	matchLocation(const ServerConfig& srv, const string& uri);
-Route			route(const ServerConfig& server, const string& method, const string& uri, size_t bodySize);
+const Location*	findLocation(const ServerConfig& server, const Request &request);
+Route			routing(const ServerConfig& server, const Request &request);
+bool			validateRoute(const ServerConfig& server, const Request& request, Route& route);
 
 int sendResponse(int clientFd, Response &response);
 int receiveRequest(int clientFd, Request &request);
