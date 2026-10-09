@@ -65,7 +65,7 @@ class Request {
 		bool actionsOnKey(string& key);
 		bool allowedCharsInKey(string key);
 		bool actionsOnValue(string& value);
-		bool checkPostHeaders();
+		bool checkOtherHeaders();
 		bool checkContentType();
 		void parseBody();
 		void extractBody();

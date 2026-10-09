@@ -141,8 +141,8 @@ bool Request::checkContentType(){
 		}
 		boundary = "--" + itBoundary->second;
 	}
-	else if (itCt == headerMap.end()){
-		statusCode = BadRequest;
+	else if (itCt == headerMap.end() && Method == "POST"){
+		statusCode = UnsupportedMediaType;
 		return false;
 	}
 	return true;
@@ -160,7 +160,7 @@ bool checkIfOnlyNumbers(string string){
 	return true;
 }
 
-bool Request::checkPostHeaders(){
+bool Request::checkOtherHeaders(){
 	auto itCl = headerMap.find("content-length"); // if the key is not present, it returns end().
 	auto itTe = headerMap.find("transfer-encoding");
 	if (itCl != headerMap.end() && itTe != headerMap.end()){
@@ -204,11 +204,6 @@ bool Request::checkPostHeaders(){
 			return false;
 		}
 	}
-	else{
-		contentLength = 0;
-		statusCode = BadRequest;
-		return false;
-	}
 	if (checkContentType() == false){
 		return false;
 	}
@@ -230,10 +225,8 @@ bool Request::validateHeaders(){
 		statusCode = BadRequest;
 		return false;
 	}
-	if (Method == "POST"){
-		if (checkPostHeaders() == false)
+	if (checkOtherHeaders() == false)
 			return false;
-	}
 	return true;
 }
 

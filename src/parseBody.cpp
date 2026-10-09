@@ -16,7 +16,7 @@ bool checkIfDoubles(unordered_multimap<string, string> map){
 	return true;
 }
 
-bool Request::makeMapOfHeader(unordered_multimap<string, string>& map, string header, string headerValue){
+bool Request::makeMapOfHeader(unordered_multimap<string, string>& map, string word, string headerValue){
 	string part{};
 	vector<string> vector{};
 	stringstream ss(headerValue);
@@ -38,7 +38,7 @@ bool Request::makeMapOfHeader(unordered_multimap<string, string>& map, string he
 	for (size_t i = 0; i < firstElement.length(); i++){
 		firstElement[i] = tolower(firstElement[i]);
 	}
-	if (firstElement != header){
+	if (firstElement != word){
 		return false;
 	}
 	string key, value;
