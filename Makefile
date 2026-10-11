@@ -4,7 +4,6 @@ FLAGS = -Wall -Wextra -Werror -g -std=c++11
 
 SRC =	src/main.cpp \
 		src/serverManager.cpp \
-		src/CGI.cpp \
 		src/eventLoop.cpp \
 		src/Request.cpp \
 		src/parseRL.cpp \
@@ -18,6 +17,7 @@ SRC =	src/main.cpp \
 		src/configParser/ConfigUtils.cpp \
 		src/configParser/ServerConfig.cpp \
 		src/configParser/ConfigServerAttri.cpp \
+# 		src/CGI.cpp \
 
 OBJ = $(SRC:%.cpp=objs/%.o)
 

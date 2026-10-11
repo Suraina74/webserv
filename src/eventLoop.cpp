@@ -55,7 +55,6 @@ bool validateRoute(const ServerConfig& server, const Request& request, Route& ro
 			break;
 		}
 	}
-
 	if (!methodAllowed)
 	{
 		route.status = MethodNotAllowed;
@@ -84,9 +83,6 @@ Route routing(const ServerConfig& server, const Request& request)
 
 void acceptClient(ServerInfo &eloop)
 {
-	//accept() creates/returns a new file descriptor for the newly connected client,
-	//and that descriptor is separate from the listening socket.
-	//listen fds are the first getListenCount() entries of _pfds
 	for (size_t i = 0; i < eloop.getListenCount(); i++)
 	{
 		if (eloop.getPfds()[i].revents & POLLIN)
@@ -95,11 +91,9 @@ void acceptClient(ServerInfo &eloop)
 			int clientFd = accept(listenFd, NULL, NULL);
 			if (clientFd == -1)
 			{
-				//one failed accept should not take the whole server down
 				::perror("accept");
 				continue;
 			}
-			//the client is served by the server block of the listen fd it connected to
 			eloop.addClient(clientFd, eloop.getListenServer(listenFd));
 		}
 	}
@@ -109,9 +103,7 @@ int eventLoop(ServerInfo &eloop)
 {
 	while (1)
 	{
-		//getPfds().data() returns &pfds[0], one array with listen and client fds
 		int ready = poll(eloop.getPfds().data(), eloop.getPfds().size(), TIMEOUT);
-
 		if (ready == -1)
 		{
 			::perror("poll");
@@ -121,7 +113,6 @@ int eventLoop(ServerInfo &eloop)
 		acceptClient(eloop);
 		for (size_t i = eloop.getListenCount(); i < eloop.getPfds().size(); i++)
 		{
-			//re-read getPfds()[i] after every push_back/erase, never keep a reference
 			int revents = eloop.getPfds()[i].revents;
 			int clientFd = eloop.getPfds()[i].fd;
 			Client &client = eloop.getClient(clientFd);
@@ -156,7 +147,22 @@ int eventLoop(ServerInfo &eloop)
 					continue;
 				}
 			}
+			else if (revents & (POLLERR | POLLNVAL))
+			{
+				eloop.removeClient(i);
+				i--;
+				continue;
+			}
+			else if (revents & POLLHUP)
+			{
+				eloop.removeClient(i);
+				i--;
+				continue;
+			}
 		}
 	}
 	return (0);
 }
+
+// improper handling of partial reads/writes
+// weak socket cleanup
