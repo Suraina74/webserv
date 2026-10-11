@@ -1,5 +1,4 @@
-#include "configParser/Config.hpp"
-#include "../inc/ServerInfo.hpp"
+#include "../inc/main.hpp"
 
 int main(int ac, char **av)
 {

@@ -1,4 +1,4 @@
-#include "Config.hpp"
+#include "../../inc/Config.hpp"
 
 void cleanLine(string& line)
 {

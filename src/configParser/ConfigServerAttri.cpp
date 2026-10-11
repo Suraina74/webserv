@@ -1,4 +1,4 @@
-#include "Config.hpp"
+#include "../../inc/Config.hpp"
 
 void Config::parseBodySize(string& val, ServerConfig& server, int lineNum)
 {

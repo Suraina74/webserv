@@ -1,260 +1,68 @@
-#include "configParser/ServerConfig.hpp"
 #include "../inc/ServerInfo.hpp"
-#include "../inc/Request.hpp"
-#include "../inc/Response.hpp"
-#include "../inc/Client.hpp"
-#include <cstring>
-#include <sys/socket.h>
 #include <unistd.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 
-int receiveRequest(int clientFd, Request &request)
+ServerInfo::ServerInfo():_listenCount(0){}
+
+ServerInfo::~ServerInfo(){}
+
+//listen fds must all be added before any client, so they stay at the front of _pfds
+void ServerInfo::addListenFd(int fd, const ServerConfig *server)
 {
-	char buffer[2048];
-	ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
-	if (n == -1)
-	{
-		::perror("recv");
-		return -1;
-	}
-	else if (n == 0)
-	{
-		return 0;
-	}
-	request.setBytesRead(request.getBytesRead() + n);
-	std::string part(buffer, n);
-	request.setRequest(request.getFullRequest() + part);
-	if (request.getFullRequest().find("\r\n\r\n") != std::string::npos && request.getHeaderBytes() == 0)
-	{
-		if ((request.parseUntilHeaders(request.getFullRequest())) == false)
-		{
-			return 2;
-		}
-		request.setHeaderBytes(request.getRequestTillHeaders().size());
-	}
-	if (request.getBytesRead() == request.getHeaderBytes() + request.getContentLength())
-	{
-		return 2;
-	}
-	return 1;
+	pollfd p;
+	p.fd = fd;
+	p.events = POLLIN;
+	p.revents = 0;
+	_pfds.push_back(p);
+	_listenServers[fd] = server;
+	_listenCount++;
 }
 
-int sendResponse(int clientFd, Response &response)
+void ServerInfo::addClient(int fd, const ServerConfig *server)
 {
-	response.composeResponse();
-	std::string fullResponse = response.getFullResponse();
-	response.setLenResponse(fullResponse.length());
-	response.setCString(fullResponse.c_str());
-	if (response.getBytesSent() < response.getLenResponse())
-	{
-		int n = send(clientFd, response.getCFullResponse() + response.getBytesSent(), response.getLenResponse() - response.getBytesSent(), 0);
-		if (n == -1)
-		{
-			::perror("send");
-			return -1;
-		}
-		else if (n == 0)
-		{
-			return 0;
-		}
-		response.setBytesSent(response.getBytesSent() + n);
-	}
-	if (response.getBytesSent() == response.getLenResponse())
-	{
-		return 2;
-	}
-	return 1;
+	pollfd p;
+	p.fd = fd;
+	p.events = POLLIN;
+	p.revents = 0;
+	_pfds.push_back(p);
+	Client newClient = Client(fd, server, Request(), Response());
+	_clients[p.fd] = newClient;
 }
 
-int eventLoop(const vector<pollfd> &fds, const vector<ServerConfig> &servers)
+//closes the client fd and removes it from both _pfds and _clients
+void ServerInfo::removeClient(size_t index)
 {
-	(void)servers;
-
-	ServerInfo serverData;
-	Request request;
-	Response response;
-	vector<Client> clients;
-	// setup listining sockets
-	for (size_t i = 0; i < fds.size(); ++i)
-	{
-		pollfd listen_socket;
-
-		listen_socket.fd = fds[i].fd;
-		listen_socket.events = POLLIN;
-		listen_socket.revents = 0;
-		serverData.getFd().push_back(listen_socket);
-	}
-	while (1)
-	{
-		pollfd client_pfd;
-		size_t nfds = serverData.getFd().size();
-		int ready = poll(serverData.getFd().data(), nfds, TIMEOUT);
-
-		if (ready == -1)
-		{
-			::perror("poll");
-			return (1);
-		}
-		for (size_t i = 0; i < nfds; i++)
-		{
-			// i keeps index of listening sock
-			if (i < fds.size())
-			{
-				if (serverData.getFd()[i].revents & POLLIN)
-				{
-					client_pfd.fd = accept(fds[i].fd, NULL, NULL);
-					if (client_pfd.fd == -1)
-					{
-						::perror("accept");
-						return (1);
-					}
-					client_pfd.events = POLLIN;
-					client_pfd.revents = 0;
-					serverData.getFd().push_back(client_pfd);
-					Client client(client_pfd.fd, request, response);
-					clients.push_back(client);
-					nfds++;
-				}
-				continue;
-			}
-			// client fds
-			if ((serverData.getFd()[i].revents & POLLIN))
-			{
-				int returnValue = receiveRequest(serverData.getFd()[i].fd, clients[i - fds.size()].getRequest());
-				if (returnValue == -1 || returnValue == 0)
-				{
-					clients.erase(clients.begin() + i - fds.size());
-					close(serverData.getFd()[i].fd);
-					serverData.getFd().erase(serverData.getFd().begin() + i);
-					nfds--;
-					i--;
-					continue;
-				}
-				else if (returnValue == 2)
-				{
-					clients[i - fds.size()].getRequest().parseBody();
-					// request.action?
-					//  check request against config file. To see what server (check host header) applies and what location applies.
-					serverData.getFd()[i].events = POLLOUT;
-				}
-			}
-			else if (serverData.getFd()[i].revents & POLLOUT)
-			{
-				clients[i - fds.size()].getResponse().setRequest(clients[i - fds.size()].getRequest());
-				int returnValue = sendResponse(serverData.getFd()[i].fd, clients[i - fds.size()].getResponse());
-				if (returnValue == 0 || returnValue == -1)
-				{
-					clients.erase(clients.begin() + i - fds.size());
-					close(serverData.getFd()[i].fd);
-					serverData.getFd().erase(serverData.getFd().begin() + i);
-					nfds--;
-					i--;
-					continue;
-				}
-				else if (returnValue == 2)
-				{
-					clients.erase(clients.begin() + i - fds.size());
-					close(serverData.getFd()[i].fd);
-					serverData.getFd().erase(serverData.getFd().begin() + i);
-					nfds--;
-					i--;
-				}
-			}
-		}
-	}
-	return (0);
+	int fd = _pfds[index].fd;
+	close(fd);
+	_clients.erase(fd);
+	_pfds.erase(_pfds.begin() + index);
 }
 
-vector<pollfd> createSockAddr(struct addrinfo *result, const vector<ServerConfig> &server)
+void ServerInfo::closeAllFds()
 {
-	vector<pollfd> listenFdsList;
-
-	for (size_t i = 0; i < server.size(); ++i)
-	{
-		struct addrinfo info;
-		struct addrinfo *ptr;
-
-		memset(&info, 0, sizeof(info));
-		info.ai_family = AF_INET;
-		info.ai_socktype = SOCK_STREAM;
-		string port = to_string(server[i].getPort());
-		if (getaddrinfo(server[i].getHost().c_str(), port.c_str(), &info, &result) != 0)
-		{
-			::perror("getaddrinfo");
-			break;
-		}
-		for (ptr = result; ptr != NULL; ptr = ptr->ai_next)
-		{
-			pollfd listenFd;
-			listenFd.fd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
-			if (listenFd.fd == -1)
-			{
-				::perror("socket");
-				continue;
-			}
-			if (fcntl(listenFd.fd, F_SETFL, O_NONBLOCK) == -1)
-			{
-				::perror("fcntl");
-				close(listenFd.fd);
-				continue;
-			}
-			int on = true;
-			if ((setsockopt(listenFd.fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on))) == -1)
-			{
-				::perror("setsockopt");
-				close(listenFd.fd);
-				continue;
-			}
-			if (::bind(listenFd.fd, ptr->ai_addr, ptr->ai_addrlen) == -1)
-			{
-				::perror("bind");
-				close(listenFd.fd);
-				continue;
-			}
-			listenFdsList.push_back(listenFd);
-			break;
-		}
-	}
-	freeaddrinfo(result);
-	return (listenFdsList);
+	for (size_t i = 0; i < _pfds.size(); ++i)
+		close(_pfds[i].fd);
+	_pfds.clear();
+	_clients.clear();
+	_listenServers.clear();
+	_listenCount = 0;
 }
 
-int server(const vector<ServerConfig> &servers)
+size_t ServerInfo::getListenCount() const
 {
-	ServerInfo eloop;
-
-	eloop.setResult(nullptr);
-	eloop.setFd(createSockAddr(eloop.getResult(), servers));
-	for (size_t i = 0; i < eloop.getFd().size(); i++)
-	{
-		if (listen(eloop.getFd()[i].fd, 10) != 0)
-		{
-			::perror("listen");
-			for (size_t j = 0; j < eloop.getFd().size(); j++)
-				close(eloop.getFd()[j].fd);
-			return (1);
-		}
-	}
-	return (eventLoop(eloop.getFd(), servers));
+	return (_listenCount);
 }
 
-void ServerInfo::setResult(struct addrinfo *setRes)
+vector<pollfd>& ServerInfo::getPfds()
 {
-	_result = setRes;
+	return (_pfds);
 }
 
-void ServerInfo::setFd(vector<pollfd> setFd)
+Client& ServerInfo::getClient(int fd)
 {
-	_fds = setFd;
+	return (_clients.at(fd));
 }
 
-struct addrinfo *ServerInfo::getResult()
+const ServerConfig* ServerInfo::getListenServer(int fd)
 {
-	return (_result);
-}
-
-vector<pollfd> &ServerInfo::getFd()
-{
-	return (_fds);
+	return (_listenServers.at(fd));
 }

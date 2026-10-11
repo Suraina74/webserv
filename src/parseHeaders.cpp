@@ -1,110 +1,281 @@
 #include "../inc/Request.hpp"
 
+bool Request::allowedCharsInKey(string key)
+{
+	string allowedChars = "!#$%&'*+-.^_`|~";
+	for (size_t i = 0; i < key.length(); i++)
+	{
+		if (!(key[i] >= 'a' && key[i] <= 'z') && !(key[i] >= 'A' && key[i] <= 'Z')
+		&& !(key[i] >= '0' && key[i] <= '9') && allowedChars.find(key[i]) == string::npos)
+			return false;
+	}
+	return true;
+}
 
-// Transfer encoding!!! Dan is er geen content-length!!
+bool Request::actionsOnKey(string& key)
+{
+	if (key.empty())
+	{
+		statusCode = BadRequest;
+		return false;
+	}
+	if (key.find(' ') != string::npos)
+	{
+		statusCode = BadRequest;
+		return false;
+	}
+	if (allowedCharsInKey(key) == false)
+	{
+		statusCode = BadRequest;
+		return false;
+	}
+	// Normalize header name:
+	for (size_t i = 0; i < key.length(); i++)
+		key[i] = tolower(key[i]);
+	return true;
+}
 
-bool Request::parseHeaders(){
+bool Request::actionsOnValue(string& value)
+{
+	size_t findNotSpace;
+	if (value[0] == ' ')
+	{
+		findNotSpace = value.find_first_not_of(' ');
+		value.erase(0, findNotSpace); // delete N characters starting from pos 0.
+	}
+	if (value[value.length() - 1] == ' ')
+	{
+		findNotSpace = value.find_last_not_of(' ');
+		value.erase(findNotSpace + 1); // delete everything from pos findNotSpace + 1 onwards.
+	}
+	if (value.find('\r') != string::npos || value.find('\n') != string::npos || value.find('\0') != string::npos)
+	{
+		statusCode = BadRequest;
+		return false;
+	}
+	return true;
+}
+
+bool Request::parseHeaders()
+{
 	int amountLines = 0;
-	for (size_t i = 0; i < requestTillHeaders.size(); i++){
-		if (requestTillHeaders[i] == '\r'){
+	for (size_t i = 0; i < requestTillHeaders.size(); i++)
+	{
+		if (requestTillHeaders[i] == '\r')
 			amountLines++;
-		}
 	}
 	amountLines -= 2;
 	int startLine = requestTillHeaders.find("\r\n") + 2;
 	int endLine = 0;
-	for (int i = 0; i < amountLines; i++){
+	for (int i = 0; i < amountLines; i++)
+	{
 		endLine = requestTillHeaders.find("\r\n", startLine);
-		std::string line = requestTillHeaders.substr(startLine, endLine - startLine);
-		std::string key, value;
+		string line = requestTillHeaders.substr(startLine, endLine - startLine);
+		string key, value;
 		size_t findColon = line.find(':');
-		if (findColon == std::string::npos){
+		if (findColon == string::npos)
+		{
 			statusCode = BadRequest;
-			statusText = setStatusText(statusCode);
 			return false;
 		}
-		else{
-			key = line.substr(0, findColon);
-			if (key.find(' ') != std::string::npos){
-				statusCode = BadRequest;
-				statusText = setStatusText(statusCode);
-				return false;
-			}
-			// Normalize header name:
-			for (size_t i = 0; i < key.length(); i++){
-				key[i] = std::tolower(key[i]);
-			}
-			value = line.substr(findColon + 1, line.length() - key.length() + 1);
-			// Delete spaces in front and back of value:
-			size_t findNotSpace = value.find_first_not_of(' ');
-			value.erase(0, findNotSpace); // delete N characters starting from pos 0.
-			findNotSpace = value.find_last_not_of(' ');
-			value.erase(findNotSpace + 1); // delete everything from pos findNotSpace + 1 onwards.
-		}
+		key = line.substr(0, findColon);
+		if (actionsOnKey(key) == false)
+			return false;
+		value = line.substr(findColon + 1, line.length() - key.length() + 1);
+		if (actionsOnValue(value) == false)
+			return false;
 		headerMap.insert({key, value});
 		startLine = endLine + 2;
 	}
 	return true;
 }
 
-// The header name (the key) is case insensitive. So we want to normalize it. So that you can find it.
-// Cause you could have: Host, host, hOst, HOST and other variations. If you normalize to only lowercase, you can find it easier.
-// Otherwise you don't know what to look for. As a header could be in any form.
-
-bool checkIfOnlyNumbers(std::string string){
-	if (string.empty()){
-		return false;
+bool checkIfDoubles(string headerName, unordered_multimap<string, string> map)
+{
+	int count = 0;
+	for (auto it = map.begin(); it != map.end(); it++)
+	{
+		if (it->first == headerName)
+			count++;
 	}
-	for (size_t i = 0; i < string.size(); i++){
-		if (!isdigit(string[i])){
+	if (count > 1)
+		return false;
+	return true;
+}
+
+bool validateBoundary(string boundary)
+{
+	string allowedChars = "()'+_,-./:=? ";
+	size_t boundaryLen = boundary.length();
+	if (boundary.back() == ' ')
+		return false;
+	if (boundaryLen == 0 || boundaryLen > 70)
+		return false;
+	for (size_t i = 0; i < boundaryLen; i++)
+	{
+		if (!(boundary[i] >= 'a' && boundary[i] <= 'z') && !(boundary[i] >= 'A' && boundary[i] <= 'Z') 
+		&& !(boundary[i] >= '0' && boundary[i] <= '9') && allowedChars.find(boundary[i]) == string::npos)
 			return false;
-		}
 	}
 	return true;
 }
 
-bool Request::validateHeaders(){
-
-	// for (auto it = headerMap.begin(); it != headerMap.end(); it++){
-	// 	std::cout << it->first << it->second << std::endl;
-	// }
-
-	// Check headers that can't appear multiple times. Content length en host for example.
-	// Content length en transfer encoding mogen ook niet samen.
-
-	auto it = headerMap.find("content-length"); // if the key is not present, it returns end().
-	if (it != headerMap.end()){  //An iterator is a pointer-like object that allows traversing through the elements of a map.
-		std::string contentLenStr = it->second; // first = key, second = value of a map.
-		if (checkIfOnlyNumbers(contentLenStr) == false){
+bool Request::checkContentType()
+{
+	auto itCt = headerMap.find("content-type");
+	if (itCt != headerMap.end())
+	{
+		if (checkIfDoubles("content-type", headerMap) == false)
+		{
 			statusCode = BadRequest;
-			statusText = setStatusText(statusCode);
 			return false;
 		}
-		std::stringstream ss(contentLenStr);
-		ss >> contentLength;
+		string str = itCt->second;
+		if (str.find("multipart/form-data") == string::npos)
+		{
+			statusCode = UnsupportedMediaType;
+			return false;
+		}
+		size_t begin = str.find("boundary=");
+		if (begin == string::npos)
+		{
+			statusCode = BadRequest;
+			return false;
+		}
+		begin += 9;
+		boundary = str.substr(begin, (str.length() - begin));
+		if (boundary.front() == '"' && boundary.back() == '"')
+		{
+			boundary.erase(0, 1);
+			boundary.pop_back();
+		}
+		if (validateBoundary(boundary) == false)
+		{
+			statusCode = BadRequest;
+			return false;
+		}
+		boundary = "--" + boundary;
 	}
-	if (contentLength < 0){
+	else if (itCt == headerMap.end())
+	{
 		statusCode = BadRequest;
+		return false;
 	}
-	// if (contentLength > body size in config file){
+	return true;
+}
+
+bool checkIfOnlyNumbers(string string)
+{
+	if (string.empty())
+		return false;
+	for (size_t i = 0; i < string.size(); i++)
+	{
+		if (!isdigit(string[i]))
+			return false;
+	}
+	return true;
+}
+
+bool Request::checkPostHeaders(){
+	// Kijken of content-length niet groter is dan een bepaalde grootte.
+	auto itCl = headerMap.find("content-length"); // if the key is not present, it returns end().
+	auto itTe = headerMap.find("transfer-encoding");
+	if (itCl != headerMap.end() && itTe != headerMap.end())
+	{
+		statusCode = BadRequest;
+		return false;
+	}
+	if (itCl != headerMap.end())
+	{  //An iterator is a pointer-like object that allows traversing through the elements of a map.
+		if (checkIfDoubles("content-length", headerMap) == false)
+		{
+			statusCode = BadRequest;
+			return false;
+		}
+		string contentLenStr = itCl->second; // first = key, second = value of a map.
+		if (checkIfOnlyNumbers(contentLenStr) == false)
+		{
+			statusCode = BadRequest;
+			return false;
+		}
+		stringstream ss(contentLenStr);
+		ss >> contentLength;
+		if (contentLength < 0)
+		{
+			statusCode = BadRequest;
+			return false;
+		}
+	}
+	// if (contentLength > allowed body size in config file){
 	//	statusCode = RequestHeaderFieldsTooLarge;
 	// }
-	if (statusCode != OK){
+	else if (itTe != headerMap.end())
+	{
+		if (checkIfDoubles("transfer-encoding", headerMap) == false)
+		{
+			statusCode = BadRequest;
+			return false;
+		}
+		if (itTe->second == "chunked")
+		{
+			chunked = true;
+		}
+		else
+		{
+			statusCode = NotImplemented;
+			return false;
+		}
+	}
+	else
+	{
+		contentLength = 0;
+		statusCode = BadRequest;
+		return false;
+	}
+	if (checkContentType() == false)
+		return false;
+	return true;
+}
+
+bool Request::validateHeaders()
+{
+	// Kijken of de host een bestaande host is volgens config file.
+	auto itHost = headerMap.find("host");
+	if (itHost == headerMap.end())
+	{
+		statusCode = BadRequest;
+		return false;
+	}
+	if (checkIfDoubles("host", headerMap) == false)
+	{
+		statusCode = BadRequest;
+		return false;
+	}
+	if (Method == "POST")
+	{
+		if (checkPostHeaders() == false)
+			return false;
+	}
+	return true;
+}
+
+bool Request::parseUntilHeaders(string string)
+{
+	int endHeaders = string.find("\r\n\r\n") + 4;
+	requestTillHeaders = string.substr(0, endHeaders);
+	if (parseRequestLine() == false)
+	{
 		statusText = setStatusText(statusCode);
 		return false;
 	}
-	return true;
-}
-
-bool Request::parseUntilHeaders(std::string hString){
-	requestTillHeaders = hString;
-	if (parseRequestLine() == false){
+	if (parseHeaders() == false)
+	{
+		statusText = setStatusText(statusCode);
 		return false;
 	}
-	if (parseHeaders() == false){
-		return false;
-	}
-	if (validateHeaders() == false){
+	if (validateHeaders() == false)
+	{
+		statusText = setStatusText(statusCode);
 		return false;
 	}
 	return true;

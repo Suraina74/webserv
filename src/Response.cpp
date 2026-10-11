@@ -3,8 +3,9 @@
 int Response::composeResponse()
 {
 	statusLine = statusLine + " " + request.getStatusText() + "\r\n";
-	ssize_t bytesRead = 0;
-	if (request.getStatusCode() != OK && request.getStatusCode() != PageNotFound){
+	size_t bytesRead = 0;
+	if (request.getStatusCode() != OK && request.getStatusCode() != PageNotFound)
+	{
 		body = R"(
 			<!DOCTYPE html>
 			<html lang="en">
@@ -31,8 +32,9 @@ int Response::composeResponse()
 			)";
 			bytesRead = body.size();
 		}
-	else{
-		std::string path = request.getPath();
+	else
+	{
+		string path = request.getPath();
 		const char *cPath = path.c_str();
 		int fd = open(cPath, O_RDONLY);
 		char buffer[2048];
@@ -41,69 +43,63 @@ int Response::composeResponse()
 			bytesRead = read(fd, buffer, sizeof(buffer));
 			if (bytesRead > 0)
 			{
-				std::string htmlPage(buffer, bytesRead);
+				string htmlPage(buffer, bytesRead);
 				body = htmlPage;
 			}
 			else
 			{
-				std::cout << "error" << std::endl;
+				cout << "error" << endl;
 				return 1;
 			}
 			close(fd);
 		}
 	}
-	std::string sizeOfBody;
-	std::stringstream ss;
+	string sizeOfBody;
+	stringstream ss;
 	ss << bytesRead;
 	ss >> sizeOfBody;
 	contentLength = contentLength + sizeOfBody + "\r\n";
-	std::string connection = "Connection: close\r\n\r\n";
+	string connection = "Connection: close\r\n\r\n";
 	fullResponse = statusLine + contentType + contentLength + connection + body;
 	return 0;
 }
 
-void Response::cleanResponse(){
-	request = {};
-	statusLine = "HTTP/1.1";
-	contentType = "Content-Type: text/html\r\n";
-	contentLength = "Content-Length: ";
-	body = {};
-	fullResponse = {};
-	lenResponse = {};
-	cFullResponse = {};
-	bytesSent = {};
-}
-
-void Response::setRequest(Request r){
+void Response::setRequest(Request r)
+{
 	request = r;
 }
 
-void Response::setCString(const char* cString){
+void Response::setCString(const char* cString)
+{
 	cFullResponse = cString;
 }
 
-void Response::setLenResponse(int length){
+void Response::setLenResponse(int length)
+{
 	lenResponse = length;
 }
 
-void Response::setBytesSent(int bytes){
+void Response::setBytesSent(int bytes)
+{
 	bytesSent = bytes;
 }
 
-std::string Response::getFullResponse()
+string Response::getFullResponse() const
 {
 	return fullResponse;
 }
 
-const char* Response::getCFullResponse(){
+const char* Response::getCFullResponse() const
+{
 	return cFullResponse;
 }
 
-int Response::getLenResponse()
+int Response::getLenResponse() const
 {
 	return lenResponse;
 }
 
-int Response::getBytesSent(){
+int Response::getBytesSent() const
+{
 	return bytesSent;
 }

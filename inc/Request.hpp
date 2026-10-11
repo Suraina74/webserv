@@ -1,5 +1,5 @@
 #pragma once 
-#include "../src/configParser/ServerConfig.hpp"
+#include "ServerConfig.hpp"
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -8,10 +8,14 @@
 #include <unistd.h>
 #include <map>
 #include <cstddef>
+#include <cctype>
+#include <unordered_map>
 
-constexpr std::size_t MAX_REQUEST_LINE = 8192;
-
-enum httpStatus{
+constexpr size_t MAX_REQUEST_LINE = 8192;
+// Max Body size
+using namespace std;
+enum httpStatus
+{
 	OK = 200,
 	BadRequest = 400,
 	PageNotFound = 404,
@@ -19,59 +23,81 @@ enum httpStatus{
 	RequestTimeout = 408,
 	ContentTooLarge = 413,
 	URITooLong = 414,
+	UnsupportedMediaType = 415,
 	RequestHeaderFieldsTooLarge = 431,
  	InternalServerError = 500,
 	NotImplemented = 501,
 	HTTPVersionNotSupported = 505
 };
 
-class Request {
+class Request
+{
 	private:
-		std::string fullRequest{};
-		std::string requestTillHeaders{};
-		ssize_t 	headerBytes{};
-		std::string partialRequest{};
-		ssize_t     bytesRead{};
-		std::string	requestLine{};
-		std::map<std::string, std::string> headerMap{};
-		ssize_t		contentLength{};
-		std::string Method{};
-		std::string Protocol{};
-		std::string Path{};
-		std::string	statusText = "200 OK";
-		std::string	Body{};
-		std::string fileName{};
-		std::string fileContent{};
-		httpStatus  statusCode = OK;
+		//useful data for running CGI and eventloop
+		string								Path{};
+		string								Method{};
+		string								requestLine{};
+		string								Protocol{};
+		unordered_multimap<string, string>	headerMap{};
+		string								Body{};
+		string								queryString{};//Change by Wenxuan
+		
+		//used by serverManager.cpp
+		httpStatus 							statusCode = OK;
+		size_t								contentLength{};
+		size_t								headerBytes{};
+		bool								chunked = false;
+		string								statusText = "200 OK";
+		
+		string								fullRequest{};
+		string								requestTillHeaders{};
+		string								partialRequest{};
+		size_t								bytesRead{};
+		
+		string								boundary{};
+		map<string, string> 				partHeaderMap{};
+		unordered_multimap<string, string>	contentDisposMap{};
+		string								fileName{};
+		string								fileContent{};
 
 	public:
 		Request(){}
 		~Request(){}
-		bool parseRequestLine();
-		bool validateRequestLine();
-		bool parseUntilHeaders(std::string hString);
-		bool parseHeaders();
-		bool validateHeaders();
-		void parseBody();
-		void extractBody();
-		void extractFileElements();
-		void addFile();
-		void cleanRequest();
+		bool	parseRequestLine();
+		bool	validateRequestLine();
+		bool	parseUntilHeaders(string hString);
+		bool	parseHeaders();
+		bool	validateHeaders();
+		bool	actionsOnKey(string& key);
+		bool	allowedCharsInKey(string key);
+		bool	actionsOnValue(string& value);
+		bool	checkPostHeaders();
+		bool	checkContentType();
+		void	parseBody();
+		void	extractBody();
+		void	extractChunkedBody();
+		void	validateBody();
+		void	postAndDelete();
+		void	extractFileElements();
+		void	addFile();
+		string	setStatusText(httpStatus status);
+		void	setStatus(httpStatus status);
+		void	setRequest(string request);
+		void	setBytesRead(size_t bytes);
+		void	setHeaderBytes(size_t bytes);
+		bool	getChunked() const;
+		size_t	getHeaderBytes() const;
+		size_t	getBytesRead() const;
+		string	getRequestTillHeaders() const;
+		string	getFullRequest() const;
 
-		std::string setStatusText(httpStatus status);
-		void setRequest(std::string request);
-		void setBytesRead(ssize_t bytes);
-		void setHeaderBytes(ssize_t bytes);
-
-		ssize_t getContentLength();
-		std::string getPath();
-		std::string getMethod();
-		httpStatus  getStatusCode();
-		std::string getStatusText();
-		std::string getFullRequest();
-		std::string getRequestTillHeaders();
-		ssize_t getHeaderBytes();
-		ssize_t getBytesRead();
+		size_t		getContentLength() const;//length of the request body
+		string		getPath() const;//path before '?'
+		string		getBody() const;//requestion body content
+		string		getQuery() const;//Change by Wenxuan
+		string		getMethod() const;
+		httpStatus  getStatusCode() const;
+		string 		getStatusText() const;
 };
 
 
@@ -91,6 +117,5 @@ class Request {
 // Content-Type: application/octet-stream
 
 // helloooo
-
 
 // ------WebKitFormBoundarydRcwfbvAQ3EKmZuB--

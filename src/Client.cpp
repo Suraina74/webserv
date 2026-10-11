@@ -2,14 +2,28 @@
 #include "../inc/Request.hpp"
 #include "../inc/Response.hpp"
 
-int Client::getFd(){
-	return fd;
+Client::Client():_fd(-1), _server(NULL){}
+
+Client::Client(int fd, const ServerConfig *server, Request request, Response response):_fd(fd), _server(server), _request(request),_response(response){}
+
+Client::~Client(){}
+
+int Client::getClientFd()
+{
+	return _fd;
 }
 
-Request& Client::getRequest(){
-	return request;
+Request& Client::getRequest()
+{
+	return _request;
 }
 
-Response& Client::getResponse(){
-	return response;
+const ServerConfig&	Client::getClientServer()
+{
+	return *_server;
+}
+
+Response& Client::getResponse()
+{
+	return _response;
 }
