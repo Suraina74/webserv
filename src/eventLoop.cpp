@@ -68,7 +68,7 @@ static httpStatus statErrorStatus()
 		return Forbidden;
 	return InternalServerError;
 }
-
+//setRouteAction() is partially generated code, needs furthr inspection
 void setRouteAction(Route& route, Request& request)
 {
 	// Called only after validateRouteStat() succeeds.
