@@ -1,4 +1,4 @@
-#include "../inc/CGI.hpp"
+#include "../../inc/CGI.hpp"
 
 CGI::CGI():_env("",""), _interpreter(""), _scriptPath(""), _requestBody(""), _bodySent(0), _output(""), _clientFd(-1), _inFd(-1), _outFd(-1), _pid(-1) {}
 

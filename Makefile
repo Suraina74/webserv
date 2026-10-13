@@ -2,10 +2,11 @@ NAME = webserv
 CC = c++
 FLAGS = -Wall -Wextra -Werror -g -std=c++11
 
-SRC =	src/main.cpp \
-		src/serverManager.cpp \
-		src/CGI.cpp \
-		src/eventLoop.cpp \
+SRC =	src/serverProcess/main.cpp \
+		src/serverProcess/serverManager.cpp \
+		src/serverProcess/CGI.cpp \
+		src/serverProcess/eventLoop.cpp \
+		src/serverProcess/router.cpp \
 		src/Request.cpp \
 		src/parseRL.cpp \
 		src/parseHeaders.cpp \

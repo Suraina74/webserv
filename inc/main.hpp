@@ -33,7 +33,8 @@ struct Route
 	string			interpreter{};  // R_CGI only, e.g. /usr/bin/python3
 	string			redirectTo{};   // R_REDIRECT only
 };
-
+//src/serverProcess/router.cpp 
+int processRoute(Client& client, ServerInfo&, Route& route);
 
 int sendResponse(int clientFd, Response &response);
 int receiveRequest(int clientFd, Request &request);

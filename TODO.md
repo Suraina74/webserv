@@ -1,7 +1,7 @@
 # Webserv TODO
 
 ## Routing (config ↔ request)
-- [ ] Match request path to a location block (longest prefix) — `src/eventLoop.cpp`
+- [ ] Match request path to a location block (longest prefix) — `src/serverProcess/router.cpp`
 - [ ] Check allowed methods per location (405), body size limit (413), redirects (Suraina)
 - [ ] Use root / index from config instead of hardcoded `www` — `src/parseRL.cpp` (Suraina)
 - [ ] Remove the hardcoded `index.html` / `uploads.html` check — `src/parseRL.cpp` (Suraina)
@@ -16,10 +16,10 @@
 - [ ] Complete DELETE: resolve real path, correct status codes (404/403/204) — `src/Request.cpp` (Suraina)
 
 ## CGI
-- [ ] Complete `src/CGI.cpp` (env, runScript, write body, read output) (Wenxuan)
-- [ ] Add CGI map + pipe fds to the event loop — `src/eventLoop.cpp` (Wenxuan)
+- [ ] Complete `src/serverProcess/CGI.cpp` (env, runScript, write body, read output) (Wenxuan)
+- [ ] Add CGI map + pipe fds to the event loop — `src/serverProcess/eventLoop.cpp` (Wenxuan)
 - [ ] Turn CGI output into a response (status, headers, Content-Length) — `src/Response.cpp` (Wenxuan)
-- [x] Add `src/CGI.cpp` to the Makefile
+- [x] Add `src/serverProcess/CGI.cpp` to the Makefile
 
 ## Response
 - [ ] Use custom error pages from config (Suraina)
