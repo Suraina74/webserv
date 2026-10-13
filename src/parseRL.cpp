@@ -84,9 +84,9 @@ bool Request::parseRequestLine()
 		Path = Path.substr(0, queryPos);
 	}
 	//
-	Path = "www" + Path;
-	if (Path == "www/")
-		Path = "www/index.html";
+	//Path = "www" + Path;
+	//if (Path == "www/")
+	//	Path = "www/index.html";
 	if (validateRequestLine() == false)
 		return false;
 	return true;

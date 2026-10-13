@@ -145,6 +145,9 @@ void Config::parseHost(string& val, ServerConfig& server, int lineNum)
 void Config::parseRoot(string& val, ServerConfig& server, int lineNum)
 {
 	emptyValCheck(val, lineNum);
+	// Preserve the filesystem root while removing trailing slashes.
+	while (val.size() > 1 && val.back() == '/')
+		val.pop_back();
 	string	validChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/._-";
 	struct stat info;
 	if (val.find_first_not_of(validChars) != string::npos)

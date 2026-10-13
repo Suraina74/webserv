@@ -14,6 +14,9 @@ void Config::parseLocPath(string& val, Location& loc, int lineNum)
     if (val.find_first_not_of(validChars) != string::npos)
         throw runtime_error("Line " + to_string(lineNum) + ": found invalid character in location path.");
 
+	while (val.size() > 1 && val.back() == '/')//removes all trailing '/' in path. etc. /images/// -> /images
+		val.pop_back();
+
     if (val.find("//") != string::npos)
 	{
         throw runtime_error("Line " + to_string(lineNum) + ": invalid location path.");
@@ -48,7 +51,7 @@ void Config::parseMethods(string& val, Location& loc, int lineNum)
 
 void Config::parseLocRoot(string& val, Location& loc, int lineNum)
 {
-	 emptyValCheck(val, lineNum);
+	emptyValCheck(val, lineNum);
 
     if (val[0] != '/')
         throw runtime_error("Line " + to_string(lineNum) + ": root path must start with '/'.");

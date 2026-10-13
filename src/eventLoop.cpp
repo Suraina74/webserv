@@ -4,47 +4,34 @@ const Location*	findLocation(const ServerConfig& server, const Request& request)
 {
 	const vector<Location>& locations = server.getLocations();
 	const string requestPath = request.getPath();
-	const Location* bestMatch = NULL;
+	const Location* bestLoc = NULL;
 
 	for (size_t i = 0; i < locations.size(); i++)
 	{
 		const string& locationPath = locations[i].getPath();
-
-		if (locationPath.empty())
-			continue;
 
 		if (requestPath.compare(0, locationPath.size(), locationPath) != 0)
 			continue;
 
 		// Match complete path segments: /images must not match /images-old.
 		if (requestPath.size() > locationPath.size() &&
-			locationPath[locationPath.size() - 1] != '/' &&
-			requestPath[locationPath.size()] != '/')
+    		locationPath.back() != '/' && requestPath[locationPath.size()] != '/')
 			continue;
 
-		if (!bestMatch || locationPath.size() > bestMatch->getPath().size())
-			bestMatch = &locations[i];
+		if (!bestLoc || locationPath.size() > bestLoc->getPath().size())
+			bestLoc = &locations[i];
 	}
-	return bestMatch;
+	return bestLoc;
 }
 
-bool validateRoute(const ServerConfig& server, const Request& request, Route& route)
+int checkRouteStat(Request& request, const ServerConfig& server, Route &route)
 {
-	route = Route();
-	if (request.getStatusCode() != OK)
-	{
-		route.status = request.getStatusCode();
-		return false;
-	}
-	const Location* targetLoc = findLocation(server, request);
-	route.loc = targetLoc;
-	if (!targetLoc)
-	{
+	route.status = request.getStatusCode();
+	route.loc = findLocation(server, request);
+	if (!route.loc)
 		route.status = PageNotFound;
-		return false;
-	}
 
-	const vector<string>& methods = targetLoc->getMethods();
+	const vector<string>& methods = route.loc->getMethods();
 	bool methodAllowed = false;
 
 	for (size_t i = 0; i < methods.size(); i++)
@@ -55,31 +42,59 @@ bool validateRoute(const ServerConfig& server, const Request& request, Route& ro
 			break;
 		}
 	}
-
 	if (!methodAllowed)
-	{
 		route.status = MethodNotAllowed;
-		return false;
-	}
-	if (request.getContentLength() > server.getBodySize() ||
-		request.getBody().size() > server.getBodySize())
-	{
+	if (request.getContentLength() > server.getBodySize() || request.getBody().size() > server.getBodySize())
 		route.status = ContentTooLarge;
-		return false;
-	}
 
-	return true;
+	if (route.status != OK)
+		return 1;
+	else
+		return 0;
 }
 
-Route routing(const ServerConfig& server, const Request& request)
+int populateRoute(Client &client, ServerInfo &eloop, Route &route)
 {
-	Route route;
-	if (!validateRoute(server, request, route))
-		return route;
+	Request& request = client.getRequest();
+	const ServerConfig& server = client.getClientServer();
 
-	// Other successful route actions can be selected here later.
-	route.action = R_Static;
-	return route;
+	if (checkRouteStat(request, server, route) == 1)
+	{
+		client.getRequest().setStatus(route.status);
+		return 1;
+	}
+	else
+	{
+		//under modification, check when restart
+		struct stat info;
+		string root = route.loc->getRoot();
+		if (root.empty())
+		    root = server.getRoot();
+
+		string suffix = request.getPath().substr(route.loc->getPath().size());
+
+		// Join with exactly one slash between root and suffix.
+		if (!root.empty() && root.back() != '/')
+		    root += '/';
+		if (!suffix.empty() && suffix[0] == '/')
+		    suffix.erase(0, 1);
+
+		route.fsPath = root + suffix;
+		if (stat(route.fsPath.c_str(), &info) == -1)
+		{
+		    // Determine the error response from the failure reason.
+		}
+		else if (S_ISDIR(info.st_mode))
+		{
+		    // Look for the configured index file,
+		    // or handle directory listing.
+		}
+		else if (S_ISREG(info.st_mode))
+		{
+		    // Open the file and serve its contents.
+		}
+		client.getRequest().postAndDelete();
+	}
 }
 
 void acceptClient(ServerInfo &eloop)
@@ -135,13 +150,10 @@ int eventLoop(ServerInfo &eloop)
 					continue;
 				}
 				else if (receivStatus == 2)
-				{
+				{	
 					client.getRequest().parseBody();
-					Route route = routing(client.getClientServer(), client.getRequest());
-					if (route.action == R_Error)
-						client.getRequest().setStatus(route.status);
-					else
-						client.getRequest().postAndDelete();
+					Route route{};
+					populateRoute(client, eloop, route);
 					eloop.getPfds()[i].events = POLLOUT;
 				}
 			}

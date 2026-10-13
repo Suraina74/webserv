@@ -28,14 +28,11 @@ struct Route
 	RouteAction		action = R_Error;
 	httpStatus		status = OK;
 	const Location*	loc = NULL;
-	string			fsPath;       // resolved path on disk
-	string			interpreter;  // R_CGI only, e.g. /usr/bin/python3
-	string			redirectTo;   // R_REDIRECT only
+	string			fsPath{};       // resolved path on disk
+	string			interpreter{};  // R_CGI only, e.g. /usr/bin/python3
+	string			redirectTo{};   // R_REDIRECT only
 };
 
-const Location*	findLocation(const ServerConfig& server, const Request &request);
-Route			routing(const ServerConfig& server, const Request &request);
-bool			validateRoute(const ServerConfig& server, const Request& request, Route& route);
 
 int sendResponse(int clientFd, Response &response);
 int receiveRequest(int clientFd, Request &request);
