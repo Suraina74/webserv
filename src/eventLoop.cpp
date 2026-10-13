@@ -1,5 +1,5 @@
 #include "../inc/main.hpp"
-
+ 
 const Location*	findLocation(const ServerConfig& server, const Request& request)
 {
 	const vector<Location>& locations = server.getLocations();
@@ -24,16 +24,15 @@ const Location*	findLocation(const ServerConfig& server, const Request& request)
 	return bestLoc;
 }
 
-int checkRouteStat(Request& request, const ServerConfig& server, Route &route)
+httpStatus validateRouteStat(Request& request, const ServerConfig& server, Route &route)
 {
-	route.status = request.getStatusCode();
+	//validate location
 	route.loc = findLocation(server, request);
 	if (!route.loc)
-		route.status = PageNotFound;
-
+		return (route.status = PageNotFound);
+	//validate method
 	const vector<string>& methods = route.loc->getMethods();
 	bool methodAllowed = false;
-
 	for (size_t i = 0; i < methods.size(); i++)
 	{
 		if (methods[i] == request.getMethod())
@@ -43,58 +42,186 @@ int checkRouteStat(Request& request, const ServerConfig& server, Route &route)
 		}
 	}
 	if (!methodAllowed)
-		route.status = MethodNotAllowed;
+		return (route.status = MethodNotAllowed);
+	//validate content length
 	if (request.getContentLength() > server.getBodySize() || request.getBody().size() > server.getBodySize())
-		route.status = ContentTooLarge;
+		return (route.status = ContentTooLarge);
 
-	if (route.status != OK)
-		return 1;
-	else
-		return 0;
+	//populate fsPath
+	string root = route.loc->getRoot();
+	if (root.empty())//make sure if loc root is empty give loc the server root
+	    root = server.getRoot();
+	//if request path is '/image/cats.png' location path is '/image', suffix is '/cats.png'
+	string suffix = request.getPath().substr(route.loc->getPath().size());
+	if (!suffix.empty() && suffix[0] == '/')
+	    suffix.erase(0, 1);
+	route.fsPath = root + '/' + suffix;
+
+	return OK;
 }
 
-int populateRoute(Client &client, ServerInfo &eloop, Route &route)
+static httpStatus statErrorStatus()
+{
+	if (errno == ENOENT || errno == ENOTDIR)
+		return PageNotFound;
+	if (errno == EACCES)
+		return Forbidden;
+	return InternalServerError;
+}
+
+void setRouteAction(Route& route, Request& request)
+{
+	// Called only after validateRouteStat() succeeds.
+	if (!route.loc->getRedirect().empty())
+	{
+		route.redirectTo = route.loc->getRedirect();
+		route.action = R_REDIRECT;
+		return;
+	}
+
+	const string& method = request.getMethod();
+	// Uploads may create a file: do not require fsPath to exist.
+	// A matching CGI script takes precedence over an upload.
+	const map<string, string>& cgi = route.loc->getCGI();
+	size_t dot = route.fsPath.find_last_of('.');
+	size_t slash = route.fsPath.find_last_of('/');
+	bool matchesCGI = dot != string::npos &&
+		(slash == string::npos || dot > slash) &&
+		cgi.find(route.fsPath.substr(dot)) != cgi.end();
+	if (method == "POST" && !matchesCGI && route.loc->getUploadEnabled())
+	{
+		route.action = R_Upload;
+		return;
+	}
+	if (method != "GET" && method != "POST" && method != "DELETE")
+	{
+		route.status = MethodNotAllowed;
+		return;
+	}
+
+	struct stat info;
+	if (stat(route.fsPath.c_str(), &info) == -1)
+	{
+		route.status = statErrorStatus();
+		return;
+	}
+	if (method == "DELETE")
+	{
+		// The delete handler must check permissions and perform the deletion.
+		if (S_ISREG(info.st_mode))
+			route.action = R_Delete;
+		else
+			route.status = Forbidden;
+		return;
+	}
+	if (S_ISDIR(info.st_mode))
+	{
+		if (method != "GET")
+		{
+			route.status = MethodNotAllowed;
+			return;
+		}
+		if (!route.loc->getIndex().empty())
+		{
+			string indexPath = route.fsPath;
+			if (indexPath.empty() || indexPath.back() != '/')
+				indexPath += '/';
+			indexPath += route.loc->getIndex();
+			struct stat indexInfo;
+			if (stat(indexPath.c_str(), &indexInfo) == 0)
+			{
+				if (S_ISREG(indexInfo.st_mode))
+				{
+					route.fsPath = indexPath;
+					info = indexInfo;
+				}
+			}
+			else if (errno != ENOENT && errno != ENOTDIR)
+			{
+				route.status = statErrorStatus();
+				return;
+			}
+		}
+		if (S_ISDIR(info.st_mode))
+		{
+			if (route.loc->getDirectoryListing())
+				route.action = R_AUTOINDEX;
+			else
+				route.status = Forbidden;
+			return;
+		}
+	}
+	if (!S_ISREG(info.st_mode))
+	{
+		route.status = Forbidden;
+		return;
+	}
+	// Check again after resolving a directory's index file.
+	dot = route.fsPath.find_last_of('.');
+	slash = route.fsPath.find_last_of('/');
+	if (dot != string::npos && (slash == string::npos || dot > slash))
+	{
+		auto it = cgi.find(route.fsPath.substr(dot));
+		if (it != cgi.end())
+		{
+			route.interpreter = it->second;
+			route.action = R_CGI;
+			return;
+		}
+	}
+	if (method == "GET")
+		route.action = R_Static;
+	else
+		route.status = MethodNotAllowed;
+}
+
+void runCGI(Client&, Route&)
+{
+}
+
+int processRoute(Client& client, ServerInfo&, Route& route)
 {
 	Request& request = client.getRequest();
 	const ServerConfig& server = client.getClientServer();
-
-	if (checkRouteStat(request, server, route) == 1)
+	//validateRouteStat() validate route and sets its error status and returns 1 if it is invalid
+	if (validateRouteStat(request, server, route) != OK)
 	{
-		client.getRequest().setStatus(route.status);
+		request.setStatus(route.status);
 		return 1;
 	}
 	else
 	{
-		//under modification, check when restart
-		struct stat info;
-		string root = route.loc->getRoot();
-		if (root.empty())
-		    root = server.getRoot();
-
-		string suffix = request.getPath().substr(route.loc->getPath().size());
-
-		// Join with exactly one slash between root and suffix.
-		if (!root.empty() && root.back() != '/')
-		    root += '/';
-		if (!suffix.empty() && suffix[0] == '/')
-		    suffix.erase(0, 1);
-
-		route.fsPath = root + suffix;
-		if (stat(route.fsPath.c_str(), &info) == -1)
+		setRouteAction(route, request);
+		if (route.action == R_Error)
 		{
-		    // Determine the error response from the failure reason.
+			request.setStatus(route.status);
+			return 1;
 		}
-		else if (S_ISDIR(info.st_mode))
+		switch (route.action)
 		{
-		    // Look for the configured index file,
-		    // or handle directory listing.
+			case R_CGI:
+				runCGI(client, route);//fill response in client.setResponse()
+				break;
+			case R_Upload:
+			//Upload function
+				break;
+			case R_REDIRECT:
+			//Redirect function
+				break;
+			case R_AUTOINDEX:
+			//AutoIndex function
+				break;
+			case R_Delete:
+			//Delete function
+				break;
+			case R_Static:
+			//Static function
+				break;
+			default:
+				break;
 		}
-		else if (S_ISREG(info.st_mode))
-		{
-		    // Open the file and serve its contents.
-		}
-		client.getRequest().postAndDelete();
 	}
+	return 0;
 }
 
 void acceptClient(ServerInfo &eloop)
@@ -153,7 +280,8 @@ int eventLoop(ServerInfo &eloop)
 				{	
 					client.getRequest().parseBody();
 					Route route{};
-					populateRoute(client, eloop, route);
+					processRoute(client, eloop, route);
+					//client.getRequest().postAndDelete(); 
 					eloop.getPfds()[i].events = POLLOUT;
 				}
 			}

@@ -27,7 +27,7 @@ class Location
     	void setPath(const string& path);
     	void setMethods(const vector<string>& methods);
     	void addMethod(const string& method);
-		void addCGI(const string& ext, const string& path);
+		void addCGI(const string& fileExtension, const string& path);
     	void setRoot(const string& root);
     	void setIndex(const string& index);
     	void setUploadPath(const string& uploadPath);

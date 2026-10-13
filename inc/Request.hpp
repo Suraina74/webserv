@@ -22,6 +22,7 @@ enum httpStatus
 	MethodNotAllowed = 405,
 	RequestTimeout = 408,
 	ContentTooLarge = 413,
+	Forbidden = 403,
 	URITooLong = 414,
 	UnsupportedMediaType = 415,
 	RequestHeaderFieldsTooLarge = 431,

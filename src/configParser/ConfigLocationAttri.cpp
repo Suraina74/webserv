@@ -56,6 +56,9 @@ void Config::parseLocRoot(string& val, Location& loc, int lineNum)
     if (val[0] != '/')
         throw runtime_error("Line " + to_string(lineNum) + ": root path must start with '/'.");
 
+    while (val.size() > 1 && val.back() == '/')
+        val.pop_back();
+
     loc.setRoot(val);
 }
 
