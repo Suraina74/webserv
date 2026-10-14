@@ -7,6 +7,7 @@ SRC =	src/serverProcess/main.cpp \
 		src/serverProcess/CGI.cpp \
 		src/serverProcess/eventLoop.cpp \
 		src/serverProcess/router.cpp \
+		src/serverProcess/routerUtils.cpp \
 		src/Request.cpp \
 		src/parseRL.cpp \
 		src/parseHeaders.cpp \

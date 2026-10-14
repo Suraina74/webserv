@@ -33,8 +33,20 @@ struct Route
 	string			interpreter{};  // R_CGI only, e.g. /usr/bin/python3
 	string			redirectTo{};   // R_REDIRECT only
 };
-//src/serverProcess/router.cpp 
-int processRoute(Client& client, ServerInfo&, Route& route);
+//src/serverProcess/router.cpp
+const Location*	findLocation(const ServerConfig& server, const Request& request);
+httpStatus		validateRouteStat(Request& request, const ServerConfig& server, Route& route);
+bool			checkPathStat(string& pathName, Route& route, struct stat& pathStat);
+void			setRouteAction(Route& route, Request& request);
+//route action handlers called by processRoute(), each fills client.getResponse()
+void			runCGI(Client& client, Route& route);
+void			runUpload(Client& client, Route& route);
+void			runRedirect(Client& client, Route& route);
+void			runAutoIndex(Client& client, Route& route);
+void			runDelete(Client& client, Route& route);
+void			runStatic(Client& client, Route& route);
+int				processRoute(Client& client, ServerInfo&, Route& route);
+
 
 int sendResponse(int clientFd, Response &response);
 int receiveRequest(int clientFd, Request &request);
