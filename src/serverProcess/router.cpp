@@ -76,6 +76,7 @@ void setRouteAction(Route& route, Request& request)
 	// Called only after validateRouteStat() succeeds.
 	if (!route.loc->getRedirect().empty())
 	{
+		//On this step pairing request method is already been validated 
 		route.redirectTo = route.loc->getRedirect();
 		route.action = R_REDIRECT;
 		return;
@@ -90,14 +91,9 @@ void setRouteAction(Route& route, Request& request)
 	bool matchesCGI = dot != string::npos &&
 		(slash == string::npos || dot > slash) &&
 		cgi.find(route.fsPath.substr(dot)) != cgi.end();
-	if (method == "POST" && !matchesCGI && route.loc->getUploadEnabled())
+	if (method == "POST" && route.loc->getUploadEnabled())
 	{
 		route.action = R_Upload;
-		return;
-	}
-	if (method != "GET" && method != "POST" && method != "DELETE")
-	{
-		route.status = MethodNotAllowed;
 		return;
 	}
 
@@ -107,7 +103,7 @@ void setRouteAction(Route& route, Request& request)
 		route.status = statErrorStatus();
 		return;
 	}
-	if (method == "DELETE")
+	if (request.getMethod() == "DELETE")
 	{
 		// The delete handler must check permissions and perform the deletion.
 		if (S_ISREG(info.st_mode))
@@ -158,19 +154,7 @@ void setRouteAction(Route& route, Request& request)
 		route.status = Forbidden;
 		return;
 	}
-	// Check again after resolving a directory's index file.
-	dot = route.fsPath.find_last_of('.');
-	slash = route.fsPath.find_last_of('/');
-	if (dot != string::npos && (slash == string::npos || dot > slash))
-	{
-		auto it = cgi.find(route.fsPath.substr(dot));
-		if (it != cgi.end())
-		{
-			route.interpreter = it->second;
-			route.action = R_CGI;
-			return;
-		}
-	}
+
 	if (method == "GET")
 		route.action = R_Static;
 	else
@@ -211,13 +195,14 @@ int processRoute(Client& client, ServerInfo&, Route& route)
 			//Redirect function
 				break;
 			case R_AUTOINDEX:
-			//AutoIndex function
+			//AutoIndex function: The autoindex handler builds an HTML response with clickable links to the files and subdirectories.
 				break;
 			case R_Delete:
 			//Delete function
 				break;
 			case R_Static:
-			//Static function
+			//Static function: 1.Read the file at route.fsPath 
+			//2.Put its contents into the HTTP response body 3.Set headers such as Content-Type: image/jpeg and Content-Length
 				break;
 			default:
 				break;

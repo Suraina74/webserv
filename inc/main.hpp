@@ -17,10 +17,10 @@ enum RouteAction
 {
 	R_CGI,
 	R_Error,
-	R_Static,
+	R_Static,//R_Static means: 1.Read the file at route.fsPath 2.Put its contents into the HTTP response body 3.Set headers such as Content-Type: image/jpeg and Content-Length
 	R_Upload,
 	R_REDIRECT,
-	R_AUTOINDEX,
+	R_AUTOINDEX,//The autoindex handler builds an HTML response with clickable links to the files and subdirectories.
 	R_Delete
 };
 
