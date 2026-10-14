@@ -160,10 +160,6 @@ void setRouteAction(Route& route, Request& request)
 	route.status = Forbidden;
 }
 
-void runCGI(Client&, Route&)
-{
-}
-
 int processRoute(Client& client, ServerInfo&, Route& route)
 {
 	Request& request = client.getRequest();
