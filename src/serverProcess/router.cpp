@@ -80,7 +80,7 @@ bool checkPathStat(string& pathName, Route& route, struct stat& pathStat)
 	return true;
 }
 
-void setRouteAction(Route& route, Request& request)
+void setRouteAction(Route& route, Request& request, const ServerConfig& server)
 {
 	const string& requestMethod = request.getMethod();
 	const string& requestPath = request.getPath();
@@ -144,9 +144,11 @@ void setRouteAction(Route& route, Request& request)
 	}
 	if (S_ISDIR(fsPathStat.st_mode))
 	{
-		if (!route.loc->getIndex().empty())
+		//condition ? value_if_true : value_if_false
+		const string& index = route.loc->getIndex().empty() ? server.getIndex() : route.loc->getIndex();
+		if (!index.empty())
 		{
-			string indexPath = route.fsPath + '/' + route.loc->getIndex();
+			string indexPath = route.fsPath + '/' + index;
 			struct stat indexPathStat;
 			if (stat(indexPath.c_str(), &indexPathStat) == 0 && S_ISREG(indexPathStat.st_mode))
 			{
@@ -176,7 +178,7 @@ int processRoute(Client& client, ServerInfo&, Route& route)
 	}
 	else
 	{
-		setRouteAction(route, request);
+		setRouteAction(route, request, server);
 		if (route.action == R_ERROR)
 		{
 			request.setStatus(route.status);

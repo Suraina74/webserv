@@ -37,7 +37,7 @@ struct Route
 const Location*	findLocation(const ServerConfig& server, const Request& request);
 httpStatus		validateRouteStat(Request& request, const ServerConfig& server, Route& route);
 bool			checkPathStat(string& pathName, Route& route, struct stat& pathStat);
-void			setRouteAction(Route& route, Request& request);
+void			setRouteAction(Route& route, Request& request, const ServerConfig& server);
 //route action handlers called by processRoute(), each fills client.getResponse()
 void			runCGI(Client& client, Route& route);
 void			runUpload(Client& client, Route& route);
