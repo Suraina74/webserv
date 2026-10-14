@@ -21,7 +21,7 @@ void Location::addMethod(const string& method)
 //fileExtension—for example, .py or .php
 void Location::addCGI(const string& fileExtension, const string& path)
 {
-	_cgi[fileExtension] = path;
+	_cgis[fileExtension] = path;
 }
 
 void Location::setRoot(const string& root)
@@ -90,7 +90,7 @@ bool Location::getDirectoryListing() const
 	return _directoryListing;
 }
 
-const map<string, string>& Location::getCGI() const
+const map<string, string>& Location::getCGIs() const
 {
-	return _cgi;
+	return _cgis;
 }

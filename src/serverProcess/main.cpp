@@ -56,7 +56,7 @@ int main(int ac, char **av)
                 cout << "      Upload path: " << loc.getUploadPath() << endl;
                 cout << "      Directory listing: " << (loc.getDirectoryListing() ? "on" : "off") << endl;
 
-                const map<string, string>& cgi = loc.getCGI();
+                const map<string, string>& cgi = loc.getCGIs();
                 for (map<string, string>::const_iterator it = cgi.begin();
                      it != cgi.end(); ++it)
                 {

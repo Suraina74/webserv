@@ -15,7 +15,7 @@ class Location
    		string					_index;
    		string					_uploadPath;
    		string					_redirect;
-		map<string, string>  	_cgi;
+		map<string, string>  	_cgis;
    		bool					_uploadEnabled;
    		bool					_directoryListing;
 	
@@ -44,5 +44,5 @@ class Location
     	const string& getRedirect() const;
     	bool getUploadEnabled() const;
     	bool getDirectoryListing() const;
-		const map<string, string>& getCGI() const;
+		const map<string, string>& getCGIs() const;
 };

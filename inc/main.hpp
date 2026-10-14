@@ -16,17 +16,17 @@ using namespace std;
 enum RouteAction
 {
 	R_CGI,
-	R_Error,
-	R_Static,//R_Static means: 1.Read the file at route.fsPath 2.Put its contents into the HTTP response body 3.Set headers such as Content-Type: image/jpeg and Content-Length
-	R_Upload,
+	R_ERROR,
+	R_STATIC,//R_Static means: 1.Read the file at route.fsPath 2.Put its contents into the HTTP response body 3.Set headers such as Content-Type: image/jpeg and Content-Length
+	R_UPLOAD,
 	R_REDIRECT,
 	R_AUTOINDEX,//The autoindex handler builds an HTML response with clickable links to the files and subdirectories.
-	R_Delete
+	R_DELETE
 };
 
 struct Route
 {
-	RouteAction		action = R_Error;
+	RouteAction		action = R_ERROR;
 	httpStatus		status = OK;
 	const Location*	loc = NULL;
 	string			fsPath{};       // resolved path on disk

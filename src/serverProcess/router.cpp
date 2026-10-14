@@ -61,104 +61,103 @@ httpStatus validateRouteStat(Request& request, const ServerConfig& server, Route
 	return OK;
 }
 
-static httpStatus statErrorStatus()
+bool checkPathStat(string& pathName, Route& route, struct stat& pathStat)
 {
-	if (errno == ENOENT || errno == ENOTDIR)
-		return PageNotFound;
-	if (errno == EACCES)
-		return Forbidden;
-	return InternalServerError;
+	if (stat(pathName.c_str(), &pathStat) == -1)
+	{
+		if (errno == ENOENT || errno == ENOTDIR)
+			route.status = PageNotFound;
+		else if (errno == EACCES)
+			route.status = Forbidden;
+		else
+			route.status = InternalServerError;
+		return false;
+	}
+	return true;
 }
 
-//setRouteAction() is partially generated code, needs furthr inspection
 void setRouteAction(Route& route, Request& request)
 {
-	// Called only after validateRouteStat() succeeds.
+	const string& requestMethod = request.getMethod();
+	const string& requestPath = request.getPath();
+	//All request methods here are validated against server config
+	//route.fsPath is parsed, but still need to check its status using checkPathStat()
 	if (!route.loc->getRedirect().empty())
 	{
-		//On this step pairing request method is already been validated 
 		route.redirectTo = route.loc->getRedirect();
 		route.action = R_REDIRECT;
 		return;
 	}
-
-	const string& method = request.getMethod();
-	// Uploads may create a file: do not require fsPath to exist.
-	// A matching CGI script takes precedence over an upload.
-	const map<string, string>& cgi = route.loc->getCGI();
-	size_t dot = route.fsPath.find_last_of('.');
-	size_t slash = route.fsPath.find_last_of('/');
-	bool matchesCGI = dot != string::npos &&
-		(slash == string::npos || dot > slash) &&
-		cgi.find(route.fsPath.substr(dot)) != cgi.end();
-	if (method == "POST" && route.loc->getUploadEnabled())
+	//CGI: extension of the last path segment only, e.g. /cgi-bin/test.py -> .py
+	size_t slashPos = requestPath.rfind('/');
+	size_t dotPos = requestPath.rfind('.');
+	if (dotPos != string::npos && (slashPos == string::npos || dotPos > slashPos))
 	{
-		route.action = R_Upload;
+		string fileExtension = requestPath.substr(dotPos);
+		if (route.loc->getCGIs().count(fileExtension) != 0)
+		{
+			if (requestMethod != "GET" && requestMethod != "POST")
+			{
+				route.status = MethodNotAllowed;
+				return;
+			}
+			route.interpreter = route.loc->getCGIs().at(fileExtension);
+			if (access(route.interpreter.c_str(), X_OK) == -1)
+			{
+				route.status = InternalServerError;//config error, not client's fault
+				return;
+			}
+			route.action = R_CGI;//still need to check fsPathStat when constructing CGI obj
+			return;
+		}
+	}
+	//upload target usually doesn't exist yet, so it is decided before stat()
+	if (requestMethod == "POST")
+	{
+		if (route.loc->getUploadEnabled())
+			route.action = R_UPLOAD;
+		else
+			route.status = MethodNotAllowed;
 		return;
 	}
 
-	struct stat info;
-	if (stat(route.fsPath.c_str(), &info) == -1)
-	{
-		route.status = statErrorStatus();
+	struct stat fsPathStat;
+	if (!checkPathStat(route.fsPath, route, fsPathStat))
 		return;
-	}
-	if (request.getMethod() == "DELETE")
+	if (requestMethod == "DELETE")
 	{
-		// The delete handler must check permissions and perform the deletion.
-		if (S_ISREG(info.st_mode))
-			route.action = R_Delete;
+		if (S_ISREG(fsPathStat.st_mode))
+			route.action = R_DELETE;
 		else
 			route.status = Forbidden;
 		return;
 	}
-	if (S_ISDIR(info.st_mode))
+	//GET
+	if (S_ISREG(fsPathStat.st_mode))
 	{
-		if (method != "GET")
-		{
-			route.status = MethodNotAllowed;
-			return;
-		}
+		route.action = R_STATIC;
+		return;
+	}
+	if (S_ISDIR(fsPathStat.st_mode))
+	{
 		if (!route.loc->getIndex().empty())
 		{
-			string indexPath = route.fsPath;
-			if (indexPath.empty() || indexPath.back() != '/')
-				indexPath += '/';
-			indexPath += route.loc->getIndex();
-			struct stat indexInfo;
-			if (stat(indexPath.c_str(), &indexInfo) == 0)
+			string indexPath = route.fsPath + '/' + route.loc->getIndex();
+			struct stat indexPathStat;
+			if (stat(indexPath.c_str(), &indexPathStat) == 0 && S_ISREG(indexPathStat.st_mode))
 			{
-				if (S_ISREG(indexInfo.st_mode))
-				{
-					route.fsPath = indexPath;
-					info = indexInfo;
-				}
-			}
-			else if (errno != ENOENT && errno != ENOTDIR)
-			{
-				route.status = statErrorStatus();
+				route.fsPath = indexPath;
+				route.action = R_STATIC;
 				return;
 			}
 		}
-		if (S_ISDIR(info.st_mode))
-		{
-			if (route.loc->getDirectoryListing())
-				route.action = R_AUTOINDEX;
-			else
-				route.status = Forbidden;
-			return;
-		}
-	}
-	if (!S_ISREG(info.st_mode))
-	{
-		route.status = Forbidden;
+		if (route.loc->getDirectoryListing())
+			route.action = R_AUTOINDEX;
+		else
+			route.status = Forbidden;
 		return;
 	}
-
-	if (method == "GET")
-		route.action = R_Static;
-	else
-		route.status = MethodNotAllowed;
+	route.status = Forbidden;
 }
 
 void runCGI(Client&, Route&)
@@ -178,7 +177,7 @@ int processRoute(Client& client, ServerInfo&, Route& route)
 	else
 	{
 		setRouteAction(route, request);
-		if (route.action == R_Error)
+		if (route.action == R_ERROR)
 		{
 			request.setStatus(route.status);
 			return 1;
@@ -188,7 +187,7 @@ int processRoute(Client& client, ServerInfo&, Route& route)
 			case R_CGI:
 				runCGI(client, route);//fill response in client.setResponse()
 				break;
-			case R_Upload:
+			case R_UPLOAD:
 			//Upload function
 				break;
 			case R_REDIRECT:
@@ -197,10 +196,10 @@ int processRoute(Client& client, ServerInfo&, Route& route)
 			case R_AUTOINDEX:
 			//AutoIndex function: The autoindex handler builds an HTML response with clickable links to the files and subdirectories.
 				break;
-			case R_Delete:
+			case R_DELETE:
 			//Delete function
 				break;
-			case R_Static:
+			case R_STATIC:
 			//Static function: 1.Read the file at route.fsPath 
 			//2.Put its contents into the HTTP response body 3.Set headers such as Content-Type: image/jpeg and Content-Length
 				break;
