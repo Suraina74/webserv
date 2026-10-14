@@ -21,13 +21,13 @@ void Config::parseLocLine(string& line, Location& loc, int lineNum)
 			parseCGI(rest, loc, lineNum);
 		return;
     }
-	if (!(iss >> val))
+    if (key == "location")
+        throw runtime_error("Line " + to_string(lineNum) + ": nested location blocks are not allowed.");
+    if (!(iss >> val))
         throw runtime_error("Line " + to_string(lineNum) + ": Missing argument.");
     if (iss >> extra)
         throw runtime_error("Line " + to_string(lineNum) + ": Too many arguments.");
-    if (key == "location")
-        parseLocPath(val, loc, lineNum);
-	else if (key == "root")
+    if (key == "root")
         parseLocRoot(val, loc, lineNum);
     else if (key == "index")
         parseLocIndex(val, loc, lineNum);
@@ -43,12 +43,27 @@ void Config::parseLocLine(string& line, Location& loc, int lineNum)
         throw runtime_error("Line " + to_string(lineNum) + ": Unknown directive '" + key + "'.");
 }
 
-void Config::parseLocation(ifstream& configFile, string& line, ServerConfig& server, int lineNum)
+void Config::parseLocation(ifstream& configFile, string& line, ServerConfig& server, int& lineNum)
 {
 	bool closed = false;
 	Location loc = Location();
-	
-	parseLocLine(line, loc, lineNum);
+	set<string> seen;
+	int locLine = lineNum;
+
+	//header line: "location <path>"
+	istringstream iss(line);
+	string key, path, extra;
+	if (!(iss >> key >> path))
+		throw runtime_error("Line " + to_string(lineNum) + ": Missing argument.");
+	if (iss >> extra)
+		throw runtime_error("Line " + to_string(lineNum) + ": Too many arguments.");
+	parseLocPath(path, loc, lineNum);
+	const vector<Location>& locations = server.getLocations();
+	for (size_t i = 0; i < locations.size(); i++)
+	{
+		if (locations[i].getPath() == loc.getPath())
+			throw runtime_error("Line " + to_string(lineNum) + ": duplicate location '" + loc.getPath() + "'.");
+	}
 	if (!getline(configFile, line))
     	throw runtime_error("Line " + to_string(lineNum) + ": Unexpected end of file.");
 	lineNum++;
@@ -68,10 +83,13 @@ void Config::parseLocation(ifstream& configFile, string& line, ServerConfig& ser
 			closed = true;
 			break;
 		}
+		checkDuplicate(line, seen, lineNum);
 		parseLocLine(line, loc, lineNum);
 	}
 	if (!closed)
     	throw runtime_error("Line " + to_string(lineNum) + ": missing closing '}'.");
+	if (loc.getUploadEnabled() && loc.getUploadPath().empty())
+		throw runtime_error("Line " + to_string(locLine) + ": 'upload on' requires 'upload_path'.");
 	server.addLocation(loc);
 }
 
@@ -111,11 +129,33 @@ void Config::parseLine(string& line, ServerConfig& server, int lineNum)
         throw runtime_error("Line " + to_string(lineNum) + ": Unknown directive '" + key + "'.");
 }
 
+//runs after the whole server block is read, so directive order does not matter
+void Config::validateServer(ServerConfig& server, const set<string>& seen, int serverLine)
+{
+	if (!seen.count("listen"))
+		throw runtime_error("Line " + to_string(serverLine) + ": server block is missing 'listen'.");
+	if (!seen.count("root"))
+		throw runtime_error("Line " + to_string(serverLine) + ": server block is missing 'root'.");
+	if (!seen.count("host"))
+		server.setHost("0.0.0.0");//listen on all interfaces, like nginx
+	if (!server.getIndex().empty())
+	{
+		string path = server.getRoot() + '/' + server.getIndex();
+		struct stat info;
+		if (stat(path.c_str(), &info) != 0)
+			throw runtime_error("Line " + to_string(serverLine) + ": index file '" + path + "' does not exist.");
+		if (!S_ISREG(info.st_mode))
+			throw runtime_error("Line " + to_string(serverLine) + ": index '" + path + "' is not a regular file.");
+	}
+}
+
 void Config::parseServer(ifstream& configFile, int& lineNum, bool& foundServer)
 {
 	bool closed = false;
 	string line;
 	ServerConfig newServer = ServerConfig();
+	set<string> seen;
+	int serverLine = lineNum;
 
 	if (!getline(configFile, line))
 		throw runtime_error("Line " + to_string(lineNum) + ": Unexpected end of file.");
@@ -136,15 +176,20 @@ void Config::parseServer(ifstream& configFile, int& lineNum, bool& foundServer)
 			closed = true;
 			break;
 		}
-		if (line.compare(0, 10, "location /") == 0)
+		//any line whose first word is "location", so "location a" gets a proper path error
+		string firstWord;
+		istringstream(line) >> firstWord;
+		if (firstWord == "location")
 		{
 			parseLocation(configFile, line, newServer, lineNum);
 			continue;
 		}
+		checkDuplicate(line, seen, lineNum);
 		parseLine(line, newServer, lineNum);
 	}
 	if (!closed)
     	throw runtime_error("Line " + to_string(lineNum) + ": missing closing '}'.");
+	validateServer(newServer, seen, serverLine);
 	//vector as a class member is automatically constructed and can be used immediately
 	//push_back(x) add x to the end of the list
 	foundServer = false;

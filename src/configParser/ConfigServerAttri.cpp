@@ -54,6 +54,9 @@ void Config::parseErr(string& val, ServerConfig& server, int lineNum)
         if (errCode[0] == '/')
         {
             errPath = errCode;
+            string extra;
+            if (iss >> extra)
+                throw runtime_error("Line " + to_string(lineNum) + ": error_page takes only one path.");
             break;
         }
         size_t pos = 0;
@@ -145,17 +148,7 @@ void Config::parseHost(string& val, ServerConfig& server, int lineNum)
 void Config::parseRoot(string& val, ServerConfig& server, int lineNum)
 {
 	emptyValCheck(val, lineNum);
-	// Preserve the filesystem root while removing trailing slashes.
-	while (val.size() > 1 && val.back() == '/')
-		val.pop_back();
-	string	validChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/._-";
-	struct stat info;
-	if (val.find_first_not_of(validChars) != string::npos)
-		throw runtime_error("Line " + to_string(lineNum) + ": found invalid character.");
-	if (stat(val.c_str(), &info) == -1)
-		throw runtime_error("Line " + to_string(lineNum) + ": root path does not exist.");
-	if (!S_ISDIR(info.st_mode))
-		throw runtime_error("Line " + to_string(lineNum) + ": root path is not a directory.");
+	verifyDirPath(val, lineNum, "root path");
 	server.setRoot(val);
 }
 
@@ -164,12 +157,7 @@ void Config::parseIndex(string& val, ServerConfig& server, int lineNum)
 	emptyValCheck(val, lineNum);
 	if (val.find("/") != string::npos)
 		throw runtime_error("Line " + to_string(lineNum) + ": invalid file name.");
-	string path = server.getRoot() + '/' + val;
-	struct stat info;
-	if (stat(path.c_str(), &info) != 0)
-        throw runtime_error("Line " + to_string(lineNum) + ": index file does not exist.");
-	if (!S_ISREG(info.st_mode))//check if a file is valid
-		throw runtime_error("Line " + to_string(lineNum) + ": index is not a regular file.");
+	//existence is checked in validateServer(), root may not be parsed yet
 	server.setIndex(val);
 }
 

@@ -27,6 +27,10 @@ const Location*	findLocation(const ServerConfig& server, const Request& request)
 
 httpStatus validateRouteStat(Request& request, const ServerConfig& server, Route &route)
 {
+	//reject paths that could escape the root: must start with '/' and contain no ".." segment
+	const string requestPath = request.getPath();
+	if (requestPath.empty() || requestPath[0] != '/' || hasDotDotSegment(requestPath))
+		return (route.status = BadRequest);
 	//validate location
 	route.loc = findLocation(server, request);
 	if (!route.loc)

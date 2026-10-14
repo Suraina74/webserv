@@ -1,6 +1,6 @@
 #include "../../inc/ServerConfig.hpp"
 
-ServerConfig::ServerConfig():_listen(0), _root(""), _host(""), _index(""), _serverName(""), _maxBodySize(0) {}		
+ServerConfig::ServerConfig():_listen(0), _root(""), _host(""), _index(""), _serverName(""), _maxBodySize(1024 * 1024) {}//default body limit 1M, like nginx		
 
 ServerConfig::~ServerConfig(){}
 

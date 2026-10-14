@@ -9,15 +9,15 @@ using namespace std;
 class Location
 {
 	private:
-   		string					_path;
-   		vector<string>			_methods;
-   		string					_root;
-   		string					_index;
-   		string					_uploadPath;
-   		string					_redirect;
-		map<string, string>  	_cgis;
-   		bool					_uploadEnabled;
-   		bool					_directoryListing;
+   		string					_path{};
+   		vector<string>			_methods{};
+   		string					_root{};
+   		string					_index{};
+   		string					_uploadPath{};
+   		string					_redirect{};
+		map<string, string>  	_cgis{};
+   		bool					_uploadEnabled{};
+   		bool					_directoryListing{};
 	
 	public:
 		// Constructor

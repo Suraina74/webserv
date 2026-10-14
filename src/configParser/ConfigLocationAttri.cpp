@@ -14,10 +14,10 @@ void Config::parseLocPath(string& val, Location& loc, int lineNum)
     if (val.find_first_not_of(validChars) != string::npos)
         throw runtime_error("Line " + to_string(lineNum) + ": found invalid character in location path.");
 
-	while (val.size() > 1 && val.back() == '/')//removes all trailing '/' in path. etc. /images/// -> /images
-		val.pop_back();
+    while (val.size() > 1 && val.back() == '/')//removes all trailing '/' in path. etc. /images/// -> /images
+        val.pop_back();
 
-    if (val.find("//") != string::npos)
+    if (val.find("//") != string::npos || hasDotDotSegment(val))
 	{
         throw runtime_error("Line " + to_string(lineNum) + ": invalid location path.");
 	}
@@ -52,28 +52,30 @@ void Config::parseMethods(string& val, Location& loc, int lineNum)
 void Config::parseLocRoot(string& val, Location& loc, int lineNum)
 {
 	emptyValCheck(val, lineNum);
-
-    if (val[0] != '/')
-        throw runtime_error("Line " + to_string(lineNum) + ": root path must start with '/'.");
-
-    while (val.size() > 1 && val.back() == '/')
-        val.pop_back();
-
-    loc.setRoot(val);
+	verifyDirPath(val, lineNum, "root path");
+	loc.setRoot(val);
 }
 
 void Config::parseLocIndex(string& val, Location& loc, int lineNum)
 {
 	emptyValCheck(val, lineNum);
-
-    loc.setIndex(val);
+	//a file name only: "../x" or "a/b" would escape or change the location root
+	if (val.find('/') != string::npos || val == "..")
+		throw runtime_error("Line " + to_string(lineNum) + ": invalid file name.");
+	loc.setIndex(val);
 }
 
 void Config::parseRedirect(string& val, Location& loc, int lineNum)
 {
 	emptyValCheck(val, lineNum);
-
-    loc.setRedirect(val);
+	//a path on this server (/new-page) or a full URL (http://example.com/x)
+	if (val[0] != '/' && val.compare(0, 7, "http://") != 0 && val.compare(0, 8, "https://") != 0)
+		throw runtime_error("Line " + to_string(lineNum) + ": redirect must start with '/', 'http://' or 'https://'.");
+	static const string validChars =
+		"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~:/?#[]@!$&'()*+,=%";
+	if (val.find_first_not_of(validChars) != string::npos)
+		throw runtime_error("Line " + to_string(lineNum) + ": found invalid character in redirect.");
+	loc.setRedirect(val);
 }
 
 void Config::parseCGI(string& val, Location& loc, int lineNum)
@@ -99,11 +101,8 @@ void Config::parseCGI(string& val, Location& loc, int lineNum)
 void Config::parseUploadPath(string& val, Location& loc, int lineNum)
 {
 	emptyValCheck(val, lineNum);
-
-    if (val[0] != '/')
-        throw runtime_error("Line " + to_string(lineNum) + ": upload path must start with '/'.");
-
-    loc.setUploadPath(val);
+	verifyDirPath(val, lineNum, "upload path");
+	loc.setUploadPath(val);
 }
 void Config::parseUpload(string& val, Location& loc, int lineNum)
 {
