@@ -1,5 +1,7 @@
 #include "../inc/Request.hpp"
 
+// What if content length = 0, but there is a body?
+
 void Request::extractFileElements(){
 	auto itFilename = contentDisposMap.find("filename");
 	if (itFilename == contentDisposMap.end()){
@@ -11,30 +13,34 @@ void Request::extractFileElements(){
 		statusCode = BadRequest;
 		return;
 	}
-	size_t startOfFileContent = Body.find("\r\n\r\n");
-	if (startOfFileContent == string::npos){
-		statusCode = BadRequest;
-		return;
-	}
-	startOfFileContent += 4;
-	size_t endOfFileContent = Body.find("\r\n" + boundary + "--");
-	if (endOfFileContent == string::npos){
-		statusCode = BadRequest;
-		return;
-	}
-	fileContent = Body.substr(startOfFileContent, endOfFileContent - startOfFileContent);
-	if (fileContent.find(boundary) != string::npos){
-		statusCode = BadRequest;
-		return;
+	if (contentLength > 0 || chunked == true){
+		size_t startOfFileContent = Body.find("\r\n\r\n");
+		if (startOfFileContent == string::npos){
+			statusCode = BadRequest;
+			return;
+		}
+		startOfFileContent += 4;
+		size_t endOfFileContent = Body.find("\r\n" + boundary + "--");
+		if (endOfFileContent == string::npos){
+			statusCode = BadRequest;
+			return;
+		}
+		fileContent = Body.substr(startOfFileContent, endOfFileContent - startOfFileContent);
+		if (fileContent.find(boundary) != string::npos){
+			statusCode = BadRequest;
+			return;
+		}
 	}
 }
 
 void Request::addFile(){
 	// Vanuit config halen waar files moeten worden opgeslagen.
-	string uploadPlace = "www/uploads/" + fileName;
-	ofstream file(uploadPlace, ios::binary);
-	file << fileContent;
-	file.close();
+	if (contentLength > 0 || chunked == true){
+		string uploadPlace = "www/uploads/" + fileName;
+		ofstream file(uploadPlace, ios::binary);
+		file << fileContent;
+		file.close();
+	}
 }
 
 void Request::postAndDelete(){

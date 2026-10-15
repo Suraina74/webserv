@@ -36,7 +36,9 @@ int receiveRequest(int clientFd, Request &request)
 	if (request.getChunked() == true && request.getFullRequest().find("0\r\n\r\n") != string::npos){
 		return 2;
 	}
-	else if (request.getBytesRead() == request.getHeaderBytes() + request.getContentLength()){
+	// BytesRead can be bigger than headerbytes + contentLength -> There can be a second request after one request or an invalid
+	// headerbytes + contentLength can be bigger than BytesRead = timeout at some point?
+	else if (request.getBytesRead() >= request.getHeaderBytes() + request.getContentLength()){
 		return 2;
 	}
 	return 1;

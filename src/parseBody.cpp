@@ -39,6 +39,7 @@ bool Request::makeMapOfHeader(unordered_multimap<string, string>& map, string wo
 		firstElement[i] = tolower(firstElement[i]);
 	}
 	if (firstElement != word){
+		statusCode = UnsupportedMediaType;
 		return false;
 	}
 	string key, value;
@@ -91,12 +92,14 @@ bool Request::checkContentDisposition(string valueCD){
 void Request::validateBody(){
 	size_t pos = Body.find(boundary + "\r\n");
 	if (pos == string::npos || pos != 0){
+		cout << "test0" << endl;
 		statusCode = BadRequest;
 		return;
 	}
 	size_t headerStart = boundary.length() + 2;
 	size_t blankLine = Body.find("\r\n\r\n");
 	if (blankLine == string::npos){
+		cout << "test1" << endl;
 		statusCode = BadRequest;
 		return;
 	}
@@ -105,12 +108,14 @@ void Request::validateBody(){
 		size_t headerEnd = Body.find("\r\n", headerStart);
 		if (headerEnd == string::npos){
 			statusCode = BadRequest;
+			cout << "test2" << endl;
 			return;
 		}
 		string bodyHeader = Body.substr(headerStart, headerEnd - headerStart);
 		size_t colon = bodyHeader.find(':');
 		if (colon == string::npos){
 			statusCode = BadRequest;
+			cout << "test3" << endl;
 			return;
 		}
 		key = bodyHeader.substr(0, colon);
@@ -133,6 +138,7 @@ void Request::validateBody(){
 	auto it = bodyHeaderMap.find("content-disposition");
 	if (it == bodyHeaderMap.end()){
 		statusCode = BadRequest;
+		cout << "test4" << endl;
 		return;
 	}
 	string valueCD = it->second;
@@ -146,11 +152,13 @@ void Request::validateBody(){
 	size_t endBodyPos = Body.length();
 	size_t endBoundary = Body.find("\r\n" + boundary + "--" + "\r\n");
 	if (endBoundary == string::npos){
+		cout << "test5" << endl;
 		statusCode = BadRequest;
 		return;
 	}
 	endBoundary += (2 + boundary.length() + 4);
 	if (endBoundary != endBodyPos){
+		cout << "test6" << endl;
 		statusCode = BadRequest;
 		return;
 	}
@@ -198,6 +206,7 @@ void Request::extractChunkedBody(){
 			statusCode = BadRequest;
 			break;
 		}
+		// if allchunksizes < bytesRead --> something left in fullrequest
 		if (chunkSize != 0){
 			part = chunkedBody.substr((end + 2), chunkSize);
 			Body += part;
@@ -217,6 +226,12 @@ void Request::extractBody(){
 	}
 	startBody += 4;
 	Body = fullRequest.substr(startBody, contentLength);
+	// content length is small, something is left in the fullrequest
+	if (bytesRead > headerBytes + contentLength){
+		size_t index = startBody + contentLength;
+		requestLeft = fullRequest.substr(index, fullRequest.length() - index);
+		cout << requestLeft << endl;
+	}
 }
 
 void Request::parseBody(){

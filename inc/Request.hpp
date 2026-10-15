@@ -32,6 +32,7 @@ enum httpStatus{
 class Request {
 	private:
 		string 								fullRequest{};
+		string								requestLeft{};
 		string 								requestTillHeaders{};
 		size_t 								headerBytes{};
 		string 								partialRequest{};
@@ -40,6 +41,7 @@ class Request {
 		string 								Method{};
 		string 								Protocol{};
 		string 								Path{};
+		string								queryString{};//Change by Wenxuan
 		unordered_multimap<string, string>	headerMap{};
 		unordered_multimap<string, string>	contentTypeMap{};
 		size_t								contentLength{};
@@ -63,7 +65,7 @@ class Request {
 		bool validateHeaders();
 		bool makeMapOfHeader(unordered_multimap<string, string>& map, string header, string value);
 		bool actionsOnKey(string& key);
-		bool allowedCharsInKey(string key);
+		bool allowedCharsInString(string input);
 		bool actionsOnValue(string& value);
 		bool checkOtherHeaders();
 		bool checkContentType();
@@ -91,8 +93,8 @@ class Request {
 		size_t getHeaderBytes();
 		size_t getBytesRead();
 		bool getChunked();
+		string	getQuery() const; //Change by Wenxuan
 };
-
 
 // Request ontvangen, headers apart opslaan, body opslaan,
 // Extract information, 

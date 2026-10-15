@@ -33,6 +33,17 @@ string Request::setStatusText(httpStatus status){
 	}
 }
 
+bool Request::allowedCharsInString(string input){
+	string allowedChars = "!#$%&'*+-.^_`|~";
+	for (size_t i = 0; i < input.length(); i++){
+		if (!(input[i] >= 'a' && input[i] <= 'z') && !(input[i] >= 'A' && input[i] <= 'Z') \
+		&& !(input[i] >= '0' && input[i] <= '9') && allowedChars.find(input[i]) == string::npos){
+			return false;
+		}
+	}
+	return true;
+}
+
 void Request::setRequest(string request){
 	fullRequest = request;
 }

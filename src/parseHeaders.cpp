@@ -2,17 +2,8 @@
 
 // Check on overflow/Underflow of content length.
 // Kijken of content-length niet groter is dan een bepaalde grootte.
-
-bool Request::allowedCharsInKey(string key){
-	string allowedChars = "!#$%&'*+-.^_`|~";
-	for (size_t i = 0; i < key.length(); i++){
-		if (!(key[i] >= 'a' && key[i] <= 'z') && !(key[i] >= 'A' && key[i] <= 'Z') \
-		&& !(key[i] >= '0' && key[i] <= '9') && allowedChars.find(key[i]) == string::npos){
-			return false;
-		}
-	}
-	return true;
-}
+// Multiple requests arriving in one read. Aanpassing in serverinfo.cpp doen
+// redirections
 
 bool Request::actionsOnKey(string& key){
 	if (key.empty()){
@@ -23,7 +14,7 @@ bool Request::actionsOnKey(string& key){
 		statusCode = BadRequest;
 		return false;
 	}
-	if (allowedCharsInKey(key) == false){
+	if (allowedCharsInString(key) == false){
 		statusCode = BadRequest;
 		return false;
 	}
@@ -127,6 +118,9 @@ bool Request::checkContentType(){
 		}
 		string str = itCt->second;
 		if (makeMapOfHeader(contentTypeMap, "multipart/form-data", str) == false){
+			if (statusCode == UnsupportedMediaType){
+				return false;
+			}
 			statusCode = BadRequest;
 			return false;
 		}
@@ -141,7 +135,7 @@ bool Request::checkContentType(){
 		}
 		boundary = "--" + itBoundary->second;
 	}
-	else if (itCt == headerMap.end() && Method == "POST"){
+	else if (itCt == headerMap.end() && Method == "POST"){ //Cause for multipart/form-data you need content type.
 		statusCode = UnsupportedMediaType;
 		return false;
 	}
@@ -184,7 +178,7 @@ bool Request::checkOtherHeaders(){
 			return false;
 		}
 		// if (contentLength > allowed body size in config file){
-		//	statusCode = RequestHeaderFieldsTooLarge;
+		//	statusCode = ;
 		// }
 	}
 	else if (itTe != headerMap.end()){
