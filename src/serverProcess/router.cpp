@@ -1,6 +1,6 @@
 #include "../../inc/main.hpp"
 
- 
+
 const Location*	findLocation(const ServerConfig& server, const Request& request)
 {
 	const vector<Location>& locations = server.getLocations();
@@ -16,7 +16,7 @@ const Location*	findLocation(const ServerConfig& server, const Request& request)
 
 		// Match complete path segments: /images must not match /images-old.
 		if (requestPath.size() > locationPath.size() &&
-    		locationPath.back() != '/' && requestPath[locationPath.size()] != '/')
+			locationPath.back() != '/' && requestPath[locationPath.size()] != '/')
 			continue;
 
 		if (!bestLoc || locationPath.size() > bestLoc->getPath().size())
@@ -55,11 +55,11 @@ httpStatus validateRouteStat(Request& request, const ServerConfig& server, Route
 	//populate fsPath
 	string root = route.loc->getRoot();
 	if (root.empty())//make sure if loc root is empty give loc the server root
-	    root = server.getRoot();
+		root = server.getRoot();
 	//if request path is '/image/cats.png' location path is '/image', suffix is '/cats.png'
 	string suffix = request.getPath().substr(route.loc->getPath().size());
 	if (!suffix.empty() && suffix[0] == '/')
-	    suffix.erase(0, 1);
+		suffix.erase(0, 1);
 	route.fsPath = root + '/' + suffix;
 
 	return OK;
@@ -202,7 +202,7 @@ int processRoute(Client& client, ServerInfo&, Route& route)
 			//Delete function
 				break;
 			case R_STATIC:
-			//Static function: 1.Read the file at route.fsPath 
+			//Static function: 1.Read the file at route.fsPath
 			//2.Put its contents into the HTTP response body 3.Set headers such as Content-Type: image/jpeg and Content-Length
 				break;
 			default:

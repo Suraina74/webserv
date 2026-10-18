@@ -11,7 +11,7 @@
 
 using namespace std;
 
-class Config 
+class Config
 {
 	private:
 		vector<ServerConfig> _servers;
@@ -41,12 +41,12 @@ class Config
 		void parseMethods(string& val, Location& loc, int lineNum);
 		void parseCGI(string& val, Location& loc, int lineNum);
 		void parseLocPath(string& val, Location& loc, int lineNum);
-    	void parseLocRoot(string& val, Location& loc, int lineNum);
-    	void parseLocIndex(string& val, Location& loc, int lineNum);
-    	void parseUploadPath(string& val, Location& loc, int lineNum);
-    	void parseUpload(string& val, Location& loc, int lineNum);
-    	void parseRedirect(string& val, Location& loc, int lineNum);
-    	void parseDirectoryListing(string& val, Location& loc, int lineNum);
+		void parseLocRoot(string& val, Location& loc, int lineNum);
+		void parseLocIndex(string& val, Location& loc, int lineNum);
+		void parseUploadPath(string& val, Location& loc, int lineNum);
+		void parseUpload(string& val, Location& loc, int lineNum);
+		void parseRedirect(string& val, Location& loc, int lineNum);
+		void parseDirectoryListing(string& val, Location& loc, int lineNum);
 		//accessor to server
 		const vector<ServerConfig>& getServers() const;
 };

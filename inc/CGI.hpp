@@ -1,4 +1,4 @@
-#pragma once 
+#pragma once
 #include <iostream>
 #include <unistd.h>
 #include <vector>
@@ -7,12 +7,12 @@
 
 using namespace std;
 
-class CGI 
+class CGI
 {
 	private:
 		map<string, string>	_env; //key = "SERVER_PORT", value = "8080"
 		string				_interpreter; //tells server what language to use
-		string				_scriptPath; 
+		string				_scriptPath;
 		string				_requestBody;
 		size_t				_bodySent;
 		string				_output;

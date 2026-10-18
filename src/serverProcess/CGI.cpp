@@ -6,7 +6,7 @@ CGI::CGI(Request &request, const ServerConfig &server, int clientFd)
 {
 	CGI();
 	vector<Location> allLocations = server.getLocations();
-	for (int i = 0; i < allLocations.size(); i++)
+	for (size_t i = 0; i < allLocations.size(); i++)
 	{
 		//if found cgi, get interpreter val
 		//else all destructor
@@ -18,5 +18,5 @@ CGI::CGI(Request &request, const ServerConfig &server, int clientFd)
 
 void CGI::populateEnv(Request &request, const ServerConfig &server)
 {
-	
+
 }

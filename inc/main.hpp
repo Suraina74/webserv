@@ -48,8 +48,6 @@ void			runStatic(Client& client, Route& route);
 int				processRoute(Client& client, ServerInfo&, Route& route);
 
 
-int sendResponse(int clientFd, Response &response);
-int receiveRequest(int clientFd, Request &request);
 int eventLoop(ServerInfo &eloop);
 void createSockAddr(const vector<ServerConfig> &server, ServerInfo &eloop);
 int server(const vector<ServerConfig> &servers);

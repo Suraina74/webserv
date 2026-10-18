@@ -7,40 +7,40 @@ Config::~Config(){}
 void Config::parseLocLine(string& line, Location& loc, int lineNum)
 {
 	istringstream iss(line);
-    string key, val, extra, rest;
+	string key, val, extra, rest;
 
-    if (!(iss >> key))
-        throw runtime_error("Line " + to_string(lineNum) + ": Missing argument.");
-    if (key == "methods" || key == "cgi")
-    {
-        getline(iss, rest);
-        cleanLine(rest);
+	if (!(iss >> key))
+		throw runtime_error("Line " + to_string(lineNum) + ": Missing argument.");
+	if (key == "methods" || key == "cgi")
+	{
+		getline(iss, rest);
+		cleanLine(rest);
 		if (key == "methods")
 			parseMethods(rest, loc, lineNum);
 		else
 			parseCGI(rest, loc, lineNum);
 		return;
-    }
-    if (key == "location")
-        throw runtime_error("Line " + to_string(lineNum) + ": nested location blocks are not allowed.");
-    if (!(iss >> val))
-        throw runtime_error("Line " + to_string(lineNum) + ": Missing argument.");
-    if (iss >> extra)
-        throw runtime_error("Line " + to_string(lineNum) + ": Too many arguments.");
-    if (key == "root")
-        parseLocRoot(val, loc, lineNum);
-    else if (key == "index")
-        parseLocIndex(val, loc, lineNum);
-    else if (key == "upload_path")
-        parseUploadPath(val, loc, lineNum);
-    else if (key == "upload")
-        parseUpload(val, loc, lineNum);
-    else if (key == "redirect")
-        parseRedirect(val, loc, lineNum);
-    else if (key == "directory_listing")
-        parseDirectoryListing(val, loc, lineNum);
-    else
-        throw runtime_error("Line " + to_string(lineNum) + ": Unknown directive '" + key + "'.");
+	}
+	if (key == "location")
+		throw runtime_error("Line " + to_string(lineNum) + ": nested location blocks are not allowed.");
+	if (!(iss >> val))
+		throw runtime_error("Line " + to_string(lineNum) + ": Missing argument.");
+	if (iss >> extra)
+		throw runtime_error("Line " + to_string(lineNum) + ": Too many arguments.");
+	if (key == "root")
+		parseLocRoot(val, loc, lineNum);
+	else if (key == "index")
+		parseLocIndex(val, loc, lineNum);
+	else if (key == "upload_path")
+		parseUploadPath(val, loc, lineNum);
+	else if (key == "upload")
+		parseUpload(val, loc, lineNum);
+	else if (key == "redirect")
+		parseRedirect(val, loc, lineNum);
+	else if (key == "directory_listing")
+		parseDirectoryListing(val, loc, lineNum);
+	else
+		throw runtime_error("Line " + to_string(lineNum) + ": Unknown directive '" + key + "'.");
 }
 
 void Config::parseLocation(ifstream& configFile, string& line, ServerConfig& server, int& lineNum)
@@ -65,12 +65,12 @@ void Config::parseLocation(ifstream& configFile, string& line, ServerConfig& ser
 			throw runtime_error("Line " + to_string(lineNum) + ": duplicate location '" + loc.getPath() + "'.");
 	}
 	if (!getline(configFile, line))
-    	throw runtime_error("Line " + to_string(lineNum) + ": Unexpected end of file.");
+		throw runtime_error("Line " + to_string(lineNum) + ": Unexpected end of file.");
 	lineNum++;
 	cleanLine(line);
-    if (line != "{")
+	if (line != "{")
 	{
-    	throw runtime_error("Line " + to_string(lineNum) + ": Expected '{'.");
+		throw runtime_error("Line " + to_string(lineNum) + ": Expected '{'.");
 	}
 	while (getline(configFile, line))
 	{
@@ -87,7 +87,7 @@ void Config::parseLocation(ifstream& configFile, string& line, ServerConfig& ser
 		parseLocLine(line, loc, lineNum);
 	}
 	if (!closed)
-    	throw runtime_error("Line " + to_string(lineNum) + ": missing closing '}'.");
+		throw runtime_error("Line " + to_string(lineNum) + ": missing closing '}'.");
 	if (loc.getUploadEnabled() && loc.getUploadPath().empty())
 		throw runtime_error("Line " + to_string(locLine) + ": 'upload on' requires 'upload_path'.");
 	server.addLocation(loc);
@@ -96,37 +96,37 @@ void Config::parseLocation(ifstream& configFile, string& line, ServerConfig& ser
 void Config::parseLine(string& line, ServerConfig& server, int lineNum)
 {
 	istringstream iss(line);
-    string key, val, extra, rest;
+	string key, val, extra, rest;
 
-    if (!(iss >> key))
-        throw runtime_error("Line " + to_string(lineNum) + ": Missing argument.");
-    if (key == "error_page")
-    {
-        getline(iss, rest);
-        cleanLine(rest);
+	if (!(iss >> key))
+		throw runtime_error("Line " + to_string(lineNum) + ": Missing argument.");
+	if (key == "error_page")
+	{
+		getline(iss, rest);
+		cleanLine(rest);
 		if (rest.empty())
-            throw runtime_error("Line " + to_string(lineNum) + ": error_page requires a code and a path.");
-        parseErr(rest, server, lineNum);
+			throw runtime_error("Line " + to_string(lineNum) + ": error_page requires a code and a path.");
+		parseErr(rest, server, lineNum);
 		return;
-    }
+	}
 	if (!(iss >> val))
-        throw runtime_error("Line " + to_string(lineNum) + ": Missing argument.");
-    if (iss >> extra)
-        throw runtime_error("Line " + to_string(lineNum) + ": Too many arguments.");
-    if (key == "listen")
-        parsePort(val, server, lineNum);
-    else if (key == "host")
-        parseHost(val, server, lineNum);
-    else if (key == "root")
-        parseRoot(val, server, lineNum);
-    else if (key == "index")
-        parseIndex(val, server, lineNum);
-    else if (key == "client_max_body_size")
-        parseBodySize(val, server, lineNum);
-    else if (key == "server_name")
-        parseServerName(val, server, lineNum);
-    else
-        throw runtime_error("Line " + to_string(lineNum) + ": Unknown directive '" + key + "'.");
+		throw runtime_error("Line " + to_string(lineNum) + ": Missing argument.");
+	if (iss >> extra)
+		throw runtime_error("Line " + to_string(lineNum) + ": Too many arguments.");
+	if (key == "listen")
+		parsePort(val, server, lineNum);
+	else if (key == "host")
+		parseHost(val, server, lineNum);
+	else if (key == "root")
+		parseRoot(val, server, lineNum);
+	else if (key == "index")
+		parseIndex(val, server, lineNum);
+	else if (key == "client_max_body_size")
+		parseBodySize(val, server, lineNum);
+	else if (key == "server_name")
+		parseServerName(val, server, lineNum);
+	else
+		throw runtime_error("Line " + to_string(lineNum) + ": Unknown directive '" + key + "'.");
 }
 
 //runs after the whole server block is read, so directive order does not matter
@@ -161,9 +161,9 @@ void Config::parseServer(ifstream& configFile, int& lineNum, bool& foundServer)
 		throw runtime_error("Line " + to_string(lineNum) + ": Unexpected end of file.");
 	lineNum++;
 	cleanLine(line);
-    if (line != "{")
+	if (line != "{")
 	{
-    	throw runtime_error("Line " + to_string(lineNum) + ": Expected '{'.");
+		throw runtime_error("Line " + to_string(lineNum) + ": Expected '{'.");
 	}
 	while (getline(configFile, line))
 	{
@@ -188,7 +188,7 @@ void Config::parseServer(ifstream& configFile, int& lineNum, bool& foundServer)
 		parseLine(line, newServer, lineNum);
 	}
 	if (!closed)
-    	throw runtime_error("Line " + to_string(lineNum) + ": missing closing '}'.");
+		throw runtime_error("Line " + to_string(lineNum) + ": missing closing '}'.");
 	validateServer(newServer, seen, serverLine);
 	//vector as a class member is automatically constructed and can be used immediately
 	//push_back(x) add x to the end of the list
@@ -225,10 +225,10 @@ void Config::parse(const string &filename)
 		numServer++;
 	}
 	if (numServer == 0)
-    	throw runtime_error("Config file contains no server block.");
+		throw runtime_error("Config file contains no server block.");
 }
 
-const std::vector<ServerConfig>& Config::getServers() const
+const vector<ServerConfig>& Config::getServers() const
 {
 	return _servers;
 }

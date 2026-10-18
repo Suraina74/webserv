@@ -1,19 +1,24 @@
 #include "../inc/Request.hpp"
 
+// Nog wel kijken welke html pages allowed zijn volgens config file.
+// Nog wel kijken welke methods allowed zijn per html page volgens config file.
+// If server does not implement a method at all -> 501 Not Implemented
+// If server does implement the method, but according to the config file the method is not allowed for a specific HTML page. Then 405 Method Not Allowed.
+
 bool Request::validateRequestLine()
 {
-	// Nog wel kijken welke html pages allowed zijn volgens config file.
 	if ((Method == "GET" || Method == "POST") && Path != "www/index.html" && Path != "www/uploads.html")
 	{
 		Path = "www/404.html";
 		statusCode = PageNotFound;
 		return false;
 	}
-	// Nog wel kijken welke methods allowed zijn per html page volgens config file.
-	// If server does not implement a method at all -> 501 Not Implemented
-	// If server does implement the method, but according to the config file the method is not allowed for a specific HTML page. Then 405 Method Not Allowed.
-	// Methods mogen alleen bestaan uit bepaalde karakters. A-Z a-z 0-9 ! # $ % & ' * + - . ^ _ ` | ~
-	// Method must contain at least one character.
+
+	if (allowedCharsInString(Method) == false || Method.empty())
+	{
+		statusCode = BadRequest;
+		return false;
+	}
 	if (Method != "GET" && Method != "DELETE" && Method != "POST")
 	{
 		statusCode = NotImplemented;
@@ -30,7 +35,7 @@ bool Request::validateRequestLine()
 bool Request::parseRequestLine()
 {
 	size_t endOfRequestLine = requestTillHeaders.find("\r\n"); // CRLF is: carriage return(\r) line feed (\n)
-	if (endOfRequestLine == std::string::npos)
+	if (endOfRequestLine == string::npos)
 	{
 		statusCode = BadRequest;
 		return false;
@@ -75,8 +80,7 @@ bool Request::parseRequestLine()
 	ss.clear();
 	ss.str(requestLine);
 	ss >> Method >> Path >> Protocol;
-
-	//Change by Wenxuan
+	// Change by Wenxuan
 	size_t queryPos = Path.find('?');
 	if (queryPos != string::npos)
 	{
@@ -84,9 +88,11 @@ bool Request::parseRequestLine()
 		Path = Path.substr(0, queryPos);
 	}
 	//
-	//Path = "www" + Path;
-	//if (Path == "www/")
-	//	Path = "www/index.html";
+	Path = "www" + Path;
+	if (Path == "www/")
+	{
+		Path = "www/index.html";
+	}
 	if (validateRequestLine() == false)
 		return false;
 	return true;

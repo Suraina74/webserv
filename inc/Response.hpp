@@ -13,24 +13,25 @@ class Response
 		string		contentLength = "Content-Length: ";
 		string		body{};
 		string		fullResponse{};
-		int         lenResponse{};
-		const char* cFullResponse{};
-		int         bytesSent{};
+		int			lenResponse{};
+		const char*	cFullResponse{};
+		int			bytesSent{};
 
 	public:
 		Response(){}
 		~Response(){}
-		int composeResponse();
+		int			composeResponse();
+		void		resetResponseVars();
 
-		void setRequest(Request r);
-		void setLenResponse(int length);
-		void setCString(const char* cString);
-		void setBytesSent(int bytes);
+		void		setRequest(Request r);
+		void		setLenResponse(int length);
+		void		setCString(const char* cString);
+		void		setBytesSent(int bytes);
 
-		string getFullResponse() const;
-		const char* getCFullResponse() const;
-		int getLenResponse() const;
-		int getBytesSent() const;
+		string		getFullResponse() const;
+		const char*	getCFullResponse() const;
+		int			getLenResponse() const;
+		int			getBytesSent() const;
 };
 
 

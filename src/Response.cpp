@@ -3,7 +3,7 @@
 int Response::composeResponse()
 {
 	statusLine = statusLine + " " + request.getStatusText() + "\r\n";
-	size_t bytesRead = 0;
+	int bytesRead = 0;
 	if (request.getStatusCode() != OK && request.getStatusCode() != PageNotFound)
 	{
 		body = R"(
@@ -30,8 +30,8 @@ int Response::composeResponse()
 					h1 {font-size: 7em;}
 			</style>
 			)";
-			bytesRead = body.size();
-		}
+		bytesRead = body.size();
+	}
 	else
 	{
 		string path = request.getPath();
@@ -46,12 +46,18 @@ int Response::composeResponse()
 				string htmlPage(buffer, bytesRead);
 				body = htmlPage;
 			}
-			else
+			else if (bytesRead == -1)
 			{
-				cout << "error" << endl;
+				::perror("read");
+				close(fd);
 				return 1;
 			}
 			close(fd);
+		}
+		else if (fd == -1)
+		{
+			::perror("open");
+			return 1;
 		}
 	}
 	string sizeOfBody;
@@ -62,6 +68,19 @@ int Response::composeResponse()
 	string connection = "Connection: close\r\n\r\n";
 	fullResponse = statusLine + contentType + contentLength + connection + body;
 	return 0;
+}
+
+void Response::resetResponseVars()
+{
+	request = {};
+	statusLine = "HTTP/1.1";
+	contentType = "Content-Type: text/html\r\n";
+	contentLength = "Content-Length: ";
+	body = {};
+	fullResponse = {};
+	lenResponse = {};
+	cFullResponse = {};
+	bytesSent = {};
 }
 
 void Response::setRequest(Request r)

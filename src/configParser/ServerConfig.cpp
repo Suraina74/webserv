@@ -1,13 +1,13 @@
 #include "../../inc/ServerConfig.hpp"
 
-ServerConfig::ServerConfig():_listen(0), _root(""), _host(""), _index(""), _serverName(""), _maxBodySize(1024 * 1024) {}//default body limit 1M, like nginx		
+ServerConfig::ServerConfig():_listen(0), _root(""), _host(""), _index(""), _serverName(""), _maxBodySize(1024 * 1024) {}//default body limit 1M, like nginx
 
 ServerConfig::~ServerConfig(){}
 
 void ServerConfig::setErrPage(const vector<int>& errCodes, const string& path)
 {
 	for (size_t i = 0; i < errCodes.size(); i++)
-        _errPages[errCodes[i]] = path;
+		_errPages[errCodes[i]] = path;
 }
 
 void ServerConfig::setPort(const int port)
@@ -75,9 +75,9 @@ const size_t& ServerConfig::getBodySize() const
 	return _maxBodySize;
 }
 
-const std::map<int, std::string>& ServerConfig::getErrPages() const
+const map<int, string>& ServerConfig::getErrPages() const
 {
-    return _errPages;
+	return _errPages;
 }
 
 const vector<Location>& ServerConfig::getLocations() const

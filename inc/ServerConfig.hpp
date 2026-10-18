@@ -19,11 +19,11 @@ class ServerConfig
 		size_t _maxBodySize;
 		map<int, string> _errPages;
 		vector<Location> _locations;
-	
+
 	public:
 		ServerConfig();
 		~ServerConfig();
-	
+
 		void setPort(const int port);
 		void setHost(const string &host);
 		void setRoot(const string &root);
@@ -32,7 +32,7 @@ class ServerConfig
 		void setServerName(const string &name);
 		void setErrPage(const vector<int> &errCodes, const string &path);
 		void addLocation(const Location &loc);
-	
+
 		int getPort() const;
 		const string& getHost() const;
 		const string& getRoot() const;

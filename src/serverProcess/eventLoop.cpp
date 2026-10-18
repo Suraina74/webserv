@@ -45,26 +45,23 @@ int eventLoop(ServerInfo &eloop)
 			Client &client = eloop.getClient(clientFd);
 			if (revents & POLLIN)
 			{
-				int receivStatus = receiveRequest(clientFd, client.getRequest());
-				if (receivStatus == -1 || receivStatus == 0)
+				//receiveRequest() parses the body, routes and composes the response itself
+				int receivStatus = client.receiveRequest(eloop);
+				if (receivStatus == PARSER_ERROR || receivStatus == 0)
 				{
 					eloop.removeClient(i);
 					i--;
 					continue;
 				}
-				else if (receivStatus == 2)
-				{	
-					client.getRequest().parseBody();
-					Route route{};
-					processRoute(client, eloop, route);
-					//client.getRequest().postAndDelete(); 
+				else if (receivStatus == RESPONSE_READY)
+				{
+					//client.getRequest().postAndDelete();
 					eloop.getPfds()[i].events = POLLOUT;
 				}
 			}
 			else if (revents & POLLOUT)
 			{
-				client.getResponse().setRequest(client.getRequest());
-				int sendStatus = sendResponse(clientFd, client.getResponse());
+				int sendStatus = client.sendResponse();
 				if (sendStatus == 0 || sendStatus == -1 || sendStatus == 2)
 				{
 					eloop.removeClient(i);

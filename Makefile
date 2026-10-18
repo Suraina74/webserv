@@ -11,6 +11,8 @@ SRC =	src/serverProcess/main.cpp \
 		src/Request.cpp \
 		src/parseRL.cpp \
 		src/parseHeaders.cpp \
+		src/parseBody.cpp \
+		src/postAndDelete.cpp \
 		src/Response.cpp \
 		src/ServerInfo.cpp \
 		src/Client.cpp \

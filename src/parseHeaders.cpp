@@ -1,16 +1,7 @@
 #include "../inc/Request.hpp"
 
-bool Request::allowedCharsInKey(string key)
-{
-	string allowedChars = "!#$%&'*+-.^_`|~";
-	for (size_t i = 0; i < key.length(); i++)
-	{
-		if (!(key[i] >= 'a' && key[i] <= 'z') && !(key[i] >= 'A' && key[i] <= 'Z')
-		&& !(key[i] >= '0' && key[i] <= '9') && allowedChars.find(key[i]) == string::npos)
-			return false;
-	}
-	return true;
-}
+// Kijken of content-length niet groter is dan een bepaalde grootte.
+// redirections
 
 bool Request::actionsOnKey(string& key)
 {
@@ -24,7 +15,7 @@ bool Request::actionsOnKey(string& key)
 		statusCode = BadRequest;
 		return false;
 	}
-	if (allowedCharsInKey(key) == false)
+	if (allowedCharsInString(key) == false)
 	{
 		statusCode = BadRequest;
 		return false;
@@ -38,12 +29,12 @@ bool Request::actionsOnKey(string& key)
 bool Request::actionsOnValue(string& value)
 {
 	size_t findNotSpace;
-	if (value[0] == ' ')
+	if (!value.empty() && value[0] == ' ')
 	{
 		findNotSpace = value.find_first_not_of(' ');
 		value.erase(0, findNotSpace); // delete N characters starting from pos 0.
 	}
-	if (value[value.length() - 1] == ' ')
+	if (!value.empty() && value[value.length() - 1] == ' ')
 	{
 		findNotSpace = value.find_last_not_of(' ');
 		value.erase(findNotSpace + 1); // delete everything from pos findNotSpace + 1 onwards.
@@ -59,9 +50,9 @@ bool Request::actionsOnValue(string& value)
 bool Request::parseHeaders()
 {
 	int amountLines = 0;
-	for (size_t i = 0; i < requestTillHeaders.size(); i++)
+	for (size_t i = 0; i + 1 < requestTillHeaders.size(); i++)
 	{
-		if (requestTillHeaders[i] == '\r')
+		if (requestTillHeaders[i] == '\r' && requestTillHeaders[i + 1] == '\n')
 			amountLines++;
 	}
 	amountLines -= 2;
@@ -81,7 +72,7 @@ bool Request::parseHeaders()
 		key = line.substr(0, findColon);
 		if (actionsOnKey(key) == false)
 			return false;
-		value = line.substr(findColon + 1, line.length() - key.length() + 1);
+		value = line.substr(findColon + 1);
 		if (actionsOnValue(value) == false)
 			return false;
 		headerMap.insert({key, value});
@@ -90,30 +81,22 @@ bool Request::parseHeaders()
 	return true;
 }
 
-bool checkIfDoubles(string headerName, unordered_multimap<string, string> map)
+bool checkIfDoubleHeader(const string& headerName, const unordered_multimap<string, string>& map)
 {
-	int count = 0;
-	for (auto it = map.begin(); it != map.end(); it++)
-	{
-		if (it->first == headerName)
-			count++;
-	}
-	if (count > 1)
-		return false;
-	return true;
+	return map.count(headerName) <= 1;
 }
 
 bool validateBoundary(string boundary)
 {
-	string allowedChars = "()'+_,-./:=? ";
+	string allowedChars = "()'+_,-./:=?";
 	size_t boundaryLen = boundary.length();
-	if (boundary.back() == ' ')
-		return false;
 	if (boundaryLen == 0 || boundaryLen > 70)
+		return false;
+	if (boundary.back() == ' ')
 		return false;
 	for (size_t i = 0; i < boundaryLen; i++)
 	{
-		if (!(boundary[i] >= 'a' && boundary[i] <= 'z') && !(boundary[i] >= 'A' && boundary[i] <= 'Z') 
+		if (!(boundary[i] >= 'a' && boundary[i] <= 'z') && !(boundary[i] >= 'A' && boundary[i] <= 'Z')
 		&& !(boundary[i] >= '0' && boundary[i] <= '9') && allowedChars.find(boundary[i]) == string::npos)
 			return false;
 	}
@@ -125,40 +108,40 @@ bool Request::checkContentType()
 	auto itCt = headerMap.find("content-type");
 	if (itCt != headerMap.end())
 	{
-		if (checkIfDoubles("content-type", headerMap) == false)
+		if (checkIfDoubleHeader("content-type", headerMap) == false)
+		{
+			statusCode = BadRequest;
+			return false;
+		}
+		if (itCt->second.empty())
 		{
 			statusCode = BadRequest;
 			return false;
 		}
 		string str = itCt->second;
-		if (str.find("multipart/form-data") == string::npos)
+		if (makeMapOfHeader(contentTypeMap, "multipart/form-data", str) == false)
 		{
-			statusCode = UnsupportedMediaType;
+			if (statusCode == UnsupportedMediaType)
+				return false;
+			statusCode = BadRequest;
 			return false;
 		}
-		size_t begin = str.find("boundary=");
-		if (begin == string::npos)
+		auto itBoundary = contentTypeMap.find("boundary");
+		if (itBoundary == contentTypeMap.end())
 		{
 			statusCode = BadRequest;
 			return false;
 		}
-		begin += 9;
-		boundary = str.substr(begin, (str.length() - begin));
-		if (boundary.front() == '"' && boundary.back() == '"')
-		{
-			boundary.erase(0, 1);
-			boundary.pop_back();
-		}
-		if (validateBoundary(boundary) == false)
+		if (validateBoundary(itBoundary->second) == false)
 		{
 			statusCode = BadRequest;
 			return false;
 		}
-		boundary = "--" + boundary;
+		boundary = "--" + itBoundary->second;
 	}
-	else if (itCt == headerMap.end())
+	else if (Method == "POST") //Cause for multipart/form-data you need content type.
 	{
-		statusCode = BadRequest;
+		statusCode = UnsupportedMediaType;
 		return false;
 	}
 	return true;
@@ -176,8 +159,8 @@ bool checkIfOnlyNumbers(string string)
 	return true;
 }
 
-bool Request::checkPostHeaders(){
-	// Kijken of content-length niet groter is dan een bepaalde grootte.
+bool Request::checkOtherHeaders()
+{
 	auto itCl = headerMap.find("content-length"); // if the key is not present, it returns end().
 	auto itTe = headerMap.find("transfer-encoding");
 	if (itCl != headerMap.end() && itTe != headerMap.end())
@@ -185,9 +168,9 @@ bool Request::checkPostHeaders(){
 		statusCode = BadRequest;
 		return false;
 	}
-	if (itCl != headerMap.end())
-	{  //An iterator is a pointer-like object that allows traversing through the elements of a map.
-		if (checkIfDoubles("content-length", headerMap) == false)
+	if (itCl != headerMap.end()) //An iterator is a pointer-like object that allows traversing through the elements of a map.
+	{
+		if (checkIfDoubleHeader("content-length", headerMap) == false)
 		{
 			statusCode = BadRequest;
 			return false;
@@ -199,38 +182,35 @@ bool Request::checkPostHeaders(){
 			return false;
 		}
 		stringstream ss(contentLenStr);
-		ss >> contentLength;
-		if (contentLength < 0)
+		if (!(ss >> contentLength)) // fails when the number overflows size_t
 		{
+			contentLength = 0;
 			statusCode = BadRequest;
 			return false;
 		}
+		// if (contentLength > allowed body size in config file){
+		//	statusCode = ContentTooLarge;
+		// }
 	}
-	// if (contentLength > allowed body size in config file){
-	//	statusCode = RequestHeaderFieldsTooLarge;
-	// }
 	else if (itTe != headerMap.end())
 	{
-		if (checkIfDoubles("transfer-encoding", headerMap) == false)
+		if (checkIfDoubleHeader("transfer-encoding", headerMap) == false)
 		{
 			statusCode = BadRequest;
 			return false;
 		}
 		if (itTe->second == "chunked")
-		{
 			chunked = true;
+		else if (itTe->second.empty())
+		{
+			statusCode = BadRequest;
+			return false;
 		}
 		else
 		{
 			statusCode = NotImplemented;
 			return false;
 		}
-	}
-	else
-	{
-		contentLength = 0;
-		statusCode = BadRequest;
-		return false;
 	}
 	if (checkContentType() == false)
 		return false;
@@ -246,16 +226,18 @@ bool Request::validateHeaders()
 		statusCode = BadRequest;
 		return false;
 	}
-	if (checkIfDoubles("host", headerMap) == false)
+	if (itHost->second.empty())
 	{
 		statusCode = BadRequest;
 		return false;
 	}
-	if (Method == "POST")
+	if (checkIfDoubleHeader("host", headerMap) == false)
 	{
-		if (checkPostHeaders() == false)
-			return false;
+		statusCode = BadRequest;
+		return false;
 	}
+	if (checkOtherHeaders() == false)
+		return false;
 	return true;
 }
 
