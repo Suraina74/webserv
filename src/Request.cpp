@@ -44,6 +44,33 @@ bool Request::allowedCharsInString(string input){
 	return true;
 }
 
+void Request::resetParserVars(){
+	fullRequest = {};
+	requestLeft = {};
+	requestTillHeaders = {};
+	headerBytes = {};
+	bytesRead = {};
+	requestLine = {};
+	Method = {};
+	Protocol = {};
+	Path = {};
+	queryString = {};//Change by Wenxuan
+	headerMap = {};
+	contentTypeMap = {};
+	contentLength = {};
+	chunked = false;
+	boundary = {};
+	statusText = "200 OK";
+	Body = {};
+	bodyHeaderMap = {};
+	contentDisposMap = {};
+	fileName = {};
+	fileContent = {};
+	statusCode = OK;
+	stateOfParser = {};
+	partialRequest = {};
+}
+
 void Request::setRequest(string request){
 	fullRequest = request;
 }

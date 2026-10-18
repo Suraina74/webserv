@@ -13,3 +13,7 @@ Request& Client::getRequest(){
 Response& Client::getResponse(){
 	return response;
 }
+
+std::string& Client::getFullResponse(){
+	return responsesString;
+}

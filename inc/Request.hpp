@@ -29,6 +29,14 @@ enum httpStatus{
 	HTTPVersionNotSupported = 505
 };
 
+enum parserState{
+	PARSER_ERROR = -1,
+	INCOMPLETE_HEADERS = 0,
+	BODY_INCOMPLETE = 1,
+	REQUEST_READY = 2,
+	RESPONSE_READY = 3
+};
+
 class Request {
 	private:
 		string 								fullRequest{};
@@ -54,6 +62,7 @@ class Request {
 		string 								fileName{};
 		string 								fileContent{};
 		httpStatus  						statusCode = OK;
+		parserState							stateOfParser{};
 
 	public:
 		Request(){}
@@ -93,6 +102,7 @@ class Request {
 		size_t getHeaderBytes();
 		size_t getBytesRead();
 		bool getChunked();
+		void resetParserVars();
 		string	getQuery() const; //Change by Wenxuan
 };
 
@@ -114,3 +124,7 @@ class Request {
 // hello
 
 // ------WebKitFormBoundarydRcwfbvAQ3EKmZuB--
+
+
+// Transfer encoding chunked example:
+// 'POST /uploads.html HTTP/1.1\r\nHost: localhost:8080\r\nContent-Type: multipart/form-data; boundary=MyBoundary123\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n8A\r\n--MyBoundary123\r\nContent-Disposition: form-data; name="file"; filename="hello.txt"\r\nContent-Type: text/plain\r\n\r\nHello\r\n--MyBoundary123--\r\n0\r\n\r\n' | nc 127.0.0.1 8080

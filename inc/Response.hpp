@@ -6,11 +6,11 @@ class Response
 {
 	private:
 		Request 	request{};
-		string	statusLine = "HTTP/1.1";
-		string contentType = "Content-Type: text/html\r\n";
-		string contentLength = "Content-Length: ";
-		string body{};
-		string fullResponse{};
+		string		statusLine = "HTTP/1.1";
+		string 		contentType = "Content-Type: text/html\r\n";
+		string 		contentLength = "Content-Length: ";
+		string 		body{};
+		string 		fullResponse{};
 		int         lenResponse{};
 		const char* cFullResponse{};
 		int         bytesSent{};
@@ -28,6 +28,7 @@ class Response
 		const char* getCFullResponse();
 		int getLenResponse();
 		int getBytesSent();
+		void resetResponseVars();
 };
 
 

@@ -66,6 +66,18 @@ int Response::composeResponse()
 	return 0;
 }
 
+void Response::resetResponseVars(){
+	request = {};
+	statusLine = "HTTP/1.1";
+	contentType = "Content-Type: text/html\r\n";
+	contentLength = "Content-Length: ";
+	body = {};
+	fullResponse = {};
+	lenResponse = {};
+	cFullResponse = {};
+	bytesSent = {};
+}
+
 void Response::setRequest(Request r){
 	request = r;
 }

@@ -9,52 +9,94 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-int receiveRequest(int clientFd, Request &request)
+// Change Suraina
+int Client::receiveRequest()
 {
 	char buffer[2048];
-	ssize_t n = recv(clientFd, buffer, sizeof(buffer), 0);
-	if (n == -1)
-	{
+	ssize_t n = recv(fd, buffer, sizeof(buffer), 0);
+	if (n == -1){
 		::perror("recv");
-		return -1;
+		return PARSER_ERROR;
 	}
-	else if (n == 0)
-	{
+	// Change Suraina
+	else if (n == 0 && request.getFullRequest().empty()){
 		return 0;
 	}
-	request.setBytesRead(request.getBytesRead() + n);
-	string part(buffer, n);
-	request.setRequest(request.getFullRequest() + part);
-	if (request.getFullRequest().find("\r\n\r\n") != string::npos && request.getHeaderBytes() == 0)
+	if (n != 0){
+		request.setBytesRead(request.getBytesRead() + n);
+		string part(buffer, n);
+		request.setRequest(request.getFullRequest() + part);
+	}
+	// Change Suraina
+	size_t delimiter = request.getFullRequest().find("\r\n\r\n");
+	if (delimiter == string::npos){
+		if (n == 0){
+			return RESPONSE_READY;
+		}
+		return INCOMPLETE_HEADERS;
+	}
+	else if (request.getHeaderBytes() == 0)
 	{
-		if ((request.parseUntilHeaders(request.getFullRequest())) == false)
-		{
-			return 2;
+		if ((request.parseUntilHeaders(request.getFullRequest())) == false){
+			response.setRequest(request);
+			response.composeResponse();
+			responsesString += response.getFullResponse();
+			return RESPONSE_READY;
 		}
 		request.setHeaderBytes(request.getRequestTillHeaders().size());
 	}
-	if (request.getChunked() == true && request.getFullRequest().find("0\r\n\r\n") != string::npos){
-		return 2;
+	// Change Suraina
+	if (request.getContentLength()){
+		size_t startBody = delimiter + 4;
+		size_t endBody = request.getFullRequest().length();
+		size_t bodySize = endBody - startBody;
+		if (bodySize < request.getContentLength()){
+			if (n == 0){
+				return RESPONSE_READY;
+			}
+			return BODY_INCOMPLETE;
+		}
 	}
-	// BytesRead can be bigger than headerbytes + contentLength -> There can be a second request after one request or an invalid
-	// headerbytes + contentLength can be bigger than BytesRead = timeout at some point?
-	else if (request.getBytesRead() >= request.getHeaderBytes() + request.getContentLength()){
-		return 2;
+	size_t expectedBytes = request.getHeaderBytes() + request.getContentLength();
+	if (request.getChunked() == true && request.getFullRequest().find("0\r\n\r\n") != string::npos){
+		request.parseBody();
+		response.setRequest(request);
+		response.composeResponse();
+		responsesString = response.getFullResponse();
+		return RESPONSE_READY;
+	}
+	// Change Suraina
+	else if (request.getBytesRead() >= expectedBytes){
+		request.parseBody();
+		response.setRequest(request);
+		response.composeResponse();
+		responsesString += response.getFullResponse();
+		if (request.getBytesRead() > expectedBytes){
+			size_t startBody = delimiter + 4;
+			size_t endBody = startBody + request.getContentLength();
+			std::string requestLeft = request.getFullRequest().substr(endBody, request.getFullRequest().length() - endBody);
+			request.resetParserVars();
+			response.resetResponseVars();
+			request.setRequest(requestLeft);
+			request.setBytesRead(requestLeft.length());
+			request.setHeaderBytes(0);
+			return REQUEST_READY;
+		}
+		request.setRequest("");
+		return RESPONSE_READY;
 	}
 	return 1;
 }
 
-int sendResponse(int clientFd, Response &response)
+// Change Suraina
+int Client::sendResponse()
 {
-	if (response.composeResponse() == 1){
-		return -1;
-	}
-	string fullResponse = response.getFullResponse();
+	string fullResponse = responsesString;
 	response.setLenResponse(fullResponse.length());
 	response.setCString(fullResponse.c_str());
 	if (response.getBytesSent() < response.getLenResponse())
 	{
-		int n = send(clientFd, response.getCFullResponse() + response.getBytesSent(), response.getLenResponse() - response.getBytesSent(), 0);
+		int n = send(fd, response.getCFullResponse() + response.getBytesSent(), response.getLenResponse() - response.getBytesSent(), 0);
 		if (n == -1)
 		{
 			::perror("send");
@@ -66,8 +108,7 @@ int sendResponse(int clientFd, Response &response)
 		}
 		response.setBytesSent(response.getBytesSent() + n);
 	}
-	if (response.getBytesSent() == response.getLenResponse())
-	{
+	if (response.getBytesSent() == response.getLenResponse()){
 		return 2;
 	}
 	return 1;
@@ -127,8 +168,9 @@ int eventLoop(const vector<pollfd> &fds, const vector<ServerConfig> &servers)
 			// client fds
 			if ((serverData.getFd()[i].revents & POLLIN))
 			{
-				int returnValue = receiveRequest(serverData.getFd()[i].fd, clients[i - fds.size()].getRequest());
-				if (returnValue == -1 || returnValue == 0)
+				int returnValue = clients[i - fds.size()].receiveRequest();
+				// Change Suraina
+				if (returnValue == PARSER_ERROR || returnValue == 0)
 				{
 					clients.erase(clients.begin() + i - fds.size());
 					close(serverData.getFd()[i].fd);
@@ -137,9 +179,9 @@ int eventLoop(const vector<pollfd> &fds, const vector<ServerConfig> &servers)
 					i--;
 					continue;
 				}
-				else if (returnValue == 2)
+				// Change Suraina
+				else if (returnValue == RESPONSE_READY)
 				{
-					clients[i - fds.size()].getRequest().parseBody();
 					clients[i - fds.size()].getRequest().postAndDelete();
 					//  check request against config file. To see what server (check host header) applies and what location applies.
 					serverData.getFd()[i].events = POLLOUT;
@@ -147,8 +189,8 @@ int eventLoop(const vector<pollfd> &fds, const vector<ServerConfig> &servers)
 			}
 			else if (serverData.getFd()[i].revents & POLLOUT)
 			{
-				clients[i - fds.size()].getResponse().setRequest(clients[i - fds.size()].getRequest());
-				int returnValue = sendResponse(serverData.getFd()[i].fd, clients[i - fds.size()].getResponse());
+				// Change Suraina
+				int returnValue = clients[i - fds.size()].sendResponse();
 				if (returnValue == 0 || returnValue == -1)
 				{
 					clients.erase(clients.begin() + i - fds.size());
