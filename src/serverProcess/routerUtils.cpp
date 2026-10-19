@@ -1,31 +1,33 @@
 #include "../../inc/main.hpp"
+#include "../../inc/CGI.hpp"
 
-void			runCGI(Client& client, Route& route)
+void runCGI(Request &request, const ServerConfig &server, int clientFd)
+{
+    CGI newCGI = CGI(request, server, clientFd);
+    
+}
+
+void runUpload(Request &request, const ServerConfig &server, int clientFd)
 {
 
 }
 
-void			runUpload(Client& client, Route& route)
+void runRedirect(Request &request, const ServerConfig &server, int clientFd)
 {
 
 }
 
-void			runRedirect(Client& client, Route& route)
+void runAutoIndex(Request &request, const ServerConfig &server, int clientFd)
 {
 
 }
 
-void			runAutoIndex(Client& client, Route& route)
+void runDelete(Request &request, const ServerConfig &server, int clientFd)
 {
 
 }
 
-void			runDelete(Client& client, Route& route)
-{
-
-}
-
-void			runStatic(Client& client, Route& route)
+void runStatic(Request &request, const ServerConfig &server, int clientFd)
 {
 
 }

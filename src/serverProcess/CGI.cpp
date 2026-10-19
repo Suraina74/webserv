@@ -5,12 +5,7 @@ CGI::CGI():_env("",""), _interpreter(""), _scriptPath(""), _requestBody(""), _bo
 CGI::CGI(Request &request, const ServerConfig &server, int clientFd)
 {
 	CGI();
-	vector<Location> allLocations = server.getLocations();
-	for (size_t i = 0; i < allLocations.size(); i++)
-	{
-		//if found cgi, get interpreter val
-		//else all destructor
-	}
+
 	_scriptPath = request.getPath();
 	_requestBody = request.getBody();
 	_clientFd = clientFd;

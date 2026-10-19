@@ -1,6 +1,5 @@
 #include "../../inc/main.hpp"
 
-
 const Location*	findLocation(const ServerConfig& server, const Request& request)
 {
 	const vector<Location>& locations = server.getLocations();
@@ -166,7 +165,7 @@ void setRouteAction(Route& route, Request& request, const ServerConfig& server)
 	route.status = Forbidden;
 }
 
-int processRoute(Client& client, Route& route)
+int processRoute(Client& client, ServerInfo& eloop, Route& route)
 {
 	Request& request = client.getRequest();
 	const ServerConfig& server = client.getClientServer();
@@ -187,7 +186,7 @@ int processRoute(Client& client, Route& route)
 		switch (route.action)
 		{
 			case R_CGI:
-				runCGI(client, route);//fill response in client.setResponse()
+				runCGI(request, server, client.getFd());//fill response in client.setResponse()
 				break;
 			case R_UPLOAD:
 			//Upload function
