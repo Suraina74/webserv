@@ -69,6 +69,18 @@ int eventLoop(ServerInfo &eloop)
 					continue;
 				}
 			}
+			else if (revents & (POLLERR | POLLNVAL))
+			{
+				eloop.removeClient(i);
+				i--;
+				continue;
+			}
+			else if (revents & POLLHUP)
+			{
+				eloop.removeClient(i);
+				i--;
+				continue;
+			}
 		}
 	}
 	return (0);

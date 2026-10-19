@@ -22,6 +22,7 @@ SRC =	src/serverProcess/main.cpp \
 		src/configParser/ConfigUtils.cpp \
 		src/configParser/ServerConfig.cpp \
 		src/configParser/ConfigServerAttri.cpp \
+# 		src/CGI.cpp \
 
 OBJ = $(SRC:%.cpp=objs/%.o)
 
