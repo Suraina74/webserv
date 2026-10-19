@@ -36,7 +36,7 @@ int eventLoop(ServerInfo &eloop)
 			eloop.closeAllFds();
 			return (1);
 		}
-		acceptClient(eloop);
+		acceptClient(eloop);//add client fds
 		for (size_t i = eloop.getListenCount(); i < eloop.getPfds().size(); i++)
 		{
 			//re-read getPfds()[i] after every push_back/erase, never keep a reference

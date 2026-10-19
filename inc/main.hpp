@@ -45,7 +45,7 @@ void			runRedirect(Client& client, Route& route);
 void			runAutoIndex(Client& client, Route& route);
 void			runDelete(Client& client, Route& route);
 void			runStatic(Client& client, Route& route);
-int				processRoute(Client& client, ServerInfo&, Route& route);
+int				processRoute(Client& client, ServerInfo& eloop, Route& route);
 
 
 int eventLoop(ServerInfo &eloop);

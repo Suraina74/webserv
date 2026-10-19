@@ -3,14 +3,14 @@ Merge of http_parser into WenxuanDev - summary of changes (formatting changes ex
 
 Merge resolution
 ----------------
-src/ServerInfo.cpp
+src/ServerInfo.cpp (Validated by Wenxuan)
   - Took the WenxuanDev version.
   - Dropped http_parser's old eventLoop, createSockAddr, server, setResult, setFd,
     getResult and getFd. WenxuanDev already replaced them in src/serverProcess/.
 
 Client
 ------
-src/Client.cpp
+src/Client.cpp (Need to be checked by Suraina to see if there were major changes to her code)
   - Added Client::receiveRequest() and Client::sendResponse(), moved from
     http_parser's ServerInfo.cpp. Member names were adapted to the Client class
     (_fd, _request, _response, _responsesString).
@@ -20,13 +20,13 @@ src/Client.cpp
     would happen after the response was already built and would have no effect.
   - Added includes: main.hpp, <sys/socket.h>, <cstdio>.
 
-inc/Client.hpp
+inc/Client.hpp (Validated by Wenxuan)
   - Added the forward declaration "class ServerInfo;" to avoid a circular include.
   - Changed the declaration to receiveRequest(ServerInfo &eloop).
 
 Server loop
 -----------
-src/serverProcess/eventLoop.cpp
+src/serverProcess/eventLoop.cpp (Validated by Wenxuan, further check need by Suraina and Alisha)
   - Receiving: calls client.receiveRequest(eloop). Removes the client on
     PARSER_ERROR or 0, and switches to POLLOUT on RESPONSE_READY. The parseBody()
     and processRoute calls were removed here; they now run inside the client.

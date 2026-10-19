@@ -166,7 +166,7 @@ void setRouteAction(Route& route, Request& request, const ServerConfig& server)
 	route.status = Forbidden;
 }
 
-int processRoute(Client& client, ServerInfo&, Route& route)
+int processRoute(Client& client, Route& route)
 {
 	Request& request = client.getRequest();
 	const ServerConfig& server = client.getClientServer();

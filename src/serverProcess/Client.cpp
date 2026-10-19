@@ -1,7 +1,7 @@
-#include "../inc/Client.hpp"
-#include "../inc/Request.hpp"
-#include "../inc/Response.hpp"
-#include "../inc/main.hpp"
+#include "../../inc/Client.hpp"
+#include "../../inc/Request.hpp"
+#include "../../inc/Response.hpp"
+#include "../../inc/main.hpp"
 #include <sys/socket.h>
 #include <cstdio>
 

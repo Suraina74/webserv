@@ -1,12 +1,12 @@
 # Webserv TODO
 
-_Last reviewed: 2026-10-14_
+_Last reviewed: 2026-10-19 (after merging `http_parser` into `WenxuanDev`)_
 
 ## Build (blocking: `make` currently fails)
-- [ ] `src/serverProcess/CGI.cpp`: `_env("","")` can't initialize a `map`; `CGI();` inside the constructor creates a temporary instead of delegating; `int i` vs `size()` sign-compare; unused params in `populateEnv()`; destructor, `runScript()` and getters are declared but not defined (will fail at link time) (Wenxuan)
+- [ ] `src/serverProcess/CGI.cpp`: `_env("","")` can't initialize a `map`; `CGI();` inside the constructor creates a temporary instead of delegating; unused params in `populateEnv()`; destructor, `runScript()` and getters are declared but not defined (will fail at link time) (Wenxuan)
 - [ ] `src/serverProcess/routerUtils.cpp`: empty handlers have unused `client`/`route` params, `(void)` them until implemented (Wenxuan)
-- [ ] `src/Request.cpp` `setStatusText()`: missing `case Forbidden` and no return after the switch (Suraina)
-- [ ] `src/configParser/ConfigLocationAttri.cpp:17`: mixed tabs/spaces trigger `-Wmisleading-indentation`
+- [x] `src/Request.cpp` `setStatusText()`: missing `case Forbidden` and no return after the switch (Suraina)
+- [x] `src/configParser/ConfigLocationAttri.cpp:17`: mixed tabs/spaces trigger `-Wmisleading-indentation`
 - [ ] `inc/main.hpp`: add `#pragma once`
 
 ## Routing (config ↔ request), `src/serverProcess/router.cpp`
@@ -14,11 +14,12 @@ _Last reviewed: 2026-10-14_
 - [x] Check allowed methods (405) and body size limit (413): `validateRouteStat()`
 - [x] Resolve `route.fsPath` from location root, falling back to server root
 - [x] Decide route action (redirect / CGI / upload / delete / static / index / autoindex): `setRouteAction()`
-- [ ] Remove the hardcoded `www/index.html` / `www/uploads.html` check in `validateRequestLine()`; it 404s every GET/POST before routing runs: `src/parseRL.cpp` (Suraina)
-- [ ] Skip `processRoute()` when parsing already failed (`request.getStatusCode() != OK`): `src/serverProcess/eventLoop.cpp`
+- [x] Fall back to the server `index` when a location has none
+- [x] Config roots are relative (`root www;`)
+- [x] `processRoute()` is now called from `Client::receiveRequest()` before the response is composed, so routing affects the response
+- [ ] **Blocking all requests:** `src/parseRL.cpp` prefixes the path with `www` (`Path = "www" + Path`) and only allows `www/index.html` / `www/uploads.html`. The router rejects any path not starting with `/`, so every request currently returns 400 or 404 (smoke test 2026-10-19: `GET /` → 400, `GET /images/icon.png` → 404). Remove the prefix and the hardcoded page check (Suraina)
+- [ ] Skip `processRoute()` when parsing already failed (`request.getStatusCode() != OK`): `src/Client.cpp` `receiveRequest()`
 - [ ] `processRoute()`: if action is `R_ERROR` but status is still `OK`, set 500
-- [ ] Fall back to the server `index` when a location has none (location `/` in `standard.config` would show autoindex instead of `index.html`)
-- [ ] Config roots are absolute (`root /www;`) and resolve to `/www` on the filesystem root; make them relative in the configs or resolve them against the project dir
 - [ ] Call each handler in the `processRoute()` switch once it is implemented
 - [ ] `Request::setStatus()` overwrites `Path` with `www/404.html`; remove once error pages come from config
 - [ ] Return `const string&` from `Request` getters instead of copies
@@ -33,16 +34,25 @@ _Last reviewed: 2026-10-14_
 
 ## Request
 - [x] Split query string off the path (`?`) and add a getter: `src/parseRL.cpp`
+- [x] Multiple requests in one read: leftover data is kept and the parser is reset (`Client::receiveRequest()`)
+- [x] Use `>=` for the Content-Length completion check
+- [x] Content-Length overflow is rejected with 400: `src/parseHeaders.cpp`
 - [ ] Only require multipart for uploads, not for CGI POSTs: `src/parseHeaders.cpp` (Suraina)
-- [ ] `receiveRequest()`: use `>=` for the Content-Length completion check; `find("0\r\n\r\n")` can match inside chunk data; enforce `client_max_body_size` while reading instead of after; avoid copying `fullRequest` on every `recv()`: `src/serverProcess/serverManager.cpp`
+- [ ] `Client::receiveRequest()`: `find("0\r\n\r\n")` can match inside chunk data; enforce `client_max_body_size` while reading instead of after; avoid copying `fullRequest` on every `recv()`: `src/Client.cpp`
 
 ## Response
-- [ ] Build the response from the `Route` (fsPath, status, headers), not `request.getPath()`; `Route` is a local in `eventLoop()` and is discarded after routing
-- [ ] `sendResponse()` calls `composeResponse()` on every POLLOUT, so the status line and Content-Length are appended again on each partial send; compose once
-- [ ] `setCString(fullResponse.c_str())` points into a local string; keep the response string in `Response` and send from it
+- [x] Compose the response once instead of on every POLLOUT (`Client::sendResponse()` sends from `_responsesString`)
+- [ ] Build the response from the `Route` (fsPath, status, headers), not `request.getPath()`; `Route` is a local in `Client::receiveRequest()` and is discarded after routing
+- [ ] `Client::sendResponse()` copies `_responsesString` on every POLLOUT; send directly from it
 - [ ] Content-Type per file instead of always `text/html`
 - [ ] Use custom error pages from config (Suraina)
 - [ ] Support redirect responses (301/302 + Location header) (Suraina)
+
+## Event loop / connections, `src/serverProcess/eventLoop.cpp`
+- [x] Use `Client::receiveRequest()` / `Client::sendResponse()` instead of the old free functions
+- [ ] Handle `REQUEST_READY`: a second request in the same read is only answered after more data arrives or the client closes
+- [ ] Keep-alive: the client is removed after one response and `Connection: close` is always sent
+- [ ] Set client fds to non-blocking (`fcntl(fd, F_SETFL, O_NONBLOCK)` in `ServerInfo::addClient()`)
 
 ## CGI (Wenxuan)
 - [x] Add `src/serverProcess/CGI.cpp` to the Makefile
