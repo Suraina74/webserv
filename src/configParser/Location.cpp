@@ -1,4 +1,4 @@
-#include "Location.hpp"
+#include "../../inc/Location.hpp"
 
 Location::Location(){}
 
@@ -18,10 +18,10 @@ void Location::addMethod(const string& method)
 {
 	_methods.push_back(method);
 }
-
-void Location::addCGI(const string& ext, const string& path)
+//fileExtension—for example, .py or .php
+void Location::addCGI(const string& fileExtension, const string& path)
 {
-	_cgi[ext] = path;
+	_cgis[fileExtension] = path;
 }
 
 void Location::setRoot(const string& root)
@@ -90,7 +90,7 @@ bool Location::getDirectoryListing() const
 	return _directoryListing;
 }
 
-const map<string, string>& Location::getCGI() const
+const map<string, string>& Location::getCGIs() const
 {
-	return _cgi;
+	return _cgis;
 }
