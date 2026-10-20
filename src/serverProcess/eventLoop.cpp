@@ -55,7 +55,7 @@ int eventLoop(ServerInfo &eloop)
 				}
 				else if (receivStatus == RESPONSE_READY)
 				{
-					//client.getRequest().postAndDelete();
+					// client.getRequest().postAndDelete();
 					eloop.getPfds()[i].events = POLLOUT;
 				}
 			}

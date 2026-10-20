@@ -1,5 +1,8 @@
 #include "../inc/Request.hpp"
 
+// Check that chunksize is not too big, overflow check.
+// Check if chunk size exceeds body size limit.
+
 bool checkIfDoubles(unordered_multimap<string, string> map)
 {
 	for (auto it = map.begin(); it != map.end(); it++)
@@ -206,31 +209,27 @@ bool checkIfHex(string chunkSize)
 	return true;
 }
 
-void Request::extractChunkedBody()
-{
+void Request::extractChunkedBody(){
 	size_t startBody = fullRequest.find("\r\n\r\n") + 4;
-	if (startBody == string::npos)
-	{
+	if (startBody == string::npos){
 		statusCode = BadRequest;
-		return;
+        return;
 	}
 	size_t endBody = fullRequest.find("0\r\n\r\n");
-	if (endBody == string::npos)
-	{
+	if (endBody == string::npos){
 		statusCode = BadRequest;
-		return;
+        return;
 	}
 	endBody += 2;
 	string chunkedBody = fullRequest.substr(startBody, endBody - startBody);
 	int start = 0;
-	string part{};
-	size_t allChunkSizes{};
-	while (1)
-	{
+	string chunk{};
+	// size_t allChunkSizes{};
+	// size_t sizeBodyWithoutChunkSizes = chunkedBody.size();
+	while (1){
 		int end = chunkedBody.find("\r\n", start);
 		string chunkSizeString = chunkedBody.substr(start, end - start);
-		if (checkIfHex(chunkSizeString) == false)
-		{
+		if (checkIfHex(chunkSizeString) == false){
 			statusCode = BadRequest;
 			return;
 		}
@@ -239,21 +238,26 @@ void Request::extractChunkedBody()
 		ss >> hex >> chunkSize;
 		ss.str("");
 		ss.clear();
-		allChunkSizes += chunkSize;
-		if (allChunkSizes > bytesRead)
-		{
-			statusCode = BadRequest;
-			break;
-		}
+		// allChunkSizes += chunkSize;
+		// sizeBodyWithoutChunkSizes -= chunkSize + 2;
+		// cout << allChunkSizes << " " << sizeBodyWithoutChunkSizes << endl;
+		// if (allChunkSizes >= sizeBodyWithoutChunkSizes){
+		// 	statusCode = BadRequest;
+		// 	break;
+		// }
 		// if allchunksizes < bytesRead --> something left in fullrequest
-		if (chunkSize != 0)
-		{
-			part = chunkedBody.substr((end + 2), chunkSize);
-			Body += part;
+		if (chunkSize != 0){
+			chunk = chunkedBody.substr((end + 2), chunkSize);
+			size_t endOfChunk = end + 2 + chunkSize;
+			if (chunkedBody[endOfChunk + 1] != '\r' && chunkedBody[endOfChunk + 2] != '\n'){
+				cout << "Testttt" << endl;
+				statusCode = BadRequest;
+				break;
+			}
+			Body += chunk;
 			start = end + 2 + chunkSize + 2;
 		}
-		else
-		{
+		else{
 			break;
 		}
 	}

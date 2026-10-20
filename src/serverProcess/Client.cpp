@@ -39,6 +39,7 @@ string& Client::getFullResponse()
 // Change Suraina
 int Client::receiveRequest(ServerInfo &eloop)
 {
+	(void)eloop;
 	char buffer[2048];
 	ssize_t n = recv(_fd, buffer, sizeof(buffer), 0);
 	if (n == -1)
@@ -93,23 +94,50 @@ int Client::receiveRequest(ServerInfo &eloop)
 			return BODY_INCOMPLETE;
 		}
 	}
-	size_t expectedBytes = _request.getHeaderBytes() + _request.getContentLength();
-	if (_request.getChunked() == true && _request.getFullRequest().find("0\r\n\r\n") != string::npos)
-	{
+	size_t indexLastChunk = _request.getFullRequest().find("0\r\n\r\n");
+	if (_request.getChunked() == true && indexLastChunk != string::npos){
+		if (_request.getFullRequest().length() > indexLastChunk + 5){
+			cout << "TEST\n";
+			size_t endBody = indexLastChunk + 5;
+			string requestLeft = _request.getFullRequest().substr(endBody, _request.getFullRequest().length() - endBody);
+			string currentRequest = _request.getFullRequest().substr(0, endBody);
+			_request.setRequest(currentRequest);
+			_request.parseBody();
+			// Route route{};
+			// processRoute(*this, eloop, route);
+			_request.postAndDelete();
+			_response.setRequest(_request);
+			_response.composeResponse();
+			_responsesString += _response.getFullResponse();
+			_request.resetParserVars();
+			_response.resetResponseVars();
+			_request.setRequest(requestLeft);
+			_request.setBytesRead(requestLeft.length());
+			_request.setHeaderBytes(0);
+			return REQUEST_READY;
+		}
 		_request.parseBody();
-		Route route{};
-		processRoute(*this, eloop, route);
+		// Route route{};
+		// processRoute(*this, eloop, route);
+		_request.postAndDelete();
 		_response.setRequest(_request);
 		_response.composeResponse();
-		_responsesString = _response.getFullResponse();
+		_responsesString += _response.getFullResponse();
+		// cout << responsesString << endl;
+		_request.setRequest("");
 		return RESPONSE_READY;
 	}
+	else if (_request.getChunked() == true && indexLastChunk == string::npos){
+		return BODY_INCOMPLETE;
+	}
 	// Change Suraina
-	else if (_request.getBytesRead() >= expectedBytes)
+	size_t expectedBytes = _request.getHeaderBytes() + _request.getContentLength();
+	if (_request.getBytesRead() >= expectedBytes)
 	{
 		_request.parseBody();
-		Route route{};
-		processRoute(*this, eloop, route);
+		_request.postAndDelete();
+		// Route route{};
+		// processRoute(*this, eloop, route);
 		_response.setRequest(_request);
 		_response.composeResponse();
 		_responsesString += _response.getFullResponse();
