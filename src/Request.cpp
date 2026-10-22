@@ -52,7 +52,6 @@ bool Request::allowedCharsInString(string input)
 void Request::resetParserVars()
 {
 	fullRequest = {};
-	requestLeft = {};
 	requestTillHeaders = {};
 	headerBytes = {};
 	bytesRead = {};
@@ -103,6 +102,10 @@ void Request::setParserState(parserState state){
 	stateOfParser = state;
 }
 
+void Request::setRequestLeft(string request){
+	requestLeft = request;
+}
+
 size_t Request::getContentLength() const
 {
 	return contentLength;
@@ -151,6 +154,10 @@ size_t Request::getHeaderBytes() const
 bool Request::getChunked() const
 {
 	return chunked;
+}
+
+string Request::getRequestLeft() const{
+	return requestLeft;
 }
 
 parserState Request::getParserState() const{

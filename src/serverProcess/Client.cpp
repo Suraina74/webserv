@@ -37,11 +37,12 @@ string& Client::getFullResponse()
 }
 
 void Client::actionsRequestLeft(size_t startNextRequest){
-	string requestLeft = _request.getFullRequest().substr(startNextRequest, _request.getFullRequest().length() - startNextRequest);
+	string reqLeft = _request.getFullRequest().substr(startNextRequest, _request.getFullRequest().length() - startNextRequest);
+	_request.setRequestLeft(reqLeft);
 	_request.resetParserVars();
 	_response.resetResponseVars();
-	_request.setRequest(requestLeft);
-	_request.setBytesRead(requestLeft.length());
+	_request.setRequest(reqLeft);
+	_request.setBytesRead(reqLeft.length());
 	_request.setHeaderBytes(0);
 	_request.setParserState(REQUEST_READY);
 }
@@ -51,7 +52,7 @@ void Client::transferEncodingRequest(){
 	if (indexLastChunk != string::npos){
 		_request.parseBody();
 		if (_request.getParserState() == BODY_INCOMPLETE){
-			return ;
+			return;
 		}
 		// Route route{};
 		// processRoute(*this, eloop, route);
@@ -150,11 +151,12 @@ void Client::receiveRequest(ServerInfo &eloop)
 		_request.setParserState(PARSER_ERROR);
 		return ;
 	}
-	else if (n == 0 && _request.getFullRequest().empty())
+	else if (n == 0 && _request.getRequestLeft().empty())
 	{
 		_request.setParserState(ZERO_BYTES);
 		return;
 	}
+	_request.setRequestLeft("");
 	if (n != 0)
 	{
 		_request.setBytesRead(_request.getBytesRead() + n);

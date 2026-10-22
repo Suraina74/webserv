@@ -45,7 +45,6 @@ class Request
 {
 	private:
 		string								fullRequest{};
-		string								requestLeft{};
 		string								requestTillHeaders{};
 		size_t								headerBytes{};
 		string								partialRequest{};
@@ -62,6 +61,7 @@ class Request
 		string								boundary{};
 		string								statusText = "200 OK";
 		string								Body{};
+		string								requestLeft{};
 		unordered_multimap<string, string>	bodyHeaderMap{};
 		unordered_multimap<string, string>	contentDisposMap{};
 		string								fileName{};
@@ -99,6 +99,7 @@ class Request
 		void		setBytesRead(size_t bytes);
 		void		setHeaderBytes(size_t bytes);
 		void		setParserState(parserState state);
+		void		setRequestLeft(string request);
 
 		bool		getChunked() const;
 		parserState	getParserState() const;
@@ -107,6 +108,7 @@ class Request
 		string		getRequestTillHeaders() const;
 		string		getFullRequest() const;
 		size_t		getContentLength() const;//length of the request body
+		string 		getRequestLeft() const;
 		string		getPath() const;//path before '?'
 		string		getBody() const;//request body content
 		string		getQuery() const;//Change by Wenxuan

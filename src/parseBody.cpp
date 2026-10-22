@@ -210,10 +210,6 @@ bool checkIfHex(string chunkSize)
 	return true;
 }
 
-// If enough bytes arrive to satisfy the declared size, the receiver consumes them as chunk data, 
-// even if those bytes include what the sender intended to be the terminating chunk.
-// The parser then expects the chunk's trailing \r\n and another chunk-size line.
-
 void Request::extractChunkedBody(){
 	size_t startBody = fullRequest.find("\r\n\r\n");
 	if (startBody == string::npos){
