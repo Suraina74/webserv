@@ -46,8 +46,9 @@ int eventLoop(ServerInfo &eloop)
 			if (revents & POLLIN)
 			{
 				//receiveRequest() parses the body, routes and composes the response itself
-				int receivStatus = client.receiveRequest(eloop);
-				if (receivStatus == PARSER_ERROR || receivStatus == 0)
+				client.receiveRequest(eloop);
+				int receivStatus = client.getRequest().getParserState();
+				if (receivStatus == PARSER_ERROR || receivStatus == ZERO_BYTES)
 				{
 					eloop.removeClient(i);
 					i--;

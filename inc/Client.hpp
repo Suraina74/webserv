@@ -22,7 +22,11 @@ class Client
 		~Client();
 
 		int					getFd();
-		int 				receiveRequest(ServerInfo &eloop);
+		void 				receiveRequest(ServerInfo &eloop);
+		void 				handleHeaders(ssize_t n, size_t delimiter);
+		void 				transferEncodingRequest();
+		void 				contentLengthRequest(size_t delimiter, ssize_t n);
+		void 				actionsRequestLeft(size_t startRequest);
 		int 				sendResponse();
 		string& 			getFullResponse();//check with http_parser branch
 

@@ -34,10 +34,11 @@ enum httpStatus
 enum parserState
 {
 	PARSER_ERROR = -1,
-	INCOMPLETE_HEADERS = 0,
-	BODY_INCOMPLETE = 1,
-	REQUEST_READY = 2,
-	RESPONSE_READY = 3
+	ZERO_BYTES = 0,
+	INCOMPLETE_HEADERS = 1,
+	BODY_INCOMPLETE = 2,
+	REQUEST_READY = 3,
+	RESPONSE_READY = 4
 };
 
 class Request
@@ -97,8 +98,10 @@ class Request
 		void		setRequest(string request);
 		void		setBytesRead(size_t bytes);
 		void		setHeaderBytes(size_t bytes);
+		void		setParserState(parserState state);
 
 		bool		getChunked() const;
+		parserState	getParserState() const;
 		size_t		getHeaderBytes() const;
 		size_t		getBytesRead() const;
 		string		getRequestTillHeaders() const;
@@ -133,4 +136,7 @@ class Request
 
 
 // Transfer encoding chunked example:
-// 'POST /uploads.html HTTP/1.1\r\nHost: localhost:8080\r\nContent-Type: multipart/form-data; boundary=MyBoundary123\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n8A\r\n--MyBoundary123\r\nContent-Disposition: form-data; name="file"; filename="hello.txt"\r\nContent-Type: text/plain\r\n\r\nHello\r\n--MyBoundary123--\r\n0\r\n\r\n' | nc 127.0.0.1 8080
+// printf 'POST /uploads.html HTTP/1.1\r\nHost: localhost:8080\r\nContent-Type: multipart/form-data; boundary=MyBoundary123\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n8A\r\n--MyBoundary123\r\nContent-Disposition: form-data; name="file"; filename="hello.txt"\r\nContent-Type: text/plain\r\n\r\nHello\r\n--MyBoundary123--\r\n0\r\n\r\n' | nc 127.0.0.1 8080
+
+// Request with content length:
+// printf 'POST /uploads.html HTTP/1.1\r\nHost: localhost:8080\r\nContent-Type: multipart/form-data; boundary=MyBoundary123\r\nContent-Length: 138\r\nConnection: close\r\n\r\n--MyBoundary123\r\nContent-Disposition: form-data; name="file"; filename="hello.txt"\r\nContent-Type: text/plain\r\n\r\nHello\r\n--MyBoundary123--\r\n' | nc 127.0.0.1 8080
