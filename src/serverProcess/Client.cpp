@@ -179,9 +179,8 @@ void Client::receiveRequest(ServerInfo &eloop)
 
 int Client::sendResponse()
 {
-	string fullResponse = _responsesString;
-	_response.setLenResponse(fullResponse.length());
-	_response.setCString(fullResponse.c_str());
+	_response.setLenResponse(_responsesString.length());
+	_response.setCString(_responsesString.c_str());
 	if (_response.getBytesSent() < _response.getLenResponse())
 	{
 		int n = send(_fd, _response.getCFullResponse() + _response.getBytesSent(), _response.getLenResponse() - _response.getBytesSent(), 0);

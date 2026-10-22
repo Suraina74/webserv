@@ -1,6 +1,5 @@
 #include "../inc/Request.hpp"
 
-// Check that chunksize is not too big, overflow check.
 // Check if chunk size exceeds body size limit.
 
 bool checkIfDoubles(unordered_multimap<string, string> map)
@@ -231,7 +230,6 @@ void Request::extractChunkedBody(){
 		string chunkSizeString = chunkedBody.substr(start, end - start);
 		if (checkIfHex(chunkSizeString) == false){
 			statusCode = BadRequest;
-			stateOfParser = PARSER_ERROR;
 			return;
 		}
 		stringstream ss(chunkSizeString);
@@ -250,7 +248,6 @@ void Request::extractChunkedBody(){
 			// check if chunk does ends with /r/n, which it should
 			if (chunkedBody[endOfChunk + 1] != '\r' && chunkedBody[endOfChunk + 2] != '\n'){
 				statusCode = BadRequest;
-				stateOfParser = PARSER_ERROR;
 				break;
 			}
 			chunk = chunkedBody.substr((end + 2), chunkSize);

@@ -14,9 +14,11 @@
 constexpr size_t MAX_REQUEST_LINE = 8192;
 // Max Body size
 using namespace std;
+
 enum httpStatus
 {
 	OK = 200,
+	NoContent = 204,
 	BadRequest = 400,
 	PageNotFound = 404,
 	MethodNotAllowed = 405,

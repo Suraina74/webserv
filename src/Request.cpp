@@ -9,6 +9,8 @@ string Request::setStatusText(httpStatus status)
 	{
 		case OK:
 			return "200 OK";
+		case NoContent:
+			return "204 No Content";
 		case BadRequest:
 			return "400 Bad Request";
 		case Forbidden:
