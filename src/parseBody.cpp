@@ -241,7 +241,7 @@ void Request::extractChunkedBody(){
 			// chunk is bigger than what is left in body.
 			size_t lenBodyWithoutChunkSize = chunkedBody.length() - (end + 2);
 			if (chunkSize > lenBodyWithoutChunkSize){
-				stateOfParser = BODY_INCOMPLETE;
+				stateOfParser = INCOMPLETE;
 				break;
 			}
 			size_t endOfChunk = end + 2 + chunkSize;
@@ -255,7 +255,7 @@ void Request::extractChunkedBody(){
 			start = end + 2 + chunkSize + 2;
 		}
 		else{
-			stateOfParser = REQUEST_READY;
+			stateOfParser = COMPLETE;
 			break;
 		}
 	}
@@ -280,6 +280,7 @@ void Request::extractBody()
 
 void Request::parseBody()
 {
+	// cout << getFullRequest() << endl;
 	if (contentLength && statusCode == OK)
 	{
 		extractBody();
@@ -294,7 +295,7 @@ void Request::parseBody()
 	{
 		extractChunkedBody();
 		statusText = setStatusText(statusCode);
-		if (statusCode == OK && stateOfParser == REQUEST_READY)
+		if (statusCode == OK && stateOfParser == COMPLETE)
 		{
 			validateBody();
 			statusText = setStatusText(statusCode);

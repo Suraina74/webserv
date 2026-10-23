@@ -1,5 +1,7 @@
 #include "../../inc/main.hpp"
 
+// Close connection only if client closes connection or in the request the header connection:close is present.
+
 void acceptClient(ServerInfo &eloop)
 {
 	//accept() creates/returns a new file descriptor for the newly connected client,
@@ -48,14 +50,21 @@ int eventLoop(ServerInfo &eloop)
 				//receiveRequest() parses the body, routes and composes the response itself
 				client.receiveRequest(eloop);
 				int receivStatus = client.getRequest().getParserState();
-				if (receivStatus == PARSER_ERROR || receivStatus == ZERO_BYTES)
+				// cout << receivStatus << endl;
+				if (receivStatus == ERROR)
 				{
 					eloop.removeClient(i);
 					i--;
 					continue;
 				}
-				else if (receivStatus == RESPONSE_READY)
+				else if (receivStatus == REQUESTLINE || receivStatus == HEADERS || receivStatus == BODY){
+					eloop.getPfds()[i].events = POLLIN;
+					i--;
+					continue;
+				}
+				else if (receivStatus == COMPLETE)
 				{
+					// client.getRequest().setParserState(RL_HEADERS);
 					// client.getRequest().postAndDelete();
 					eloop.getPfds()[i].events = POLLOUT;
 				}
@@ -63,11 +72,14 @@ int eventLoop(ServerInfo &eloop)
 			else if (revents & POLLOUT)
 			{
 				int sendStatus = client.sendResponse();
-				if (sendStatus == 0 || sendStatus == -1 || sendStatus == 2)
+				if (sendStatus == 0 || sendStatus == -1)
 				{
 					eloop.removeClient(i);
 					i--;
 					continue;
+				}
+				else if (sendStatus == 2){
+					eloop.getPfds()[i].events = POLLIN;
 				}
 			}
 			else if (revents & (POLLERR | POLLNVAL))

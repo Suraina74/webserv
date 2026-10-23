@@ -23,6 +23,7 @@ class Client
 
 		int					getFd();
 		void 				receiveRequest(ServerInfo &eloop);
+		void 				handleRequestLine();
 		void 				handleHeaders(ssize_t n, size_t delimiter);
 		void 				transferEncodingRequest();
 		void 				contentLengthRequest(size_t delimiter, ssize_t n);
