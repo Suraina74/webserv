@@ -1,7 +1,6 @@
 #include "../inc/Request.hpp"
 
 // The parsed HTTP request is evaluated against the configuration after parsing.
-// Per belangrijke header kijken wat mag of niet. Content Length, Transfer encoding:chunked, Content Type, Host
 // Kijken of alle lines in request eindigen met /r/n. if /r see if next is /n.
 
 string Request::setStatusText(httpStatus status)
@@ -10,6 +9,8 @@ string Request::setStatusText(httpStatus status)
 	{
 		case OK:
 			return "200 OK";
+		case NoContent:
+			return "204 No Content";
 		case BadRequest:
 			return "400 Bad Request";
 		case Forbidden:
@@ -53,7 +54,6 @@ bool Request::allowedCharsInString(string input)
 void Request::resetParserVars()
 {
 	fullRequest = {};
-	requestLeft = {};
 	requestTillHeaders = {};
 	headerBytes = {};
 	bytesRead = {};
@@ -74,7 +74,6 @@ void Request::resetParserVars()
 	fileName = {};
 	fileContent = {};
 	statusCode = OK;
-	stateOfParser = {};
 	partialRequest = {};
 }
 
@@ -99,6 +98,14 @@ void Request::setStatus(httpStatus status)
 	statusText = setStatusText(status);
 	if (status == PageNotFound)
 		Path = "www/404.html";
+}
+
+void Request::setParserState(parserState state){
+	stateOfParser = state;
+}
+
+void Request::setRequestLeft(string request){
+	requestLeft = request;
 }
 
 size_t Request::getContentLength() const
@@ -149,6 +156,14 @@ size_t Request::getHeaderBytes() const
 bool Request::getChunked() const
 {
 	return chunked;
+}
+
+string Request::getRequestLeft() const{
+	return requestLeft;
+}
+
+parserState Request::getParserState() const{
+	return stateOfParser;
 }
 
 string Request::getBody() const

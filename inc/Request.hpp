@@ -14,9 +14,11 @@
 constexpr size_t MAX_REQUEST_LINE = 8192;
 // Max Body size
 using namespace std;
+
 enum httpStatus
 {
 	OK = 200,
+	NoContent = 204,
 	BadRequest = 400,
 	PageNotFound = 404,
 	MethodNotAllowed = 405,
@@ -34,17 +36,17 @@ enum httpStatus
 enum parserState
 {
 	PARSER_ERROR = -1,
-	INCOMPLETE_HEADERS = 0,
-	BODY_INCOMPLETE = 1,
-	REQUEST_READY = 2,
-	RESPONSE_READY = 3
+	ZERO_BYTES = 0,
+	INCOMPLETE_HEADERS = 1,
+	BODY_INCOMPLETE = 2,
+	REQUEST_READY = 3,
+	RESPONSE_READY = 4
 };
 
 class Request
 {
 	private:
 		string								fullRequest{};
-		string								requestLeft{};
 		string								requestTillHeaders{};
 		size_t								headerBytes{};
 		string								partialRequest{};
@@ -61,6 +63,7 @@ class Request
 		string								boundary{};
 		string								statusText = "200 OK";
 		string								Body{};
+		string								requestLeft{};
 		unordered_multimap<string, string>	bodyHeaderMap{};
 		unordered_multimap<string, string>	contentDisposMap{};
 		string								fileName{};
@@ -97,13 +100,17 @@ class Request
 		void		setRequest(string request);
 		void		setBytesRead(size_t bytes);
 		void		setHeaderBytes(size_t bytes);
+		void		setParserState(parserState state);
+		void		setRequestLeft(string request);
 
 		bool		getChunked() const;
+		parserState	getParserState() const;
 		size_t		getHeaderBytes() const;
 		size_t		getBytesRead() const;
 		string		getRequestTillHeaders() const;
 		string		getFullRequest() const;
 		size_t		getContentLength() const;//length of the request body
+		string 		getRequestLeft() const;
 		string		getPath() const;//path before '?'
 		string		getBody() const;//request body content
 		string		getQuery() const;//Change by Wenxuan
@@ -133,4 +140,7 @@ class Request
 
 
 // Transfer encoding chunked example:
-// 'POST /uploads.html HTTP/1.1\r\nHost: localhost:8080\r\nContent-Type: multipart/form-data; boundary=MyBoundary123\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n8A\r\n--MyBoundary123\r\nContent-Disposition: form-data; name="file"; filename="hello.txt"\r\nContent-Type: text/plain\r\n\r\nHello\r\n--MyBoundary123--\r\n0\r\n\r\n' | nc 127.0.0.1 8080
+// printf 'POST /uploads.html HTTP/1.1\r\nHost: localhost:8080\r\nContent-Type: multipart/form-data; boundary=MyBoundary123\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n8A\r\n--MyBoundary123\r\nContent-Disposition: form-data; name="file"; filename="hello.txt"\r\nContent-Type: text/plain\r\n\r\nHello\r\n--MyBoundary123--\r\n0\r\n\r\n' | nc 127.0.0.1 8080
+
+// Request with content length:
+// printf 'POST /uploads.html HTTP/1.1\r\nHost: localhost:8080\r\nContent-Type: multipart/form-data; boundary=MyBoundary123\r\nContent-Length: 138\r\nConnection: close\r\n\r\n--MyBoundary123\r\nContent-Disposition: form-data; name="file"; filename="hello.txt"\r\nContent-Type: text/plain\r\n\r\nHello\r\n--MyBoundary123--\r\n' | nc 127.0.0.1 8080

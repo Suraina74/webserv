@@ -29,12 +29,17 @@ bool Request::actionsOnKey(string& key)
 bool Request::actionsOnValue(string& value)
 {
 	size_t findNotSpace;
-	if (!value.empty() && value[0] == ' ')
+	if (value.empty())
+	{
+		statusCode = BadRequest;
+		return false;
+	}
+	if (value[0] == ' ')
 	{
 		findNotSpace = value.find_first_not_of(' ');
 		value.erase(0, findNotSpace); // delete N characters starting from pos 0.
 	}
-	if (!value.empty() && value[value.length() - 1] == ' ')
+	if (value[value.length() - 1] == ' ')
 	{
 		findNotSpace = value.find_last_not_of(' ');
 		value.erase(findNotSpace + 1); // delete everything from pos findNotSpace + 1 onwards.

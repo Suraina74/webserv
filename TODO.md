@@ -43,7 +43,7 @@ _Last reviewed: 2026-10-19 (after merging `http_parser` into `WenxuanDev`)_
 ## Response
 - [x] Compose the response once instead of on every POLLOUT (`Client::sendResponse()` sends from `_responsesString`)
 - [ ] Build the response from the `Route` (fsPath, status, headers), not `request.getPath()`; `Route` is a local in `Client::receiveRequest()` and is discarded after routing
-- [ ] `Client::sendResponse()` copies `_responsesString` on every POLLOUT; send directly from it
+- [x] `Client::sendResponse()` copies `_responsesString` on every POLLOUT; send directly from it
 - [ ] Content-Type per file instead of always `text/html`
 - [ ] Use custom error pages from config (Suraina)
 - [ ] Support redirect responses (301/302 + Location header) (Suraina)

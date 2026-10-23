@@ -1,5 +1,7 @@
 #include "../inc/Request.hpp"
 
+// Check if chunk size exceeds body size limit.
+
 bool checkIfDoubles(unordered_multimap<string, string> map)
 {
 	for (auto it = map.begin(); it != map.end(); it++)
@@ -179,8 +181,9 @@ void Request::validateBody()
 		statusCode = BadRequest;
 		return;
 	}
+	// Misschien wordt niet alles in een keer ontvangen met recv, dan eindigt het niet met boundary + -- + \r\n
 	size_t endBodyPos = Body.length();
-	size_t endBoundary = Body.find("\r\n" + boundary + "--" + "\r\n");
+	size_t endBoundary = Body.find("\r\n" + boundary + "--");
 	if (endBoundary == string::npos)
 	{
 		statusCode = BadRequest;
@@ -206,31 +209,26 @@ bool checkIfHex(string chunkSize)
 	return true;
 }
 
-void Request::extractChunkedBody()
-{
-	size_t startBody = fullRequest.find("\r\n\r\n") + 4;
-	if (startBody == string::npos)
-	{
+void Request::extractChunkedBody(){
+	size_t startBody = fullRequest.find("\r\n\r\n");
+	if (startBody == string::npos){
 		statusCode = BadRequest;
-		return;
+        return;
 	}
+	startBody += 4;
 	size_t endBody = fullRequest.find("0\r\n\r\n");
-	if (endBody == string::npos)
-	{
+	if (endBody == string::npos){
 		statusCode = BadRequest;
-		return;
+        return;
 	}
 	endBody += 2;
 	string chunkedBody = fullRequest.substr(startBody, endBody - startBody);
 	int start = 0;
-	string part{};
-	size_t allChunkSizes{};
-	while (1)
-	{
+	string chunk{};
+	while (1){
 		int end = chunkedBody.find("\r\n", start);
 		string chunkSizeString = chunkedBody.substr(start, end - start);
-		if (checkIfHex(chunkSizeString) == false)
-		{
+		if (checkIfHex(chunkSizeString) == false){
 			statusCode = BadRequest;
 			return;
 		}
@@ -239,21 +237,25 @@ void Request::extractChunkedBody()
 		ss >> hex >> chunkSize;
 		ss.str("");
 		ss.clear();
-		allChunkSizes += chunkSize;
-		if (allChunkSizes > bytesRead)
-		{
-			statusCode = BadRequest;
-			break;
-		}
-		// if allchunksizes < bytesRead --> something left in fullrequest
-		if (chunkSize != 0)
-		{
-			part = chunkedBody.substr((end + 2), chunkSize);
-			Body += part;
+		if (chunkSize != 0){
+			// chunk is bigger than what is left in body.
+			size_t lenBodyWithoutChunkSize = chunkedBody.length() - (end + 2);
+			if (chunkSize > lenBodyWithoutChunkSize){
+				stateOfParser = BODY_INCOMPLETE;
+				break;
+			}
+			size_t endOfChunk = end + 2 + chunkSize;
+			// check if chunk does ends with /r/n, which it should
+			if (chunkedBody[endOfChunk + 1] != '\r' && chunkedBody[endOfChunk + 2] != '\n'){
+				statusCode = BadRequest;
+				break;
+			}
+			chunk = chunkedBody.substr((end + 2), chunkSize);
+			Body += chunk;
 			start = end + 2 + chunkSize + 2;
 		}
-		else
-		{
+		else{
+			stateOfParser = REQUEST_READY;
 			break;
 		}
 	}
@@ -292,7 +294,7 @@ void Request::parseBody()
 	{
 		extractChunkedBody();
 		statusText = setStatusText(statusCode);
-		if (statusCode == OK)
+		if (statusCode == OK && stateOfParser == REQUEST_READY)
 		{
 			validateBody();
 			statusText = setStatusText(statusCode);

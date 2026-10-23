@@ -40,7 +40,3 @@ class Response
 // Content-Length: 13\r\n
 // \r\n
 // text in html page
-
-
-// String samenstellen voor response zonder body t/m \r\n\r\n
-// en dan die string + html page

@@ -1,5 +1,10 @@
 #include "../inc/Response.hpp"
 
+// Redirections
+// Support redirect responses (301/302 + Location header)
+// Use custom error pages from config.
+// Connection:close needed?
+
 int Response::composeResponse()
 {
 	statusLine = statusLine + " " + request.getStatusText() + "\r\n";

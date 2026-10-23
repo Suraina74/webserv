@@ -1,6 +1,7 @@
 #include "../inc/Request.hpp"
 
-// What if content length = 0, but there is a body?
+// What if upload is too large? 413 Content Too Large.
+// Permission checks?
 
 void Request::extractFileElements()
 {
@@ -43,24 +44,27 @@ void Request::extractFileElements()
 void Request::addFile()
 {
 	// Vanuit config halen waar files moeten worden opgeslagen.
-	if (contentLength > 0 || chunked == true)
-	{
-		string uploadPlace = "www/uploads/" + fileName;
-		ofstream file(uploadPlace, ios::binary);
-		file << fileContent;
-		file.close();
+	string uploadPlace = "www/uploads/" + fileName;
+	ofstream file(uploadPlace, ios::binary);
+	if (!file.is_open()){
+		statusCode = InternalServerError;
+		statusText = setStatusText(statusCode);
 	}
+	file << fileContent;
+	file.close();
 }
 
 void Request::postAndDelete()
 {
 	if (Method == "POST" && statusCode == OK)
 	{
-		extractFileElements();
-		statusText = setStatusText(statusCode);
-		if (statusCode == OK)
-		{
-			addFile();
+		if (contentLength > 0 || chunked == true){
+			extractFileElements();
+			statusText = setStatusText(statusCode);
+			if (statusCode == OK)
+			{
+				addFile();
+			}
 		}
 	}
 	if (Method == "DELETE" && statusCode == OK) //  curl -X DELETE localhost:8080/uploads/cat.png;
@@ -70,8 +74,10 @@ void Request::postAndDelete()
 		int status = remove(cUploadPlace);
 		if (status != 0)
 		{
-			statusCode = BadRequest;
+			statusCode = PageNotFound;
 			statusText = setStatusText(statusCode);
 		}
+			statusCode = NoContent;
+			statusText = setStatusText(statusCode);
 	}
 }
