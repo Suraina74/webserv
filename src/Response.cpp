@@ -7,6 +7,7 @@
 
 // Connection close werkt goed for browser requests, maar niet voor interactive nc.
 // Want interactive nc wil een open connection de hele tijd.
+// buffer is te klein. ifstream gebruiken, bij bestaande html files.
 
 int Response::composeResponse()
 {
