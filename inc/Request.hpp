@@ -35,13 +35,21 @@ enum httpStatus
 
 enum parserState
 {
-	PARSER_ERROR = -1,
-	ZERO_BYTES = 0,
-	INCOMPLETE_HEADERS = 1,
-	BODY_INCOMPLETE = 2,
-	REQUEST_READY = 3,
-	RESPONSE_READY = 4
+	REQUESTLINE = 0,
+	HEADERS = 1,
+	BODY = 2,
+	COMPLETE = 3,
+	INCOMPLETE = 4,
+	ERROR = 5
 };
+
+// enum parserResult
+// {
+// 	PARSER_ERROR = -1,
+// 	ZERO_BYTES = 0,
+// 	INCOMPLETE = 1,
+// 	RESET = 5
+// };
 
 class Request
 {
@@ -69,12 +77,13 @@ class Request
 		string								fileName{};
 		string								fileContent{};
 		httpStatus							statusCode = OK;
-		parserState							stateOfParser{};
+		parserState							stateOfParser = REQUESTLINE;
+		// parserResult						result = RESET;
 
 	public:
 		Request(){}
 		~Request(){}
-		bool		parseRequestLine();
+		bool		parseRequestLine(string rstring);
 		bool		validateRequestLine();
 		bool		parseUntilHeaders(string hString);
 		bool		parseHeaders();
@@ -143,4 +152,26 @@ class Request
 // printf 'POST /uploads.html HTTP/1.1\r\nHost: localhost:8080\r\nContent-Type: multipart/form-data; boundary=MyBoundary123\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n8A\r\n--MyBoundary123\r\nContent-Disposition: form-data; name="file"; filename="hello.txt"\r\nContent-Type: text/plain\r\n\r\nHello\r\n--MyBoundary123--\r\n0\r\n\r\n' | nc 127.0.0.1 8080
 
 // Request with content length:
-// printf 'POST /uploads.html HTTP/1.1\r\nHost: localhost:8080\r\nContent-Type: multipart/form-data; boundary=MyBoundary123\r\nContent-Length: 138\r\nConnection: close\r\n\r\n--MyBoundary123\r\nContent-Disposition: form-data; name="file"; filename="hello.txt"\r\nContent-Type: text/plain\r\n\r\nHello\r\n--MyBoundary123--\r\n' | nc 127.0.0.1 8080
+// printf 'POST /uploads.html HTTP/1.1\r\nHost: localhost:8080\r\nContent-Type: multipart/form-data; boundary=MyBoundary123\r\nContent-Length: 138\r\n\r\n--MyBoundary123\r\nContent-Disposition: form-data; name="file"; filename="hello.txt"\r\nContent-Type: text/plain\r\n\r\nHello\r\n--MyBoundary123--\r\n' | nc 127.0.0.1 8080
+
+// POST /uploads.html HTTP/1.1
+// Host: localhost:8080
+// Content-Type: multipart/form-data; boundary=MyBoundary123
+// Content-Length: 138
+
+//--MyBoundary123\r\nContent-Disposition: form-data; name="file"; filename="hello.txt"
+// Content-Type: text/plain
+
+// Hello
+//--MyBoundary123--
+//
+
+
+// {
+//     printf 'GET / HTTP/1.1\r\nHost: localhost\r\n\r\n'
+//     sleep 1
+//     printf 'GET /page HTTP/1.1\r\nHost: localhost\r\n'
+//     sleep 1
+//     printf 'GET /sec'
+//     sleep 5
+// } | nc -N 127.0.0.1 8080

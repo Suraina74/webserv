@@ -5,6 +5,10 @@
 // Use custom error pages from config.
 // Connection:close needed?
 
+// Connection close werkt goed for browser requests, maar niet voor interactive nc.
+// Want interactive nc wil een open connection de hele tijd.
+// buffer is te klein. ifstream gebruiken, bij bestaande html files.
+
 int Response::composeResponse()
 {
 	statusLine = statusLine + " " + request.getStatusText() + "\r\n";
@@ -67,7 +71,7 @@ int Response::composeResponse()
 	}
 	string sizeOfBody;
 	stringstream ss;
-	ss << bytesRead;
+	ss << body.size();
 	ss >> sizeOfBody;
 	contentLength = contentLength + sizeOfBody + "\r\n";
 	string connection = "Connection: close\r\n\r\n";

@@ -44,14 +44,14 @@ void Client::actionsRequestLeft(size_t startNextRequest){
 	_request.setRequest(reqLeft);
 	_request.setBytesRead(reqLeft.length());
 	_request.setHeaderBytes(0);
-	_request.setParserState(REQUEST_READY);
+	_request.setParserState(REQUESTLINE);
 }
 
 void Client::transferEncodingRequest(){
 	size_t indexLastChunk = _request.getFullRequest().find("0\r\n\r\n");
 	if (indexLastChunk != string::npos){
 		_request.parseBody();
-		if (_request.getParserState() == BODY_INCOMPLETE){
+		if (_request.getParserState() == INCOMPLETE){
 			return;
 		}
 		// Route route{};
@@ -66,16 +66,17 @@ void Client::transferEncodingRequest(){
 			return;
 		}
 		_request.setRequest("");
-		_request.setParserState(RESPONSE_READY);
+		_request.setParserState(COMPLETE);
 		return;
 	}
 	else if (indexLastChunk == string::npos){
-		_request.setParserState(BODY_INCOMPLETE);
+		_request.setParserState(BODY);
 		return;
 	}
 }
 
 void Client::contentLengthRequest(size_t delimiter, ssize_t n){
+	(void)n;
 	if (_request.getContentLength())
 	{
 		size_t startBody = delimiter + 4;
@@ -83,12 +84,12 @@ void Client::contentLengthRequest(size_t delimiter, ssize_t n){
 		size_t bodySize = endBody - startBody;
 		if (_request.getContentLength() > bodySize)
 		{
-			if (n == 0)
-			{
-				_request.setParserState(RESPONSE_READY);
-				return;
-			}
-			_request.setParserState(BODY_INCOMPLETE);
+			// if (n == 0)
+			// {
+			// 	_request.setParserState(COMPLETE);
+			// 	return;
+			// }
+			_request.setParserState(BODY);
 			return;
 		}
 	}
@@ -102,6 +103,7 @@ void Client::contentLengthRequest(size_t delimiter, ssize_t n){
 		_response.setRequest(_request);
 		_response.composeResponse();
 		_responsesString += _response.getFullResponse();
+		cout<< _request.getBytesRead() << " " << expectedBytes << endl;
 		if (_request.getBytesRead() > expectedBytes)
 		{
 			size_t startBody = delimiter + 4;
@@ -110,34 +112,51 @@ void Client::contentLengthRequest(size_t delimiter, ssize_t n){
 			return;
 		}
 		_request.setRequest("");
-		_request.setParserState(RESPONSE_READY);
+		_request.setParserState(COMPLETE);
 		return;
 	}
 }
 
 void Client::handleHeaders(ssize_t n, size_t delimiter){
+	(void)n;
 	if (delimiter == string::npos)
 	{
-		if (n == 0)
-		{
-			_request.setParserState(RESPONSE_READY);
-			return;
-		}
-		_request.setParserState(INCOMPLETE_HEADERS);
+		// if (n == 0)
+		// {
+		// 	_request.setParserState(COMPLETE);
+		// 	return;
+		// }
+		_request.setParserState(HEADERS);
 		return;
 	}
 	else if (_request.getHeaderBytes() == 0)
 	{
+		// delimiter found
 		if ((_request.parseUntilHeaders(_request.getFullRequest())) == false)
 		{
 			_response.setRequest(_request);
 			_response.composeResponse();
 			_responsesString += _response.getFullResponse();
-			_request.setParserState(RESPONSE_READY);
+			_request.setParserState(COMPLETE);
 			return;
 		}
 		_request.setHeaderBytes(_request.getRequestTillHeaders().size());
+		_request.setParserState(BODY);
 	}
+}
+
+void Client::handleRequestLine(){
+	if ((_request.parseRequestLine(_request.getFullRequest())) == false){
+		_response.setRequest(_request);
+		_response.composeResponse();
+		_responsesString += _response.getFullResponse();
+		_request.setParserState(COMPLETE);
+		return;
+	}
+	if (_request.getParserState() == INCOMPLETE){
+		return;
+	}
+	_request.setParserState(HEADERS);
 }
 
 void Client::receiveRequest(ServerInfo &eloop)
@@ -148,34 +167,54 @@ void Client::receiveRequest(ServerInfo &eloop)
 	if (n == -1)
 	{
 		::perror("recv");
-		_request.setParserState(PARSER_ERROR);
+		_request.setParserState(ERROR);
 		return ;
 	}
 	else if (n == 0 && _request.getRequestLeft().empty())
 	{
-		_request.setParserState(ZERO_BYTES);
+		_request.setParserState(ERROR);
 		return;
 	}
-	_request.setRequestLeft("");
+	// _request.setRequestLeft("");
 	if (n != 0)
 	{
 		_request.setBytesRead(_request.getBytesRead() + n);
 		string part(buffer, n);
 		_request.setRequest(_request.getFullRequest() + part);
 	}
-	size_t delimiter = _request.getFullRequest().find("\r\n\r\n");
-	handleHeaders(n, delimiter);
-	if (_request.getParserState() == RESPONSE_READY || _request.getParserState() == INCOMPLETE_HEADERS){
-		return;
-	}
-	if (_request.getChunked() == true){
-		transferEncodingRequest();
-	}
-	else{
-		contentLengthRequest(delimiter, n);
+	while (true){
+		if (_request.getParserState() == REQUESTLINE){
+			handleRequestLine();
+			if (_request.getParserState() == INCOMPLETE){
+				return;
+			}
+		}
+		size_t delimiter = _request.getFullRequest().find("\r\n\r\n");
+		if (_request.getParserState() == HEADERS){
+			handleHeaders(n, delimiter);
+			if (_request.getParserState() == HEADERS){
+				return;
+			}
+		}
+		if (_request.getParserState() == BODY){
+			if (_request.getChunked() == true){
+				transferEncodingRequest();
+			}
+			else{
+				contentLengthRequest(delimiter, n);
+			}
+			if (_request.getParserState() == BODY){
+				return;
+			}
+		}
+		if (_request.getParserState() == COMPLETE){
+			return;
+		}
 	}
 	return;
 }
+// Your sendResponse() must handle partial writes. If it sends only part of fullResponse, keep POLLOUT enabled until all bytes have been sent. 
+// Only then switch back to POLLIN or close the connection, depending on the connection policy.
 
 int Client::sendResponse()
 {
