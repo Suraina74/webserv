@@ -12,6 +12,7 @@ class Client
 	private:
 		int					_fd;
 		const ServerConfig*	_server;
+		int					_timeout;
 		Request				_request;
 		Response			_response;
 		string				_responsesString{};
