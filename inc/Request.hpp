@@ -27,6 +27,7 @@ enum httpStatus
 	Forbidden = 403,
 	URITooLong = 414,
 	UnsupportedMediaType = 415,
+	UnprocessableContent = 422,
 	RequestHeaderFieldsTooLarge = 431,
 	InternalServerError = 500,
 	NotImplemented = 501,
@@ -42,14 +43,6 @@ enum parserState
 	INCOMPLETE = 4,
 	ERROR = 5
 };
-
-// enum parserResult
-// {
-// 	PARSER_ERROR = -1,
-// 	ZERO_BYTES = 0,
-// 	INCOMPLETE = 1,
-// 	RESET = 5
-// };
 
 class Request
 {

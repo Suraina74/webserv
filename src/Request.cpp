@@ -27,6 +27,8 @@ string Request::setStatusText(httpStatus status)
 			return "414 URI Too Long";
 		case UnsupportedMediaType:
 			return "415 Unsupported Media Type";
+		case UnprocessableContent:
+			return "422 Unprocessable Content";
 		case RequestHeaderFieldsTooLarge:
 			return "431 Request Header Fields Too Large";
 		case InternalServerError:

@@ -50,7 +50,6 @@ int eventLoop(ServerInfo &eloop)
 				//receiveRequest() parses the body, routes and composes the response itself
 				client.receiveRequest(eloop);
 				int receivStatus = client.getRequest().getParserState();
-				// cout << receivStatus << endl;
 				if (receivStatus == ERROR)
 				{
 					eloop.removeClient(i);

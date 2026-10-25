@@ -103,7 +103,6 @@ void Client::contentLengthRequest(size_t delimiter, ssize_t n){
 		_response.setRequest(_request);
 		_response.composeResponse();
 		_responsesString += _response.getFullResponse();
-		cout<< _request.getBytesRead() << " " << expectedBytes << endl;
 		if (_request.getBytesRead() > expectedBytes)
 		{
 			size_t startBody = delimiter + 4;
@@ -154,6 +153,7 @@ void Client::handleRequestLine(){
 		return;
 	}
 	if (_request.getParserState() == INCOMPLETE){
+		_request.setParserState(REQUESTLINE);
 		return;
 	}
 	_request.setParserState(HEADERS);
@@ -185,7 +185,7 @@ void Client::receiveRequest(ServerInfo &eloop)
 	while (true){
 		if (_request.getParserState() == REQUESTLINE){
 			handleRequestLine();
-			if (_request.getParserState() == INCOMPLETE){
+			if (_request.getParserState() == REQUESTLINE){
 				return;
 			}
 		}

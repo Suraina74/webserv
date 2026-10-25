@@ -37,7 +37,6 @@ bool Request::parseRequestLine(string rstring)
 	size_t endOfRequestLine = rstring.find("\r\n"); // CRLF is: carriage return(\r) line feed (\n)
 	if (endOfRequestLine == string::npos)
 	{
-		cout << "1" << endl;
 		statusCode = BadRequest;
 		statusText = setStatusText(statusCode);
 		return false;
@@ -73,7 +72,6 @@ bool Request::parseRequestLine(string rstring)
 		{
 			if (requestLine[i] != ' ')
 			{
-				cout << "3" << endl;
 				statusCode = BadRequest;
 				statusText = setStatusText(statusCode);
 				return false;
@@ -83,7 +81,6 @@ bool Request::parseRequestLine(string rstring)
 	}
 	if (spaces != 2)
 	{
-		cout << "4" << endl;
 		statusCode = BadRequest;
 		statusText = setStatusText(statusCode);
 		return false;
@@ -106,7 +103,6 @@ bool Request::parseRequestLine(string rstring)
 		Path = "www/index.html";
 	}
 	if (validateRequestLine() == false){
-		cout << "5" << endl;
 		statusText = setStatusText(statusCode);
 		return false;
 	}
