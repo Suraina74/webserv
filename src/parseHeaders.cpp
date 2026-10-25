@@ -250,11 +250,6 @@ bool Request::parseUntilHeaders(string string)
 {
 	int endHeaders = string.find("\r\n\r\n") + 4;
 	requestTillHeaders = string.substr(0, endHeaders);
-	if (parseRequestLine() == false)
-	{
-		statusText = setStatusText(statusCode);
-		return false;
-	}
 	if (parseHeaders() == false)
 	{
 		statusText = setStatusText(statusCode);

@@ -8,7 +8,7 @@ void Request::extractFileElements()
 	auto itFilename = contentDisposMap.find("filename");
 	if (itFilename == contentDisposMap.end())
 	{
-		statusCode = BadRequest;
+		statusCode = UnprocessableContent;
 		return;
 	}
 	fileName = itFilename->second;

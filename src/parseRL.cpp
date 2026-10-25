@@ -32,20 +32,22 @@ bool Request::validateRequestLine()
 	return true;
 }
 
-bool Request::parseRequestLine()
+bool Request::parseRequestLine(string rstring)
 {
-	size_t endOfRequestLine = requestTillHeaders.find("\r\n"); // CRLF is: carriage return(\r) line feed (\n)
+	size_t endOfRequestLine = rstring.find("\r\n"); // CRLF is: carriage return(\r) line feed (\n)
 	if (endOfRequestLine == string::npos)
 	{
 		statusCode = BadRequest;
+		statusText = setStatusText(statusCode);
 		return false;
 	}
-	requestLine = requestTillHeaders.substr(0, endOfRequestLine);
+	requestLine = rstring.substr(0, endOfRequestLine);
 	// Check if max request line size is given in config file, anders wordt datgene waarmee moet worden compared die value van de config file.
 	size_t lenRL = requestLine.length();
 	if (lenRL >= MAX_REQUEST_LINE)
 	{
 		statusCode = URITooLong;
+		statusText = setStatusText(statusCode);
 		return false;
 	}
 	stringstream ss(requestLine);
@@ -53,9 +55,14 @@ bool Request::parseRequestLine()
 	int amountWords = 0;
 	while (ss >> word)
 		amountWords++;
-	if (amountWords != 3)
+	if (amountWords < 3){
+		stateOfParser = INCOMPLETE;
+		return true;
+	}
+	if (amountWords > 3)
 	{
 		statusCode = BadRequest;
+		statusText = setStatusText(statusCode);
 		return false;
 	}
 	int spaces = 0;
@@ -66,6 +73,7 @@ bool Request::parseRequestLine()
 			if (requestLine[i] != ' ')
 			{
 				statusCode = BadRequest;
+				statusText = setStatusText(statusCode);
 				return false;
 			}
 			spaces++;
@@ -74,6 +82,7 @@ bool Request::parseRequestLine()
 	if (spaces != 2)
 	{
 		statusCode = BadRequest;
+		statusText = setStatusText(statusCode);
 		return false;
 	}
 	ss.str("");
@@ -93,7 +102,9 @@ bool Request::parseRequestLine()
 	{
 		Path = "www/index.html";
 	}
-	if (validateRequestLine() == false)
+	if (validateRequestLine() == false){
+		statusText = setStatusText(statusCode);
 		return false;
+	}
 	return true;
 }
