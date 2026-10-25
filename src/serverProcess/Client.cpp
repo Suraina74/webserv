@@ -36,6 +36,11 @@ string& Client::getFullResponse()
 	return _responsesString;
 }
 
+int	Client::getTimeout()
+{
+	return _timeout;
+}
+
 void Client::actionsRequestLeft(size_t startNextRequest){
 	string reqLeft = _request.getFullRequest().substr(startNextRequest, _request.getFullRequest().length() - startNextRequest);
 	_request.setRequestLeft(reqLeft);
@@ -241,3 +246,7 @@ int Client::sendResponse()
 	return 1;
 }
 
+void Client::setTimeout(int newTimeout)
+{
+	_timeout = newTimeout;
+}

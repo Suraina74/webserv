@@ -22,6 +22,7 @@ class Client
 		Client(int fd, const ServerConfig *server, Request request, Response response);
 		~Client();
 
+		int					getTimeout();
 		int					getFd();
 		void 				receiveRequest(ServerInfo &eloop);
 		void 				handleRequestLine();
@@ -33,6 +34,7 @@ class Client
 		string& 			getFullResponse();//check with http_parser branch
 
 
+		void				setTimeout(int newTimeout);
 		void				setResponse();
 		int					getClientFd();
 		const ServerConfig& getClientServer();
