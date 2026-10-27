@@ -3,7 +3,6 @@
 #include <vector>
 #include <map>
 #include <iostream>
-#define TIMEOUT 60
 
 using namespace std;
 

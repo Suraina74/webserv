@@ -49,6 +49,7 @@ int eventLoop(ServerInfo &eloop)
 			if (revents & POLLIN)//A client has connected
 			{
 				//receiveRequest() parses the body, routes and composes the response itself
+				timer();
 				client.receiveRequest(eloop);
 				int receivStatus = client.getRequest().getParserState();
 				if (receivStatus == ERROR)

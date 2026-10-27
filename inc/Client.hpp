@@ -3,6 +3,8 @@
 #include "../inc/Config.hpp"
 #include <poll.h>
 
+#define TIMEOUT 60
+
 using namespace std;
 
 class ServerInfo;
@@ -34,6 +36,7 @@ class Client
 		string& 			getFullResponse();//check with http_parser branch
 
 
+		void				timer(int time_cur, int time_after_action);
 		void				setTimeout(int newTimeout);
 		void				setResponse();
 		int					getClientFd();
