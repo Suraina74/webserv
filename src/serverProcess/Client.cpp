@@ -58,7 +58,10 @@ void Client::transferEncodingRequest(ServerInfo &eloop)
 	{
 		_request.parseBody();
 		if (_request.getParserState() == INCOMPLETE)
+		{
+			_request.setParserState(BODY);
 			return;
+		}
 		Route route{};
 		processRoute(*this, eloop, route);
 		_request.postAndDelete();
