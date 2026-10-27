@@ -10,22 +10,22 @@ using namespace std;
 class CGI
 {
 	private:
-		map<string, string>	_env; //key = "SERVER_PORT", value = "8080"
-		string				_interpreter; //tells server what language to use
-		string				_scriptPath;
-		string				_requestBody;
-		size_t				_bodySent;
-		string				_output;
-		int					_clientFd;
+		map<string, string>	_env{}; //key = "SERVER_PORT", value = "8080"
+		string				_interpreter{}; //tells server what language to use
+		string				_scriptPath{};
+		string				_requestBody{};
+		size_t				_bodySent{};
+		string				_output{};
+		int					_clientFd{};
 
-		int					_inFd;
-		int					_outFd;
-		pid_t				_pid;
+		int					_inFd{};
+		int					_outFd{};
+		pid_t				_pid{};
 
 	public:
 		CGI();
 		~CGI();
-		CGI(Request &request, const ServerConfig &server, int clientFd);
+		CGI(Request &request, const ServerConfig &server, int clientFd, string interpreter);
 		void	populateEnv(Request &request, const ServerConfig &server);
 		int		runScript();
 

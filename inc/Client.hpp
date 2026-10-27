@@ -65,9 +65,9 @@ int	processRoute(Client& client, ServerInfo& eloop, Route& route);
 const Location*	findLocation(const ServerConfig& server, const Request& request);
 httpStatus		validateRouteStat(Request& request, const ServerConfig& server, Route& route);
 bool			checkPathStat(string& pathName, Route& route, struct stat& pathStat);
-void			setRouteAction(Route& route, Request& request, const ServerConfig& server);
+string			setRouteAction(Route& route, Request& request, const ServerConfig& server);
 //route action handlers called by processRoute(), each fills client.getResponse()
-void			runCGI(Request &request, const ServerConfig &server, int clientFd);
+void			runCGI(Request &request, const ServerConfig &server, int clientFd, string interpreter);
 void			runUpload(Request &request, const ServerConfig &server, int clientFd);
 void			runRedirect(Request &request, const ServerConfig &server, int clientFd);
 void			runAutoIndex(Request &request, const ServerConfig &server, int clientFd);

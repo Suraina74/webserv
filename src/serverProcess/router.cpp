@@ -79,7 +79,7 @@ bool checkPathStat(string& pathName, Route& route, struct stat& pathStat)
 	return true;
 }
 
-void setRouteAction(Route& route, Request& request, const ServerConfig& server)
+string setRouteAction(Route& route, Request& request, const ServerConfig& server)
 {
 	const string& requestMethod = request.getMethod();
 	const string& requestPath = request.getPath();
@@ -108,7 +108,7 @@ void setRouteAction(Route& route, Request& request, const ServerConfig& server)
 			if (access(route.interpreter.c_str(), X_OK) == -1)
 			{
 				route.status = InternalServerError;//config error, not client's fault
-				return;
+				return ;
 			}
 			route.action = R_CGI;//still need to check fsPathStat when constructing CGI obj
 			return;
@@ -187,7 +187,7 @@ int processRoute(Client& client, ServerInfo& eloop, Route& route)
 		switch (route.action)
 		{
 			case R_CGI:
-				runCGI(request, server, client.getFd());//fill response in client.setResponse()
+				runCGI(request, server, client.getFd(), route.interpreter);//fill response in client.setResponse()
 				break;
 			case R_UPLOAD:
 			//Upload function
