@@ -1,4 +1,5 @@
 #include "../inc/ServerInfo.hpp"
+#include "../inc/Client.hpp"
 #include <unistd.h>
 
 ServerInfo::ServerInfo():_listenCount(0){}

@@ -1,4 +1,5 @@
 #include "../../inc/main.hpp"
+#include "../../inc/ServerInfo.hpp"
 
 // Close connection only if client closes connection or in the request the header connection:close is present.
 
@@ -45,7 +46,7 @@ int eventLoop(ServerInfo &eloop)
 			int revents = eloop.getPfds()[i].revents;
 			int clientFd = eloop.getPfds()[i].fd;
 			Client &client = eloop.getClient(clientFd);
-			if (revents & POLLIN)
+			if (revents & POLLIN)//A client has connected
 			{
 				//receiveRequest() parses the body, routes and composes the response itself
 				client.receiveRequest(eloop);
@@ -56,14 +57,14 @@ int eventLoop(ServerInfo &eloop)
 					i--;
 					continue;
 				}
-				else if (receivStatus == REQUESTLINE || receivStatus == HEADERS || receivStatus == BODY){
+				else if (receivStatus == REQUESTLINE || receivStatus == HEADERS || receivStatus == BODY)
+				{
 					eloop.getPfds()[i].events = POLLIN;
 					i--;
 					continue;
 				}
 				else if (receivStatus == COMPLETE)
 				{
-					// client.getRequest().setParserState(RL_HEADERS);
 					// client.getRequest().postAndDelete();
 					eloop.getPfds()[i].events = POLLOUT;
 				}
@@ -77,9 +78,8 @@ int eventLoop(ServerInfo &eloop)
 					i--;
 					continue;
 				}
-				else if (sendStatus == 2){
+				else if (sendStatus == 2)
 					eloop.getPfds()[i].events = POLLIN;
-				}
 			}
 			else if (revents & (POLLERR | POLLNVAL))
 			{

@@ -1,4 +1,4 @@
-#include "../../inc/main.hpp"
+#include "../../inc/Client.hpp"
 
 const Location*	findLocation(const ServerConfig& server, const Request& request)
 {
@@ -167,6 +167,7 @@ void setRouteAction(Route& route, Request& request, const ServerConfig& server)
 
 int processRoute(Client& client, ServerInfo& eloop, Route& route)
 {
+	(void)eloop;
 	Request& request = client.getRequest();
 	const ServerConfig& server = client.getClientServer();
 	//validateRouteStat() validate route and sets its error status and returns 1 if it is invalid

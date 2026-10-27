@@ -1,5 +1,5 @@
 #pragma once
-#include "ServerConfig.hpp"
+#include "Config.hpp"
 #include <iostream>
 #include <string>
 #include <sstream>

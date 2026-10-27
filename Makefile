@@ -9,6 +9,9 @@ SRC =	src/main.cpp \
 		src/serverProcess/serverManager.cpp \
 		src/serverProcess/eventLoop.cpp \
 		src/serverProcess/Client.cpp \
+		src/serverProcess/router.cpp \
+		src/serverProcess/routerUtils.cpp \
+		src/serverProcess/CGI.cpp \
 		src/Request.cpp \
 		src/parseRL.cpp \
 		src/parseHeaders.cpp \

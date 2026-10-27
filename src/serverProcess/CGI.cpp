@@ -1,11 +1,13 @@
 #include "../../inc/CGI.hpp"
 
-CGI::CGI():_env("",""), _interpreter(""), _scriptPath(""), _requestBody(""), _bodySent(0), _output(""), _clientFd(-1), _inFd(-1), _outFd(-1), _pid(-1) {}
+CGI::CGI():_env(), _interpreter(""), _scriptPath(""), _requestBody(""), _bodySent(0), _output(""), _clientFd(-1), _inFd(-1), _outFd(-1), _pid(-1) {}
+
+CGI::~CGI(){}
 
 CGI::CGI(Request &request, const ServerConfig &server, int clientFd)
 {
+	(void)server;
 	CGI();
-
 	_scriptPath = request.getPath();
 	_requestBody = request.getBody();
 	_clientFd = clientFd;
@@ -13,5 +15,7 @@ CGI::CGI(Request &request, const ServerConfig &server, int clientFd)
 
 void CGI::populateEnv(Request &request, const ServerConfig &server)
 {
+	(void)request;
+	(void)server;
 
 }
