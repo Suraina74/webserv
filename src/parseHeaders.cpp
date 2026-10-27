@@ -252,13 +252,11 @@ bool Request::parseUntilHeaders(string string)
 	requestTillHeaders = string.substr(0, endHeaders);
 	if (parseHeaders() == false)
 	{
-		cout << "testparse" << endl;
 		statusText = setStatusText(statusCode);
 		return false;
 	}
 	if (validateHeaders() == false)
 	{
-		cout << "testvalidateparse" << endl;
 		statusText = setStatusText(statusCode);
 		return false;
 	}

@@ -1,4 +1,5 @@
 #include "../../inc/main.hpp"
+#include "../../inc/ServerInfo.hpp"
 
 //FIX: moved struct addrinfo *result; from ServerInfo class to local variable inside createSockAddr()
 //because it is just a assisting variable not needed elsewhere.

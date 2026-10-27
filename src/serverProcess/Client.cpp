@@ -1,7 +1,4 @@
 #include "../../inc/Client.hpp"
-#include "../../inc/Request.hpp"
-#include "../../inc/Response.hpp"
-#include "../../inc/main.hpp"
 #include <sys/socket.h>
 #include <cstdio>
 
@@ -41,7 +38,13 @@ int	Client::getTimeout()
 	return _timeout;
 }
 
-void Client::actionsRequestLeft(size_t startNextRequest){
+int Client::getFd()
+{
+    return _fd;
+}
+
+void Client::actionsRequestLeft(size_t startNextRequest)
+{
 	string reqLeft = _request.getFullRequest().substr(startNextRequest, _request.getFullRequest().length() - startNextRequest);
 	_request.setRequestLeft(reqLeft);
 	_request.resetParserVars();
@@ -52,20 +55,26 @@ void Client::actionsRequestLeft(size_t startNextRequest){
 	_request.setParserState(REQUESTLINE);
 }
 
-void Client::transferEncodingRequest(){
+void Client::transferEncodingRequest(ServerInfo &eloop)
+{
+	//(void)eloop;
 	size_t indexLastChunk = _request.getFullRequest().find("0\r\n\r\n");
-	if (indexLastChunk != string::npos){
+	if (indexLastChunk != string::npos)
+	{
 		_request.parseBody();
-		if (_request.getParserState() == INCOMPLETE){
+		if (_request.getParserState() == INCOMPLETE)
+		{
+			_request.setParserState(BODY);
 			return;
 		}
-		// Route route{};
-		// processRoute(*this, eloop, route);
+		Route route{};
+		processRoute(*this, eloop, route);
 		_request.postAndDelete();
 		_response.setRequest(_request);
 		_response.composeResponse();
 		_responsesString += _response.getFullResponse();
-		if (_request.getFullRequest().length() > indexLastChunk + 5){
+		if (_request.getFullRequest().length() > indexLastChunk + 5)
+		{
 			size_t startNextRequest = indexLastChunk + 5;
 			actionsRequestLeft(startNextRequest);
 			return;
@@ -80,8 +89,10 @@ void Client::transferEncodingRequest(){
 	}
 }
 
-void Client::contentLengthRequest(size_t delimiter, ssize_t n){
+void Client::contentLengthRequest(size_t delimiter, ssize_t n, ServerInfo &eloop)
+{
 	(void)n;
+	//(void)eloop;
 	if (_request.getContentLength())
 	{
 		size_t startBody = delimiter + 4;
@@ -103,12 +114,11 @@ void Client::contentLengthRequest(size_t delimiter, ssize_t n){
 	{
 		_request.parseBody();
 		_request.postAndDelete();
-		// Route route{};
-		// processRoute(*this, eloop, route);
+		Route route{};
+		processRoute(*this, eloop, route);
 		_response.setRequest(_request);
 		_response.composeResponse();
 		_responsesString += _response.getFullResponse();
-		cout<< _request.getBytesRead() << " " << expectedBytes << endl;
 		if (_request.getBytesRead() > expectedBytes)
 		{
 			size_t startBody = delimiter + 4;
@@ -122,7 +132,8 @@ void Client::contentLengthRequest(size_t delimiter, ssize_t n){
 	}
 }
 
-void Client::handleHeaders(ssize_t n, size_t delimiter){
+void Client::handleHeaders(ssize_t n, size_t delimiter)
+{
 	(void)n;
 	if (delimiter == string::npos)
 	{
@@ -150,15 +161,19 @@ void Client::handleHeaders(ssize_t n, size_t delimiter){
 	}
 }
 
-void Client::handleRequestLine(){
-	if ((_request.parseRequestLine(_request.getFullRequest())) == false){
+void Client::handleRequestLine()
+{
+	if ((_request.parseRequestLine(_request.getFullRequest())) == false)
+	{
 		_response.setRequest(_request);
 		_response.composeResponse();
 		_responsesString += _response.getFullResponse();
 		_request.setParserState(COMPLETE);
 		return;
 	}
-	if (_request.getParserState() == INCOMPLETE){
+	if (_request.getParserState() == INCOMPLETE)
+	{
+		_request.setParserState(REQUESTLINE);
 		return;
 	}
 	_request.setParserState(HEADERS);
@@ -166,16 +181,15 @@ void Client::handleRequestLine(){
 
 void Client::receiveRequest(ServerInfo &eloop)
 {
-	(void)eloop;
 	char buffer[2048];
-	ssize_t n = recv(_fd, buffer, sizeof(buffer), 0);
+	ssize_t n = recv(_fd, buffer, sizeof(buffer), 0);//reads incoming data from a the client _fd socket.
 	if (n == -1)
 	{
 		::perror("recv");
 		_request.setParserState(ERROR);
 		return ;
 	}
-	else if (n == 0 && _request.getRequestLeft().empty())
+	else if (n == 0 && _request.getRequestLeft().empty())//Double check this logic, what if it is EOF
 	{
 		_request.setParserState(ERROR);
 		return;
@@ -187,34 +201,32 @@ void Client::receiveRequest(ServerInfo &eloop)
 		string part(buffer, n);
 		_request.setRequest(_request.getFullRequest() + part);
 	}
-	while (true){
-		if (_request.getParserState() == REQUESTLINE){
+	while (true)
+	{
+		if (_request.getParserState() == REQUESTLINE)
+		{
 			handleRequestLine();
-			if (_request.getParserState() == INCOMPLETE){
+			if (_request.getParserState() == REQUESTLINE)
 				return;
-			}
 		}
 		size_t delimiter = _request.getFullRequest().find("\r\n\r\n");
-		if (_request.getParserState() == HEADERS){
+		if (_request.getParserState() == HEADERS)
+		{
 			handleHeaders(n, delimiter);
-			if (_request.getParserState() == HEADERS){
+			if (_request.getParserState() == HEADERS)
 				return;
-			}
 		}
-		if (_request.getParserState() == BODY){
-			if (_request.getChunked() == true){
-				transferEncodingRequest();
-			}
-			else{
-				contentLengthRequest(delimiter, n);
-			}
-			if (_request.getParserState() == BODY){
+		if (_request.getParserState() == BODY)
+		{
+			if (_request.getChunked() == true)
+				transferEncodingRequest(eloop);
+			else
+				contentLengthRequest(delimiter, n, eloop);
+			if (_request.getParserState() == BODY)
 				return;
-			}
 		}
-		if (_request.getParserState() == COMPLETE){
+		if (_request.getParserState() == COMPLETE)
 			return;
-		}
 	}
 	return;
 }
@@ -234,15 +246,11 @@ int Client::sendResponse()
 			return -1;
 		}
 		else if (n == 0)
-		{
 			return 0;
-		}
 		_response.setBytesSent(_response.getBytesSent() + n);
 	}
 	if (_response.getBytesSent() == _response.getLenResponse())
-	{
 		return 2;
-	}
 	return 1;
 }
 

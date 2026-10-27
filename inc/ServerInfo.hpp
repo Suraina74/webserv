@@ -3,11 +3,12 @@
 #include <vector>
 #include <map>
 #include <iostream>
-#include "ServerConfig.hpp"
-#include "Client.hpp"
 #define TIMEOUT 60
 
 using namespace std;
+
+class Client;
+class ServerConfig;
 
 class ServerInfo
 {
