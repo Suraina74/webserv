@@ -94,7 +94,7 @@ class Request
 		bool		checkContentDisposition(string valueCT);
 		void		postAndDelete();
 		void		extractFileElements();
-		void		addFile();
+		void		addFile(string s);
 		void		resetParserVars();
 
 		string		setStatusText(httpStatus status);

@@ -7,12 +7,16 @@ void runCGI(Request &request, const ServerConfig &server, int clientFd)
     
 }
 
-void runUpload(Request &request, const ServerConfig &server, int clientFd)
+void runUpload(Request &request, Route &route)
 {
-	(void)request;
-	(void)server;
-	(void)clientFd;
-
+	if (request.getContentLength() > 0 || request.getChunked() == true){
+			request.extractFileElements();
+			request.setStatusText(request.getStatusCode());
+			if (request.getStatusCode() == OK)
+			{
+				request.addFile(route.fsPath);
+			}
+		}
 }
 
 void runRedirect(Request &request, const ServerConfig &server, int clientFd)

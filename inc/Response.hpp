@@ -20,7 +20,7 @@ class Response
 	public:
 		Response(){}
 		~Response(){}
-		int			composeResponse();
+		int			composeResponse(string routePath);
 		void		resetResponseVars();
 
 		void		setRequest(Request r);

@@ -2,15 +2,19 @@
 
 // Redirections
 // Support redirect responses (301/302 + Location header)
-// Use custom error pages from config.
-// Connection:close needed?
+// Use custom error pages from config, include server and use the getter.
+// If an error html page is missing in the directory, fall back to a simple built-in error response.
 
-// Connection close werkt goed for browser requests, maar niet voor interactive nc.
-// Want interactive nc wil een open connection de hele tijd.
-// buffer is te klein. ifstream gebruiken, bij bestaande html files.
-
-int Response::composeResponse()
+int Response::composeResponse(string routePath)
 {
+	if (request.getStatusCode() == OK){
+		ifstream file(routePath, std::ios::binary);
+		if (!file.is_open()){
+			request.setStatus(PageNotFound);
+			request.setStatusText(PageNotFound);
+		}
+		file.close();
+	}
 	statusLine = statusLine + " " + request.getStatusText() + "\r\n";
 	int bytesRead = 0;
 	if (request.getStatusCode() != OK && request.getStatusCode() != PageNotFound)
@@ -43,31 +47,15 @@ int Response::composeResponse()
 	}
 	else
 	{
-		string path = request.getPath();
-		const char *cPath = path.c_str();
-		int fd = open(cPath, O_RDONLY);
-		char buffer[2048];
-		if (fd >= 0)
+		ifstream file(routePath, std::ios::binary);
+		string line;
+		if (file.is_open())
 		{
-			bytesRead = read(fd, buffer, sizeof(buffer));
-			if (bytesRead > 0)
-			{
-				string htmlPage(buffer, bytesRead);
-				body = htmlPage;
+			while(getline(file, line)){
+				body += line + '\n';
 			}
-			else if (bytesRead == -1)
-			{
-				::perror("read");
-				close(fd);
-				return 1;
-			}
-			close(fd);
 		}
-		else if (fd == -1)
-		{
-			::perror("open");
-			return 1;
-		}
+		file.close();
 	}
 	string sizeOfBody;
 	stringstream ss;

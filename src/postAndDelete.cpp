@@ -1,7 +1,6 @@
 #include "../inc/Request.hpp"
 
 // What if upload is too large? 413 Content Too Large.
-// Permission checks?
 
 void Request::extractFileElements()
 {
@@ -41,10 +40,10 @@ void Request::extractFileElements()
 	}
 }
 
-void Request::addFile()
+void Request::addFile(string path)
 {
 	// Vanuit config halen waar files moeten worden opgeslagen.
-	string uploadPlace = "www/uploads/" + fileName;
+	string uploadPlace = path + fileName;
 	ofstream file(uploadPlace, ios::binary);
 	if (!file.is_open()){
 		statusCode = InternalServerError;
@@ -56,17 +55,17 @@ void Request::addFile()
 
 void Request::postAndDelete()
 {
-	if (Method == "POST" && statusCode == OK)
-	{
-		if (contentLength > 0 || chunked == true){
-			extractFileElements();
-			statusText = setStatusText(statusCode);
-			if (statusCode == OK)
-			{
-				addFile();
-			}
-		}
-	}
+	// if (Method == "POST" && statusCode == OK)
+	// {
+	// 	if (contentLength > 0 || chunked == true){
+	// 		extractFileElements();
+	// 		statusText = setStatusText(statusCode);
+	// 		if (statusCode == OK)
+	// 		{
+	// 			addFile();
+	// 		}
+	// 	}
+	// }
 	if (Method == "DELETE" && statusCode == OK) //  curl -X DELETE localhost:8080/uploads/cat.png;
 	{
 		string uploadPlace = Path;

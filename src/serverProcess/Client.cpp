@@ -52,7 +52,7 @@ void Client::actionsRequestLeft(size_t startNextRequest)
 
 void Client::transferEncodingRequest(ServerInfo &eloop)
 {
-	//(void)eloop;
+	(void)eloop;
 	size_t indexLastChunk = _request.getFullRequest().find("0\r\n\r\n");
 	if (indexLastChunk != string::npos)
 	{
@@ -63,10 +63,13 @@ void Client::transferEncodingRequest(ServerInfo &eloop)
 			return;
 		}
 		Route route{};
-		processRoute(*this, eloop, route);
-		_request.postAndDelete();
+		if (_request.getStatusCode() == OK){
+			processRoute(*this, eloop, route);
+		}
+		// _request.postAndDelete();
+		string routePath = route.fsPath;
 		_response.setRequest(_request);
-		_response.composeResponse();
+		_response.composeResponse(routePath);
 		_responsesString += _response.getFullResponse();
 		if (_request.getFullRequest().length() > indexLastChunk + 5)
 		{
@@ -87,7 +90,7 @@ void Client::transferEncodingRequest(ServerInfo &eloop)
 void Client::contentLengthRequest(size_t delimiter, ssize_t n, ServerInfo &eloop)
 {
 	(void)n;
-	//(void)eloop;
+	(void)eloop;
 	if (_request.getContentLength())
 	{
 		size_t startBody = delimiter + 4;
@@ -108,11 +111,14 @@ void Client::contentLengthRequest(size_t delimiter, ssize_t n, ServerInfo &eloop
 	if (_request.getBytesRead() >= expectedBytes)
 	{
 		_request.parseBody();
-		_request.postAndDelete();
+		// _request.postAndDelete();
 		Route route{};
-		processRoute(*this, eloop, route);
+		if (_request.getStatusCode() == OK){
+			processRoute(*this, eloop, route);
+		}
+		string routePath = route.fsPath;
 		_response.setRequest(_request);
-		_response.composeResponse();
+		_response.composeResponse(routePath);
 		_responsesString += _response.getFullResponse();
 		if (_request.getBytesRead() > expectedBytes)
 		{
@@ -146,7 +152,8 @@ void Client::handleHeaders(ssize_t n, size_t delimiter)
 		if ((_request.parseUntilHeaders(_request.getFullRequest())) == false)
 		{
 			_response.setRequest(_request);
-			_response.composeResponse();
+			// static?
+			_response.composeResponse({});
 			_responsesString += _response.getFullResponse();
 			_request.setParserState(COMPLETE);
 			return;
@@ -161,7 +168,8 @@ void Client::handleRequestLine()
 	if ((_request.parseRequestLine(_request.getFullRequest())) == false)
 	{
 		_response.setRequest(_request);
-		_response.composeResponse();
+		// static?
+		_response.composeResponse({});
 		_responsesString += _response.getFullResponse();
 		_request.setParserState(COMPLETE);
 		return;

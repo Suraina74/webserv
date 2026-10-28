@@ -7,12 +7,12 @@
 
 bool Request::validateRequestLine()
 {
-	if ((Method == "GET" || Method == "POST") && Path != "www/index.html" && Path != "www/uploads.html")
-	{
-		Path = "www/404.html";
-		statusCode = PageNotFound;
-		return false;
-	}
+	// if ((Method == "GET" || Method == "POST") && Path != "www/index.html" && Path != "www/uploads.html")
+	// {
+	// 	Path = "www/404.html";
+	// 	statusCode = PageNotFound;
+	// 	return false;
+	// }
 
 	if (allowedCharsInString(Method) == false || Method.empty())
 	{
@@ -97,11 +97,11 @@ bool Request::parseRequestLine(string rstring)
 		Path = Path.substr(0, queryPos);
 	}
 	//
-	Path = "www" + Path;
-	if (Path == "www/")
-	{
-		Path = "www/index.html";
-	}
+	// Path = "www" + Path;
+	// if (Path == "www/")
+	// {
+	// 	Path = "www/index.html";
+	// }
 	if (validateRequestLine() == false){
 		statusText = setStatusText(statusCode);
 		return false;
