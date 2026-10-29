@@ -4,7 +4,7 @@
 
 Client::Client():_fd(-1), _server(NULL){}
 
-Client::Client(int fd, const ServerConfig *server, Request request, Response response):_fd(fd), _server(server), _request(request),_response(response){}
+Client::Client(int fd, const ServerConfig *server, Request request, Response response):_fd(fd), _server(server), _request(request),_response(response), _last_active(std::chrono::steady_clock::now()){}
 
 Client::~Client(){}
 
@@ -46,6 +46,7 @@ int Client::getFd()
 void Client::timer(std::chrono::steady_clock::time_point time_cur, std::chrono::steady_clock::time_point time_after_action)
 {
 	auto time_to_check = time_after_action - time_cur;
+
 	if ((time_to_check) > std::chrono::seconds(TIMEOUT))
 		cout << "max timeout reached, close thee connection" << endl;
 }
