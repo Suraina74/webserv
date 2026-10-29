@@ -14,7 +14,7 @@ void runUpload(Request &request, Route &route)
 			request.setStatusText(request.getStatusCode());
 			if (request.getStatusCode() == OK)
 			{
-				request.addFile(route.fsPath);
+				request.addFile(route.loc->getUploadPath());
 			}
 		}
 }
@@ -43,10 +43,48 @@ void runDelete(Request &request, const ServerConfig &server, int clientFd)
 
 }
 
-void runStatic(Request &request, const ServerConfig &server, int clientFd)
+void runStatic(Request &request, const ServerConfig &server, Route &route, Client &client)
 {
-	(void)request;
-	(void)server;
-	(void)clientFd;
-
+	string b{};
+	if (request.getStatusCode() == OK){
+		ifstream file(route.fsPath, std::ios::binary);
+		if (!file.is_open()){
+			request.setStatus(PageNotFound);
+			request.setStatusText(PageNotFound);
+		}
+		file.close();
+	}
+	for (auto it = server.getErrPages().begin(); it != server.getErrPages().end(); it++)
+	{
+		if ((route.fsPath == server.getRoot() + it->second) && (request.getStatusCode() != OK))
+		{
+			ifstream file(route.fsPath, std::ios::binary);
+			string line;
+			if (file.is_open())
+			{
+				while(getline(file, line)){
+					b += line + '\n';
+				}
+			}
+			file.close();
+			client.getResponse().setBody(b);
+			break ;
+		}
+		else if ((route.fsPath == server.getRoot() + it->second) && (request.getStatusCode() == OK))
+		{
+			return ;
+		}
+	}
+	if (request.getStatusCode() == OK){
+		ifstream file(route.fsPath, std::ios::binary);
+		string line;
+		if (file.is_open())
+		{
+			while(getline(file, line)){
+				b += line + '\n';
+			}
+		}
+		file.close();
+		client.getResponse().setBody(b);
+	}
 }

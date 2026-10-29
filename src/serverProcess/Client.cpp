@@ -50,7 +50,7 @@ void Client::actionsRequestLeft(size_t startNextRequest)
 	_request.setParserState(REQUESTLINE);
 }
 
-void Client::transferEncodingRequest(ServerInfo &eloop)
+void Client::transferEncodingRequest(ServerInfo &eloop, const ServerConfig& server)
 {
 	(void)eloop;
 	size_t indexLastChunk = _request.getFullRequest().find("0\r\n\r\n");
@@ -69,7 +69,7 @@ void Client::transferEncodingRequest(ServerInfo &eloop)
 		// _request.postAndDelete();
 		string routePath = route.fsPath;
 		_response.setRequest(_request);
-		_response.composeResponse(routePath);
+		_response.composeResponse(routePath, server);
 		_responsesString += _response.getFullResponse();
 		if (_request.getFullRequest().length() > indexLastChunk + 5)
 		{
@@ -87,7 +87,7 @@ void Client::transferEncodingRequest(ServerInfo &eloop)
 	}
 }
 
-void Client::contentLengthRequest(size_t delimiter, ssize_t n, ServerInfo &eloop)
+void Client::contentLengthRequest(size_t delimiter, ssize_t n, ServerInfo &eloop, const ServerConfig& server)
 {
 	(void)n;
 	(void)eloop;
@@ -118,7 +118,7 @@ void Client::contentLengthRequest(size_t delimiter, ssize_t n, ServerInfo &eloop
 		}
 		string routePath = route.fsPath;
 		_response.setRequest(_request);
-		_response.composeResponse(routePath);
+		_response.composeResponse(routePath, server);
 		_responsesString += _response.getFullResponse();
 		if (_request.getBytesRead() > expectedBytes)
 		{
@@ -133,7 +133,7 @@ void Client::contentLengthRequest(size_t delimiter, ssize_t n, ServerInfo &eloop
 	}
 }
 
-void Client::handleHeaders(ssize_t n, size_t delimiter)
+void Client::handleHeaders(ssize_t n, size_t delimiter, ServerInfo &eloop, const ServerConfig& server)
 {
 	(void)n;
 	if (delimiter == string::npos)
@@ -151,9 +151,10 @@ void Client::handleHeaders(ssize_t n, size_t delimiter)
 		// delimiter found
 		if ((_request.parseUntilHeaders(_request.getFullRequest())) == false)
 		{
+			Route route{};
+			processRoute(*this, eloop, route);
 			_response.setRequest(_request);
-			// static?
-			_response.composeResponse({});
+			_response.composeResponse({}, server);
 			_responsesString += _response.getFullResponse();
 			_request.setParserState(COMPLETE);
 			return;
@@ -163,13 +164,14 @@ void Client::handleHeaders(ssize_t n, size_t delimiter)
 	}
 }
 
-void Client::handleRequestLine()
+void Client::handleRequestLine(ServerInfo &eloop,const ServerConfig& server)
 {
 	if ((_request.parseRequestLine(_request.getFullRequest())) == false)
 	{
+		Route route{};
+		processRoute(*this, eloop, route);
 		_response.setRequest(_request);
-		// static?
-		_response.composeResponse({});
+		_response.composeResponse({}, server);
 		_responsesString += _response.getFullResponse();
 		_request.setParserState(COMPLETE);
 		return;
@@ -185,6 +187,7 @@ void Client::handleRequestLine()
 void Client::receiveRequest(ServerInfo &eloop)
 {
 	char buffer[2048];
+	const ServerConfig& server = getClientServer();
 	ssize_t n = recv(_fd, buffer, sizeof(buffer), 0);//reads incoming data from a the client _fd socket.
 	if (n == -1)
 	{
@@ -208,23 +211,23 @@ void Client::receiveRequest(ServerInfo &eloop)
 	{
 		if (_request.getParserState() == REQUESTLINE)
 		{
-			handleRequestLine();
+			handleRequestLine(eloop, server);
 			if (_request.getParserState() == REQUESTLINE)
 				return;
 		}
 		size_t delimiter = _request.getFullRequest().find("\r\n\r\n");
 		if (_request.getParserState() == HEADERS)
 		{
-			handleHeaders(n, delimiter);
+			handleHeaders(n, delimiter, eloop, server);
 			if (_request.getParserState() == HEADERS)
 				return;
 		}
 		if (_request.getParserState() == BODY)
 		{
 			if (_request.getChunked() == true)
-				transferEncodingRequest(eloop);
+				transferEncodingRequest(eloop, server);
 			else
-				contentLengthRequest(delimiter, n, eloop);
+				contentLengthRequest(delimiter, n, eloop, server);
 			if (_request.getParserState() == BODY)
 				return;
 		}

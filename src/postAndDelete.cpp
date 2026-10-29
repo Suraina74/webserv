@@ -40,16 +40,17 @@ void Request::extractFileElements()
 	}
 }
 
-void Request::addFile(string path)
+void Request::addFile(string uploadPath)
 {
-	// Vanuit config halen waar files moeten worden opgeslagen.
-	string uploadPlace = path + fileName;
+	string uploadPlace = uploadPath + "/" + fileName;
 	ofstream file(uploadPlace, ios::binary);
 	if (!file.is_open()){
 		statusCode = InternalServerError;
 		statusText = setStatusText(statusCode);
 	}
 	file << fileContent;
+	statusCode = Created;
+	statusText = setStatusText(statusCode);
 	file.close();
 }
 

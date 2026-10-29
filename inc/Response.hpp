@@ -20,13 +20,14 @@ class Response
 	public:
 		Response(){}
 		~Response(){}
-		int			composeResponse(string routePath);
+		int			composeResponse(string routePath, const ServerConfig& server);
 		void		resetResponseVars();
 
 		void		setRequest(Request r);
 		void		setLenResponse(int length);
 		void		setCString(const char* cString);
 		void		setBytesSent(int bytes);
+		void		setBody(string b);
 
 		string		getFullResponse() const;
 		const char*	getCFullResponse() const;

@@ -2,12 +2,12 @@
 
 // Redirections
 // Support redirect responses (301/302 + Location header)
-// Use custom error pages from config, include server and use the getter.
-// If an error html page is missing in the directory, fall back to a simple built-in error response.
 
-int Response::composeResponse(string routePath)
+// content type aanpassen.
+
+int Response::composeResponse(string routePath, const ServerConfig& server)
 {
-	if (request.getStatusCode() == OK){
+	if (request.getStatusCode() == OK && !routePath.empty()){
 		ifstream file(routePath, std::ios::binary);
 		if (!file.is_open()){
 			request.setStatus(PageNotFound);
@@ -15,9 +15,23 @@ int Response::composeResponse(string routePath)
 		}
 		file.close();
 	}
+	auto it = server.getErrPages().find(request.getStatusCode());
+	if (it != server.getErrPages().end())
+	{
+		routePath = server.getRoot() + it->second;
+		ifstream file(routePath, std::ios::binary);
+		string line;
+		if (file.is_open())
+		{
+			while(getline(file, line))
+			{
+				body += line + '\n';
+			}
+		}
+		file.close();
+	}
 	statusLine = statusLine + " " + request.getStatusText() + "\r\n";
-	int bytesRead = 0;
-	if (request.getStatusCode() != OK && request.getStatusCode() != PageNotFound)
+	if (body.empty())
 	{
 		body = R"(
 			<!DOCTYPE html>
@@ -43,19 +57,6 @@ int Response::composeResponse(string routePath)
 					h1 {font-size: 7em;}
 			</style>
 			)";
-		bytesRead = body.size();
-	}
-	else
-	{
-		ifstream file(routePath, std::ios::binary);
-		string line;
-		if (file.is_open())
-		{
-			while(getline(file, line)){
-				body += line + '\n';
-			}
-		}
-		file.close();
 	}
 	string sizeOfBody;
 	stringstream ss;
@@ -98,6 +99,11 @@ void Response::setLenResponse(int length)
 void Response::setBytesSent(int bytes)
 {
 	bytesSent = bytes;
+}
+
+void Response::setBody(string b)
+{
+	body = b;
 }
 
 string Response::getFullResponse() const

@@ -205,10 +205,10 @@ int processRoute(Client& client, ServerInfo& eloop, Route& route)
 			//Delete function
 				break;
 			case R_STATIC:
+			runStatic(request, server, route, client);
 			// Files that are in the directory only reach this part.
 			// still need to check file.is_open, because there could be permission issues or the file is deleted. Adjust the status code accordingly.
 			// Prepare body and add to response.
-			
 			//Static function: 1.Read the file at route.fsPath
 			//2.Put its contents into the HTTP response body 3.Set headers such as Content-Type: image/jpeg and Content-Length
 				break;

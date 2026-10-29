@@ -9,6 +9,8 @@ string Request::setStatusText(httpStatus status)
 	{
 		case OK:
 			return "200 OK";
+		case Created:
+			return "201 Created";
 		case NoContent:
 			return "204 No Content";
 		case BadRequest:

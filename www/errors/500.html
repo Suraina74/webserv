@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Internal server error</title>
+</head>
+<body>
+	<main>
+		<h1>500</h1>
+		<p>Internal server error :3</p>
+		<pre>
+  ,-.       _,---._ __  / \
+ /  )    .-'       `./ /   \
+(  (   ,'            `/    /|
+ \  `-"             \'\   / |
+  `.              ,  \ \ /  |
+   /`.          ,'-`----Y   |
+  (            ;        |   '
+  |  ,-.    ,-'         |  /
+  |  | (   |        500 | /
+  )  |  \  `.___________|/
+  `--'   `--'
+		</pre>
+	</main>
+</body>
+</html>
+
+<style>
+	body {
+		background-color: rgb(255, 233, 244);
+		color: hotpink;
+		box-sizing: border-box;
+		margin: 0;
+		font-family: Arial, Helvetica, sans-serif;
+	}
+
+	main {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-direction: column;
+		height: 100vh;
+	}
+
+	h1 {
+		font-size: 7em;
+		margin: 0;
+		padding: 0;
+	}
+
+	pre {
+		color: hotpink;
+		margin-left: 10px;
+		animation: kitty_move 2s infinite ease-in;
+	}
+
+	p {
+		font-size: 60px;
+	}
+
+	@keyframes kitty_move {
+		0% {
+			margin-left: 0;
+		}
+		50% {
+			margin-left: 100px;
+		}
+		100% {
+			margin-left: 0;
+		}
+	}
+</style>

@@ -280,7 +280,7 @@ void Request::extractBody()
 
 void Request::parseBody()
 {
-	cout << getFullRequest() << endl;
+	// cout << getFullRequest() << endl;
 	if (contentLength && statusCode == OK)
 	{
 		extractBody();
