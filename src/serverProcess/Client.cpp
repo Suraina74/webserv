@@ -43,11 +43,11 @@ int Client::getFd()
     return _fd;
 }
 
-void Client::timer(std::chrono::steady_clock::time_point time_cur, std::chrono::steady_clock::time_point time_after_action)
+void Client::timer(chrono::steady_clock::time_point time_cur, chrono::steady_clock::time_point time_after_action)
 {
 	auto time_to_check = time_after_action - time_cur;
 
-	if ((time_to_check) > std::chrono::seconds(TIMEOUT))
+	if ((time_to_check) > chrono::seconds(TIMEOUT))
 		cout << "max timeout reached, close thee connection" << endl;
 }
 

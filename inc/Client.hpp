@@ -18,14 +18,14 @@ class Client
 		Request									_request;
 		Response								_response;
 		string									_responsesString{};
-		std::chrono::steady_clock::time_point	_last_active;
+		chrono::steady_clock::time_point		_last_active;
 
 	public:
 		Client();
 		Client(int fd, const ServerConfig *server, Request request, Response response);
 		~Client();
 
-		 std::chrono::steady_clock::time_point	getTimeout();
+		chrono::steady_clock::time_point		getTimeout();
 		int										getFd();
 		void 									receiveRequest(ServerInfo &eloop);
 		void 									handleRequestLine();
@@ -36,8 +36,8 @@ class Client
 		int 									sendResponse();
 		string& 								getFullResponse();//check with http_parser branch
 
-		void									timer(std::chrono::steady_clock::time_point time_cur, std::chrono::steady_clock::time_point time_after_action);
-		void									setTimeout( std::chrono::steady_clock::time_point newTimeout);
+		void									timer(chrono::steady_clock::time_point time_cur, chrono::steady_clock::time_point time_after_action);
+		void									setTimeout(chrono::steady_clock::time_point newTimeout);
 		void									setResponse();
 		int										getClientFd();
 		const ServerConfig&						getClientServer();
