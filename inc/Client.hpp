@@ -2,8 +2,9 @@
 #include "../inc/Response.hpp"
 #include "../inc/Config.hpp"
 #include <poll.h>
+#include <chrono>
 
-#define TIMEOUT 60
+#define TIMEOUT 1
 
 using namespace std;
 
@@ -12,37 +13,36 @@ class ServerInfo;
 class Client
 {
 	private:
-		int					_fd;
-		const ServerConfig*	_server;
-		int					_timeout;
-		Request				_request;
-		Response			_response;
-		string				_responsesString{};
+		int										_fd;
+		const ServerConfig*						_server;
+		Request									_request;
+		Response								_response;
+		string									_responsesString{};
+		std::chrono::steady_clock::time_point	_last_active;
 
 	public:
 		Client();
 		Client(int fd, const ServerConfig *server, Request request, Response response);
 		~Client();
 
-		int					getTimeout();
-		int					getFd();
-		void 				receiveRequest(ServerInfo &eloop);
-		void 				handleRequestLine();
-		void 				handleHeaders(ssize_t n, size_t delimiter);
-		void 				transferEncodingRequest(ServerInfo &eloop);
-		void 				contentLengthRequest(size_t delimiter, ssize_t n, ServerInfo &eloop);
-		void 				actionsRequestLeft(size_t startRequest);
-		int 				sendResponse();
-		string& 			getFullResponse();//check with http_parser branch
+		 std::chrono::steady_clock::time_point	getTimeout();
+		int										getFd();
+		void 									receiveRequest(ServerInfo &eloop);
+		void 									handleRequestLine();
+		void 									handleHeaders(ssize_t n, size_t delimiter);
+		void 									transferEncodingRequest(ServerInfo &eloop);
+		void 									contentLengthRequest(size_t delimiter, ssize_t n, ServerInfo &eloop);
+		void 									actionsRequestLeft(size_t startRequest);
+		int 									sendResponse();
+		string& 								getFullResponse();//check with http_parser branch
 
-
-		void				timer(int time_cur, int time_after_action);
-		void				setTimeout(int newTimeout);
-		void				setResponse();
-		int					getClientFd();
-		const ServerConfig& getClientServer();
-		Request& 			getRequest();
-		Response&			getResponse();
+		void									timer(std::chrono::steady_clock::time_point time_cur, std::chrono::steady_clock::time_point time_after_action);
+		void									setTimeout( std::chrono::steady_clock::time_point newTimeout);
+		void									setResponse();
+		int										getClientFd();
+		const ServerConfig&						getClientServer();
+		Request& 								getRequest();
+		Response&								getResponse();
 };
 
 enum RouteAction

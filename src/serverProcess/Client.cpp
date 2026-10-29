@@ -33,9 +33,9 @@ string& Client::getFullResponse()
 	return _responsesString;
 }
 
-int	Client::getTimeout()
+std::chrono::steady_clock::time_point	Client::getTimeout()
 {
-	return _timeout;
+	return _last_active;
 }
 
 int Client::getFd()
@@ -43,10 +43,10 @@ int Client::getFd()
     return _fd;
 }
 
-void Client::timer(int time_cur, int time_after_action)
+void Client::timer(std::chrono::steady_clock::time_point time_cur, std::chrono::steady_clock::time_point time_after_action)
 {
-	int time_passed = time_after_action - time_cur;
-	if (time_passed > TIMEOUT)
+	auto time_to_check = time_after_action - time_cur;
+	if ((time_to_check) > std::chrono::seconds(TIMEOUT))
 		cout << "max timeout reached, close thee connection" << endl;
 }
 
@@ -261,7 +261,7 @@ int Client::sendResponse()
 	return 1;
 }
 
-void Client::setTimeout(int newTimeout)
+void Client::setTimeout(std::chrono::steady_clock::time_point newTimeout)
 {
-	_timeout = newTimeout;
+	_last_active = newTimeout;
 }
