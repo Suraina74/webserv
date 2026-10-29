@@ -9,7 +9,8 @@ void runCGI(Request &request, const ServerConfig &server, int clientFd)
 
 void runUpload(Request &request, Route &route)
 {
-	if (request.getContentLength() > 0 || request.getChunked() == true){
+	if (request.getStatusCode() == OK){
+		if (request.getContentLength() > 0 || request.getChunked() == true){
 			request.extractFileElements();
 			request.setStatusText(request.getStatusCode());
 			if (request.getStatusCode() == OK)
@@ -17,6 +18,7 @@ void runUpload(Request &request, Route &route)
 				request.addFile(route.loc->getUploadPath());
 			}
 		}
+	}
 }
 
 void runRedirect(Request &request, const ServerConfig &server, int clientFd)
@@ -37,6 +39,19 @@ void runAutoIndex(Request &request, const ServerConfig &server, int clientFd)
 
 void runDelete(Request &request, const ServerConfig &server, int clientFd)
 {
+	// if (statusCode == OK) //  curl -X DELETE localhost:8080/uploads/cat.png;
+	// {
+	// 	string uploadPlace = Path;
+	// 	const char *cUploadPlace = uploadPlace.c_str();
+	// 	int status = remove(cUploadPlace);
+	// 	if (status != 0)
+	// 	{
+	// 		statusCode = PageNotFound;
+	// 		statusText = setStatusText(statusCode);
+	// 	}
+	// 		statusCode = NoContent;
+	// 		statusText = setStatusText(statusCode);
+	// }
 	(void)request;
 	(void)server;
 	(void)clientFd;

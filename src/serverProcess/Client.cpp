@@ -63,10 +63,7 @@ void Client::transferEncodingRequest(ServerInfo &eloop, const ServerConfig& serv
 			return;
 		}
 		Route route{};
-		if (_request.getStatusCode() == OK){
-			processRoute(*this, eloop, route);
-		}
-		// _request.postAndDelete();
+		processRoute(*this, eloop, route);
 		string routePath = route.fsPath;
 		_response.setRequest(_request);
 		_response.composeResponse(routePath, server);
@@ -113,9 +110,7 @@ void Client::contentLengthRequest(size_t delimiter, ssize_t n, ServerInfo &eloop
 		_request.parseBody();
 		// _request.postAndDelete();
 		Route route{};
-		if (_request.getStatusCode() == OK){
-			processRoute(*this, eloop, route);
-		}
+		processRoute(*this, eloop, route);
 		string routePath = route.fsPath;
 		_response.setRequest(_request);
 		_response.composeResponse(routePath, server);
