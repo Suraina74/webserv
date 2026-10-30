@@ -46,18 +46,16 @@ int eventLoop(ServerInfo &eloop)
 			int revents = eloop.getPfds()[i].revents;
 			int clientFd = eloop.getPfds()[i].fd;
 			Client &client = eloop.getClient(clientFd);
+			if (client.timer(chrono::steady_clock::now(), client.getTimeout()))
+			{
+				eloop.removeClient(i);
+				i--;
+				continue;
+			}
 			if (revents & POLLIN)//A client has connected
 			{
 				//receiveRequest() parses the body, routes and composes the response itself
 				client.receiveRequest(eloop);
-				chrono::steady_clock::time_point now = chrono::steady_clock::now();
-
-				if (client.timer(now, client.getTimeout()))
-				{
-					eloop.removeClient(i);
-					i--;
-					continue;
-				}
 				int receivStatus = client.getRequest().getParserState();
 				if (receivStatus == ERROR)
 				{

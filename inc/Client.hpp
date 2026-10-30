@@ -4,7 +4,7 @@
 #include <poll.h>
 #include <chrono>
 
-#define TIMEOUT 1
+#define TIMEOUT 60
 
 using namespace std;
 
