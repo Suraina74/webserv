@@ -4,7 +4,7 @@
 
 Client::Client():_fd(-1), _server(NULL){}
 
-Client::Client(int fd, const ServerConfig *server, Request request, Response response):_fd(fd), _server(server), _request(request),_response(response), _last_active(std::chrono::steady_clock::now()){}
+Client::Client(int fd, const ServerConfig *server, Request request, Response response):_fd(fd), _server(server), _request(request),_response(response), _last_active(chrono::steady_clock::now()){}
 
 Client::~Client(){}
 
@@ -33,7 +33,7 @@ string& Client::getFullResponse()
 	return _responsesString;
 }
 
-std::chrono::steady_clock::time_point	Client::getTimeout()
+chrono::steady_clock::time_point	Client::getTimeout()
 {
 	return _last_active;
 }
@@ -47,8 +47,10 @@ void Client::timer(chrono::steady_clock::time_point time_cur, chrono::steady_clo
 {
 	auto time_to_check = time_after_action - time_cur;
 
-	if ((time_to_check) > chrono::seconds(TIMEOUT))
-		cout << "max timeout reached, close thee connection" << endl;
+	if (time_to_check > chrono::seconds(TIMEOUT))
+	{
+		cout << "max timeout reached, connection closing" << endl;
+	}
 }
 
 void Client::actionsRequestLeft(size_t startNextRequest)
@@ -262,7 +264,7 @@ int Client::sendResponse()
 	return 1;
 }
 
-void Client::setTimeout(std::chrono::steady_clock::time_point newTimeout)
+void Client::setTimeout(chrono::steady_clock::time_point newTimeout)
 {
 	_last_active = newTimeout;
 }
