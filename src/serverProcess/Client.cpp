@@ -51,6 +51,7 @@ int	Client::timer(chrono::steady_clock::time_point time_cur, chrono::steady_cloc
 	if (time_to_check > chrono::seconds(TIMEOUT))
 	{
 		cout << "max timeout reached, client " << _fd << " kicked out" << endl;
+		//set 408
 		return (1);
 	}
 	return (0);
@@ -213,6 +214,7 @@ void Client::receiveRequest(ServerInfo &eloop)
 		_request.setBytesRead(_request.getBytesRead() + n);
 		string part(buffer, n);
 		_request.setRequest(_request.getFullRequest() + part);
+		_last_active = chrono::steady_clock::now();
 	}
 	_last_active = chrono::steady_clock::now();
 	while (true)
@@ -260,12 +262,15 @@ int Client::sendResponse()
 			return -1;
 		}
 		else if (n == 0)
-		return 0;
+			return 0;
+		_last_active = chrono::steady_clock::now();
 		_response.setBytesSent(_response.getBytesSent() + n);
 	}
 	if (_response.getBytesSent() == _response.getLenResponse())
+	{
+		_last_active = chrono::steady_clock::now();
 		return 2;
-	_last_active = chrono::steady_clock::now();
+	}
 	return 1;
 }
 
