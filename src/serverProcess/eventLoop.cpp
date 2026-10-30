@@ -30,8 +30,6 @@ int eventLoop(ServerInfo &eloop)
 {
 	while (1)
 	{
-		chrono::steady_clock::time_point now = chrono::steady_clock::now();
-
 		//getPfds().data() returns &pfds[0], one array with listen and client fds
 		int ready = poll(eloop.getPfds().data(), eloop.getPfds().size(), TIMEOUT);
 
@@ -52,7 +50,14 @@ int eventLoop(ServerInfo &eloop)
 			{
 				//receiveRequest() parses the body, routes and composes the response itself
 				client.receiveRequest(eloop);
-				client.timer(now, client.getTimeout());
+				chrono::steady_clock::time_point now = chrono::steady_clock::now();
+
+				if (client.timer(now, client.getTimeout()))
+				{
+					eloop.removeClient(i);
+					i--;
+					continue;
+				}
 				int receivStatus = client.getRequest().getParserState();
 				if (receivStatus == ERROR)
 				{

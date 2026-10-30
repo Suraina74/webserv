@@ -1,6 +1,7 @@
 #include "../../inc/Client.hpp"
 #include <sys/socket.h>
 #include <cstdio>
+#include <iostream>
 
 Client::Client():_fd(-1), _server(NULL){}
 
@@ -38,19 +39,21 @@ chrono::steady_clock::time_point	Client::getTimeout()
 	return _last_active;
 }
 
-int Client::getFd()
+int	Client::getFd()
 {
     return _fd;
 }
 
-void Client::timer(chrono::steady_clock::time_point time_cur, chrono::steady_clock::time_point time_after_action)
+int	Client::timer(chrono::steady_clock::time_point time_cur, chrono::steady_clock::time_point time_after_action)
 {
-	auto time_to_check = time_after_action - time_cur;
+	auto time_to_check = time_cur - time_after_action;
 
 	if (time_to_check > chrono::seconds(TIMEOUT))
 	{
-		cout << "max timeout reached, connection closing" << endl;
+		cout << "max timeout reached, client kicked out" << endl;
+		return (1);
 	}
+	return (0);
 }
 
 void Client::actionsRequestLeft(size_t startNextRequest)
