@@ -37,25 +37,21 @@ void runAutoIndex(Request &request, const ServerConfig &server, int clientFd)
 
 }
 
-void runDelete(Request &request, const ServerConfig &server, int clientFd)
+void runDelete(Request &request, Route &route)
 {
-	// if (statusCode == OK) //  curl -X DELETE localhost:8080/uploads/cat.png;
-	// {
-	// 	string uploadPlace = Path;
-	// 	const char *cUploadPlace = uploadPlace.c_str();
-	// 	int status = remove(cUploadPlace);
-	// 	if (status != 0)
-	// 	{
-	// 		statusCode = PageNotFound;
-	// 		statusText = setStatusText(statusCode);
-	// 	}
-	// 		statusCode = NoContent;
-	// 		statusText = setStatusText(statusCode);
-	// }
-	(void)request;
-	(void)server;
-	(void)clientFd;
-
+	if (request.getStatusCode() == OK) //  curl -X DELETE localhost:8080/uploads/cat.png
+	{
+		const char *cDeletePlace = route.fsPath.c_str();
+		int status = remove(cDeletePlace);
+		if (status != 0)
+		{
+			request.setStatus(PageNotFound);
+			request.setStatusText(request.getStatusCode());
+			return;
+		}
+		request.setStatus(NoContent);
+		request.setStatusText(request.getStatusCode());
+	}
 }
 
 void runStatic(Request &request, const ServerConfig &server, Route &route, Client &client)

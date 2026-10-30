@@ -93,7 +93,6 @@ class Request
 		void		extractChunkedBody();
 		void		validateBody();
 		bool		checkContentDisposition(string valueCT);
-		void		postAndDelete();
 		void		extractFileElements();
 		void		addFile(string s);
 		void		resetParserVars();

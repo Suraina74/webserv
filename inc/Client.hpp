@@ -71,5 +71,5 @@ void			runCGI(Request &request, const ServerConfig &server, int clientFd);
 void 			runUpload(Request &request, Route &route);
 void			runRedirect(Request &request, const ServerConfig &server, int clientFd);
 void			runAutoIndex(Request &request, const ServerConfig &server, int clientFd);
-void			runDelete(Request &request, const ServerConfig &server, int clientFd);
+void			runDelete(Request &request, Route &route);
 void			runStatic(Request &request, const ServerConfig &server, Route &route, Client &client);

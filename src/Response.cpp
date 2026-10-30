@@ -31,7 +31,7 @@ int Response::composeResponse(string routePath, const ServerConfig& server)
 		file.close();
 	}
 	statusLine = statusLine + " " + request.getStatusText() + "\r\n";
-	if (body.empty())
+	if (body.empty() && request.getStatusCode() != NoContent)
 	{
 		body = R"(
 			<!DOCTYPE html>
