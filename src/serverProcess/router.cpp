@@ -196,6 +196,7 @@ int processRoute(Client& client, ServerInfo& eloop, Route& route)
 				runUpload(request, route);
 				break;
 			case R_REDIRECT:
+				runRedirect(request, server, route);
 			//Redirect function
 				break;
 			case R_AUTOINDEX:

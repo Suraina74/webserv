@@ -13,6 +13,8 @@ string Request::setStatusText(httpStatus status)
 			return "201 Created";
 		case NoContent:
 			return "204 No Content";
+		case MovedPermanently:
+			return "301 Moved Permanently";
 		case BadRequest:
 			return "400 Bad Request";
 		case Forbidden:

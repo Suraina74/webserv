@@ -20,6 +20,7 @@ enum httpStatus
 	OK = 200,
 	Created = 201,
 	NoContent = 204,
+	MovedPermanently = 301,
 	BadRequest = 400,
 	PageNotFound = 404,
 	MethodNotAllowed = 405,
