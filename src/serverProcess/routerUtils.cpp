@@ -3,8 +3,7 @@
 
 void runCGI(Request &request, const ServerConfig &server, int clientFd)
 {
-    CGI newCGI = CGI(request, server, clientFd);
-    
+
 }
 
 void runUpload(Request &request, const ServerConfig &server, int clientFd)
