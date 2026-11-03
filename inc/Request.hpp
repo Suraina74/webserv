@@ -119,6 +119,7 @@ class Request
 		string		getMethod() const;
 		httpStatus	getStatusCode() const;
 		string		getStatusText() const;
+		string		getContentType() const;
 };
 
 // Request ontvangen, headers apart opslaan, body opslaan,
