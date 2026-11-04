@@ -27,7 +27,7 @@ void CGI::populateEnv(Request &request, const ServerConfig &server)
 	_env["REQUEST_METHOD"] = request.getMethod();
 	_env["SCRIPT_NAME"] = request.getPath().rfind('/');
 	_env["CONTENT_TYPE"] = request.getContentType();
-	_env["CLIENT_IP_ADDR"] = "";
+	_env["REMOTE_ADDR"] = "";
 	_env["QUERY_STRING"] = request.getQuery();
 	_env["CONTENT_LENGTH"] = request.getContentLength();
 }
