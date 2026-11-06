@@ -24,9 +24,9 @@ class Client
 		int					getFd();
 		void 				receiveRequest(ServerInfo &eloop);
 		void 				handleRequestLine(ServerInfo &eloop, const ServerConfig& server);
-		void 				handleHeaders(ssize_t n, size_t delimiter, ServerInfo &eloop, const ServerConfig& server);
+		void 				handleHeaders(size_t delimiter, ServerInfo &eloop, const ServerConfig& server);
 		void 				transferEncodingRequest(ServerInfo &eloop, const ServerConfig& server);
-		void 				contentLengthRequest(size_t delimiter, ssize_t n, ServerInfo &eloop, const ServerConfig& server);
+		void 				contentLengthRequest(size_t delimiter, ServerInfo &eloop, const ServerConfig& server);
 		void 				actionsRequestLeft(size_t startRequest);
 		int 				sendResponse();
 		string& 			getFullResponse();//check with http_parser branch
@@ -69,7 +69,7 @@ void			setRouteAction(Route& route, Request& request, const ServerConfig& server
 //route action handlers called by processRoute(), each fills client.getResponse()
 void			runCGI(Request &request, const ServerConfig &server, int clientFd);
 void 			runUpload(Request &request, Route &route);
-void			runRedirect(Request &request, const ServerConfig &server, Route &route);
+void			runRedirect(Request &request);
 void			runAutoIndex(Request &request, const ServerConfig &server, int clientFd);
 void			runDelete(Request &request, Route &route);
 void			runStatic(Request &request, const ServerConfig &server, Route &route, Client &client);

@@ -73,7 +73,6 @@ class Request
 		string								fileContent{};
 		httpStatus							statusCode = OK;
 		parserState							stateOfParser = REQUESTLINE;
-		// parserResult						result = RESET;
 
 	public:
 		Request(){}
@@ -104,7 +103,6 @@ class Request
 		void		setBytesRead(size_t bytes);
 		void		setHeaderBytes(size_t bytes);
 		void		setParserState(parserState state);
-		void		setRequestLeft(string request);
 
 		bool		getChunked() const;
 		parserState	getParserState() const;
@@ -113,7 +111,6 @@ class Request
 		string		getRequestTillHeaders() const;
 		string		getFullRequest() const;
 		size_t		getContentLength() const;//length of the request body
-		string 		getRequestLeft() const;
 		string		getPath() const;//path before '?'
 		string		getBody() const;//request body content
 		string		getQuery() const;//Change by Wenxuan
@@ -143,29 +140,17 @@ class Request
 
 
 // Transfer encoding chunked example:
-// printf 'POST /uploads.html HTTP/1.1\r\nHost: localhost:8080\r\nContent-Type: multipart/form-data; boundary=MyBoundary123\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n8A\r\n--MyBoundary123\r\nContent-Disposition: form-data; name="file"; filename="hello.txt"\r\nContent-Type: text/plain\r\n\r\nHello\r\n--MyBoundary123--\r\n0\r\n\r\n' | nc 127.0.0.1 8080
+// printf 'POST /uploads HTTP/1.1\r\nHost: localhost:8080\r\nContent-Type: multipart/form-data; boundary=MyBoundary123\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n8A\r\n--MyBoundary123\r\nContent-Disposition: form-data; name="file"; filename="hello.txt"\r\nContent-Type: text/plain\r\n\r\nHello\r\n--MyBoundary123--\r\n0\r\n\r\n' | nc 127.0.0.1 8080
 
 // Request with content length:
-// printf 'POST /uploads.html HTTP/1.1\r\nHost: localhost:8080\r\nContent-Type: multipart/form-data; boundary=MyBoundary123\r\nContent-Length: 138\r\n\r\n--MyBoundary123\r\nContent-Disposition: form-data; name="file"; filename="hello.txt"\r\nContent-Type: text/plain\r\n\r\nHello\r\n--MyBoundary123--\r\n' | nc 127.0.0.1 8080
+// printf 'POST /uploads HTTP/1.1\r\nHost: localhost:8080\r\nContent-Type: multipart/form-data; boundary=MyBoundary123\r\nContent-Length: 138\r\n\r\n--MyBoundary123\r\nContent-Disposition: form-data; name="file"; filename="hello.txt"\r\nContent-Type: text/plain\r\n\r\nHello\r\n--MyBoundary123--\r\n' | nc 127.0.0.1 8080
 
-// POST /uploads.html HTTP/1.1
-// Host: localhost:8080
-// Content-Type: multipart/form-data; boundary=MyBoundary123
-// Content-Length: 138
+// curl GET request:
+// curl -v http://localhost:8080/files/cat.jpg
 
-//--MyBoundary123\r\nContent-Disposition: form-data; name="file"; filename="hello.txt"
-// Content-Type: text/plain
+// curl POST request:
+// curl -v -X POST http://localhost:8080/uploads  
+//  -F "file=@cat.jpg"
 
-// Hello
-//--MyBoundary123--
-//
-
-
-// {
-//     printf 'GET / HTTP/1.1\r\nHost: localhost\r\n\r\n'
-//     sleep 1
-//     printf 'GET /page HTTP/1.1\r\nHost: localhost\r\n'
-//     sleep 1
-//     printf 'GET /sec'
-//     sleep 5
-// } | nc -N 127.0.0.1 8080
+// curl DELETE request:
+// curl -v -X DELETE localhost:8080/uploads/cat.png

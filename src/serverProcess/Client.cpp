@@ -41,7 +41,6 @@ int Client::getFd()
 void Client::actionsRequestLeft(size_t startNextRequest)
 {
 	string reqLeft = _request.getFullRequest().substr(startNextRequest, _request.getFullRequest().length() - startNextRequest);
-	_request.setRequestLeft(reqLeft);
 	_request.resetParserVars();
 	_response.resetResponseVars();
 	_request.setRequest(reqLeft);
@@ -52,7 +51,6 @@ void Client::actionsRequestLeft(size_t startNextRequest)
 
 void Client::transferEncodingRequest(ServerInfo &eloop, const ServerConfig& server)
 {
-	(void)eloop;
 	size_t indexLastChunk = _request.getFullRequest().find("0\r\n\r\n");
 	if (indexLastChunk != string::npos)
 	{
@@ -64,9 +62,8 @@ void Client::transferEncodingRequest(ServerInfo &eloop, const ServerConfig& serv
 		}
 		Route route{};
 		processRoute(*this, eloop, route);
-		string routePath = route.fsPath;
 		_response.setRequest(_request);
-		_response.composeResponse(routePath, server);
+		_response.composeResponse(route.redirectTo, route.fsPath, server);
 		_responsesString += _response.getFullResponse();
 		if (_request.getFullRequest().length() > indexLastChunk + 5)
 		{
@@ -74,7 +71,6 @@ void Client::transferEncodingRequest(ServerInfo &eloop, const ServerConfig& serv
 			actionsRequestLeft(startNextRequest);
 			return;
 		}
-		_request.setRequest("");
 		_request.setParserState(COMPLETE);
 		return;
 	}
@@ -84,10 +80,8 @@ void Client::transferEncodingRequest(ServerInfo &eloop, const ServerConfig& serv
 	}
 }
 
-void Client::contentLengthRequest(size_t delimiter, ssize_t n, ServerInfo &eloop, const ServerConfig& server)
+void Client::contentLengthRequest(size_t delimiter, ServerInfo &eloop, const ServerConfig& server)
 {
-	(void)n;
-	(void)eloop;
 	if (_request.getContentLength())
 	{
 		size_t startBody = delimiter + 4;
@@ -95,11 +89,6 @@ void Client::contentLengthRequest(size_t delimiter, ssize_t n, ServerInfo &eloop
 		size_t bodySize = endBody - startBody;
 		if (_request.getContentLength() > bodySize)
 		{
-			// if (n == 0)
-			// {
-			// 	_request.setParserState(COMPLETE);
-			// 	return;
-			// }
 			_request.setParserState(BODY);
 			return;
 		}
@@ -108,12 +97,10 @@ void Client::contentLengthRequest(size_t delimiter, ssize_t n, ServerInfo &eloop
 	if (_request.getBytesRead() >= expectedBytes)
 	{
 		_request.parseBody();
-		// _request.postAndDelete();
 		Route route{};
 		processRoute(*this, eloop, route);
-		string routePath = route.fsPath;
 		_response.setRequest(_request);
-		_response.composeResponse(routePath, server);
+		_response.composeResponse(route.redirectTo, route.fsPath, server);
 		_responsesString += _response.getFullResponse();
 		if (_request.getBytesRead() > expectedBytes)
 		{
@@ -122,22 +109,15 @@ void Client::contentLengthRequest(size_t delimiter, ssize_t n, ServerInfo &eloop
 			actionsRequestLeft(startNextRequest);
 			return;
 		}
-		_request.setRequest("");
 		_request.setParserState(COMPLETE);
 		return;
 	}
 }
 
-void Client::handleHeaders(ssize_t n, size_t delimiter, ServerInfo &eloop, const ServerConfig& server)
+void Client::handleHeaders(size_t delimiter, ServerInfo &eloop, const ServerConfig& server)
 {
-	(void)n;
 	if (delimiter == string::npos)
 	{
-		// if (n == 0)
-		// {
-		// 	_request.setParserState(COMPLETE);
-		// 	return;
-		// }
 		_request.setParserState(HEADERS);
 		return;
 	}
@@ -149,7 +129,7 @@ void Client::handleHeaders(ssize_t n, size_t delimiter, ServerInfo &eloop, const
 			Route route{};
 			processRoute(*this, eloop, route);
 			_response.setRequest(_request);
-			_response.composeResponse({}, server);
+			_response.composeResponse(route.redirectTo, {}, server);
 			_responsesString += _response.getFullResponse();
 			_request.setParserState(COMPLETE);
 			return;
@@ -159,14 +139,14 @@ void Client::handleHeaders(ssize_t n, size_t delimiter, ServerInfo &eloop, const
 	}
 }
 
-void Client::handleRequestLine(ServerInfo &eloop,const ServerConfig& server)
+void Client::handleRequestLine(ServerInfo &eloop, const ServerConfig& server)
 {
 	if ((_request.parseRequestLine(_request.getFullRequest())) == false)
 	{
 		Route route{};
 		processRoute(*this, eloop, route);
 		_response.setRequest(_request);
-		_response.composeResponse({}, server);
+		_response.composeResponse(route.redirectTo, {}, server);
 		_responsesString += _response.getFullResponse();
 		_request.setParserState(COMPLETE);
 		return;
@@ -181,22 +161,26 @@ void Client::handleRequestLine(ServerInfo &eloop,const ServerConfig& server)
 
 void Client::receiveRequest(ServerInfo &eloop)
 {
+	// Misschien op een andere manier zodat de buffer groter is?
 	char buffer[2048];
 	const ServerConfig& server = getClientServer();
 	ssize_t n = recv(_fd, buffer, sizeof(buffer), 0);//reads incoming data from a the client _fd socket.
 	if (n == -1)
 	{
+		// if on this, there is currently nothing to read
+		if (errno == EAGAIN || errno == EWOULDBLOCK){
+			return;
+		}
 		::perror("recv");
 		_request.setParserState(ERROR);
-		return ;
+		return;
 	}
-	else if (n == 0 && _request.getRequestLeft().empty())//Double check this logic, what if it is EOF
+	else if (n == 0)//Double check this logic, what if it is EOF
 	{
 		_request.setParserState(ERROR);
 		return;
 	}
-	// _request.setRequestLeft("");
-	if (n != 0)
+	if (n > 0)
 	{
 		_request.setBytesRead(_request.getBytesRead() + n);
 		string part(buffer, n);
@@ -213,7 +197,7 @@ void Client::receiveRequest(ServerInfo &eloop)
 		size_t delimiter = _request.getFullRequest().find("\r\n\r\n");
 		if (_request.getParserState() == HEADERS)
 		{
-			handleHeaders(n, delimiter, eloop, server);
+			handleHeaders(delimiter, eloop, server);
 			if (_request.getParserState() == HEADERS)
 				return;
 		}
@@ -222,7 +206,7 @@ void Client::receiveRequest(ServerInfo &eloop)
 			if (_request.getChunked() == true)
 				transferEncodingRequest(eloop, server);
 			else
-				contentLengthRequest(delimiter, n, eloop, server);
+				contentLengthRequest(delimiter, eloop, server);
 			if (_request.getParserState() == BODY)
 				return;
 		}
@@ -243,6 +227,10 @@ int Client::sendResponse()
 		int n = send(_fd, _response.getCFullResponse() + _response.getBytesSent(), _response.getLenResponse() - _response.getBytesSent(), 0);
 		if (n == -1)
 		{
+			// if on this, there is currently nothing to send
+			if (errno == EAGAIN || errno == EWOULDBLOCK){
+				return 1;
+			}
 			::perror("send");
 			return -1;
 		}

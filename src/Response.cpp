@@ -1,11 +1,62 @@
 #include "../inc/Response.hpp"
 
-// Redirections
-// Support redirect responses (301/302 + Location header)
+string getFileExtension(string path){
+	size_t lastDot = path.find_last_of('.');
+	if (lastDot == string::npos){
+		return "";
+	}
+	string fileExtension = path.substr(lastDot + 1, path.length() - lastDot + 1);
+	for (size_t i = 0; i < fileExtension.length(); i++)
+		fileExtension[i] = tolower(fileExtension[i]);
+	return fileExtension;
+} 
 
-// content type aanpassen.
+string convertExtension(string path){
+	string extension = getFileExtension(path);
+	if (extension == "png"){
+		return "image/png";
+	}
+	else if (extension == "gif"){
+		return "image/gif";
+	}
+	else if (extension == "jpg" || extension == "jpeg"){
+		return "image/jpeg";
+	}
+	else if (extension == "ico"){
+		return "image/x-icon";
+	}
+	else if (extension == "html" || extension == "htm"){
+		return "text/html";
+	}
+	else if (extension == "css"){
+		return "text/css";
+	}
+	else if (extension == "txt"){
+		return "text/plain";
+	}
+	else if (extension == "js"){
+		return "text/javascript";
+	}
+	else if (extension == "pdf"){
+		return "application/pdf";
+	}
+	else if (extension == "doc"){
+		return "application/msword";
+	}
+	else if (extension == "json"){
+		return "application/json";
+	}
+	return "text/html";
+}
 
-int Response::composeResponse(string routePath, const ServerConfig& server)
+string setContentType(string path, string method){
+	if (method == "GET"){
+		return convertExtension(path);
+	}
+	return "text/html";
+}
+
+int Response::composeResponse(string redirection, string routePath, const ServerConfig& server)
 {
 	if (request.getStatusCode() == OK && !routePath.empty()){
 		ifstream file(routePath, std::ios::binary);
@@ -30,8 +81,8 @@ int Response::composeResponse(string routePath, const ServerConfig& server)
 		}
 		file.close();
 	}
-	statusLine = statusLine + " " + request.getStatusText() + "\r\n";
-	if (body.empty() && request.getStatusCode() != NoContent)
+	statusLine += request.getStatusText() + "\r\n";
+	if (body.empty() && !(request.getStatusCode() == NoContent || request.getStatusCode() == MovedPermanently))
 	{
 		body = R"(
 			<!DOCTYPE html>
@@ -62,8 +113,18 @@ int Response::composeResponse(string routePath, const ServerConfig& server)
 	stringstream ss;
 	ss << body.size();
 	ss >> sizeOfBody;
-	contentLength = contentLength + sizeOfBody + "\r\n";
+	contentLength += sizeOfBody + "\r\n";
+	contentType += setContentType(routePath, request.getMethod()) + "\r\n";
 	string connection = "Connection: close\r\n\r\n";
+	if (request.getStatusCode() == MovedPermanently){
+		location += redirection + "\r\n";
+		fullResponse = statusLine + location + contentLength + connection;
+		return 0;
+	}
+	else if (request.getStatusCode() == NoContent){
+		fullResponse = statusLine + contentLength + connection;
+		return 0;
+	}
 	fullResponse = statusLine + contentType + contentLength + connection + body;
 	return 0;
 }
@@ -71,8 +132,8 @@ int Response::composeResponse(string routePath, const ServerConfig& server)
 void Response::resetResponseVars()
 {
 	request = {};
-	statusLine = "HTTP/1.1";
-	contentType = "Content-Type: text/html\r\n";
+	statusLine = "HTTP/1.1 ";
+	contentType = "Content-Type: ";
 	contentLength = "Content-Length: ";
 	body = {};
 	fullResponse = {};

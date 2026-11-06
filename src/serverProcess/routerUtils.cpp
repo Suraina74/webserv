@@ -21,13 +21,10 @@ void runUpload(Request &request, Route &route)
 	}
 }
 
-void runRedirect(Request &request, const ServerConfig &server, Route &route)
+void runRedirect(Request &request)
 {
-	cout << route.redirectTo << endl;
 	request.setStatus(MovedPermanently);
 	request.setStatusText(request.getStatusCode());
-	
-	(void)server;
 }
 
 void runAutoIndex(Request &request, const ServerConfig &server, int clientFd)
