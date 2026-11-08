@@ -28,10 +28,10 @@ class Client
 		chrono::steady_clock::time_point		getTimeout();
 		int										getFd();
 		void 									receiveRequest(ServerInfo &eloop);
-		void 									handleRequestLine();
-		void 									handleHeaders(ssize_t n, size_t delimiter);
-		void 									transferEncodingRequest(ServerInfo &eloop);
-		void 									contentLengthRequest(size_t delimiter, ssize_t n, ServerInfo &eloop);
+		void 									handleRequestLine(ServerInfo &eloop, const ServerConfig& server);
+		void 									handleHeaders(size_t delimiter, ServerInfo &eloop, const ServerConfig& server);
+		void 									transferEncodingRequest(ServerInfo &eloop, const ServerConfig& server);
+		void 									contentLengthRequest(size_t delimiter, ServerInfo &eloop, const ServerConfig& server);
 		void 									actionsRequestLeft(size_t startRequest);
 		int 									sendResponse();
 		string& 								getFullResponse();//check with http_parser branch
