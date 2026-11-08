@@ -1,10 +1,11 @@
 #include "../../inc/Client.hpp"
 #include <sys/socket.h>
 #include <cstdio>
+#include <iostream>
 
 Client::Client():_fd(-1), _server(NULL){}
 
-Client::Client(int fd, const ServerConfig *server, Request request, Response response):_fd(fd), _server(server), _request(request),_response(response){}
+Client::Client(int fd, const ServerConfig *server, Request request, Response response):_fd(fd), _server(server), _request(request),_response(response), _last_active(chrono::steady_clock::now()){}
 
 Client::~Client(){}
 
@@ -33,9 +34,27 @@ string& Client::getFullResponse()
 	return _responsesString;
 }
 
-int Client::getFd()
+chrono::steady_clock::time_point	Client::getTimeout()
+{
+	return _last_active;
+}
+
+int	Client::getFd()
 {
     return _fd;
+}
+
+int	Client::timer(chrono::steady_clock::time_point time_cur, chrono::steady_clock::time_point time_after_action)
+{
+	auto time_to_check = time_cur - time_after_action;
+
+	if (time_to_check > chrono::seconds(TIMEOUT))
+	{
+		cout << "max timeout reached, client " << _fd << " kicked out" << endl;
+		//set 408
+		return (1);
+	}
+	return (0);
 }
 
 void Client::actionsRequestLeft(size_t startNextRequest)
@@ -185,7 +204,9 @@ void Client::receiveRequest(ServerInfo &eloop)
 		_request.setBytesRead(_request.getBytesRead() + n);
 		string part(buffer, n);
 		_request.setRequest(_request.getFullRequest() + part);
+		_last_active = chrono::steady_clock::now();
 	}
+	_last_active = chrono::steady_clock::now();
 	while (true)
 	{
 		if (_request.getParserState() == REQUESTLINE)
@@ -236,10 +257,18 @@ int Client::sendResponse()
 		}
 		else if (n == 0)
 			return 0;
+		_last_active = chrono::steady_clock::now();
 		_response.setBytesSent(_response.getBytesSent() + n);
 	}
 	if (_response.getBytesSent() == _response.getLenResponse())
+	{
+		_last_active = chrono::steady_clock::now();
 		return 2;
+	}
 	return 1;
 }
 
+void Client::setTimeout(chrono::steady_clock::time_point newTimeout)
+{
+	_last_active = newTimeout;
+}
