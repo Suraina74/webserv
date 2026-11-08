@@ -1,8 +1,5 @@
 #include "../inc/Request.hpp"
 
-// Kijken of content-length niet groter is dan een bepaalde grootte.
-// redirections
-
 bool Request::actionsOnKey(string& key)
 {
 	if (key.empty())

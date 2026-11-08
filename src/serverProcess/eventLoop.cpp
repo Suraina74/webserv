@@ -1,8 +1,6 @@
 #include "../../inc/main.hpp"
 #include "../../inc/ServerInfo.hpp"
 
-// Close connection only if client closes connection or in the request the header connection:close is present.
-
 void acceptClient(ServerInfo &eloop)
 {
 	//accept() creates/returns a new file descriptor for the newly connected client,
@@ -71,7 +69,6 @@ int eventLoop(ServerInfo &eloop)
 				}
 				else if (receivStatus == COMPLETE)
 				{
-					// client.getRequest().postAndDelete();
 					eloop.getPfds()[i].events = POLLOUT;
 				}
 			}

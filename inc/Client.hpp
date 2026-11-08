@@ -74,8 +74,8 @@ bool			checkPathStat(string& pathName, Route& route, struct stat& pathStat);
 void			setRouteAction(Route& route, Request& request, const ServerConfig& server);
 //route action handlers called by processRoute(), each fills client.getResponse()
 void			runCGI(Request &request, const ServerConfig &server, int clientFd);
-void			runUpload(Request &request, const ServerConfig &server, int clientFd);
-void			runRedirect(Request &request, const ServerConfig &server, int clientFd);
+void 			runUpload(Request &request, Route &route);
+void			runRedirect(Request &request);
 void			runAutoIndex(Request &request, const ServerConfig &server, int clientFd);
-void			runDelete(Request &request, const ServerConfig &server, int clientFd);
-void			runStatic(Request &request, const ServerConfig &server, int clientFd);
+void			runDelete(Request &request, Route &route);
+void			runStatic(Request &request, const ServerConfig &server, Route &route, Client &client);

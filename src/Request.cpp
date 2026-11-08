@@ -9,8 +9,12 @@ string Request::setStatusText(httpStatus status)
 	{
 		case OK:
 			return "200 OK";
+		case Created:
+			return "201 Created";
 		case NoContent:
 			return "204 No Content";
+		case MovedPermanently:
+			return "301 Moved Permanently";
 		case BadRequest:
 			return "400 Bad Request";
 		case Forbidden:
@@ -106,10 +110,6 @@ void Request::setParserState(parserState state){
 	stateOfParser = state;
 }
 
-void Request::setRequestLeft(string request){
-	requestLeft = request;
-}
-
 size_t Request::getContentLength() const
 {
 	return contentLength;
@@ -158,10 +158,6 @@ size_t Request::getHeaderBytes() const
 bool Request::getChunked() const
 {
 	return chunked;
-}
-
-string Request::getRequestLeft() const{
-	return requestLeft;
 }
 
 parserState Request::getParserState() const{

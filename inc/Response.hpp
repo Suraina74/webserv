@@ -8,9 +8,10 @@ class Response
 {
 	private:
 		Request		request{};
-		string		statusLine = "HTTP/1.1";
-		string		contentType = "Content-Type: text/html\r\n";
+		string		statusLine = "HTTP/1.1 ";
+		string		contentType = "Content-Type: ";
 		string		contentLength = "Content-Length: ";
+		string		location = "Location: ";
 		string		body{};
 		string		fullResponse{};
 		int			lenResponse{};
@@ -20,13 +21,14 @@ class Response
 	public:
 		Response(){}
 		~Response(){}
-		int			composeResponse();
+		int			composeResponse(string redirection, string routePath, const ServerConfig& server);
 		void		resetResponseVars();
 
 		void		setRequest(Request r);
 		void		setLenResponse(int length);
 		void		setCString(const char* cString);
 		void		setBytesSent(int bytes);
+		void		setBody(string b);
 
 		string		getFullResponse() const;
 		const char*	getCFullResponse() const;
