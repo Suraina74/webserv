@@ -18,7 +18,7 @@ class Client
 		Request									_request;
 		Response								_response;
 		string									_responsesString{};
-		chrono::steady_clock::time_point		_last_active;
+		chrono::steady_clock::time_point		_last_active; // nc -v 127.0.0.1 4242 to test timeout
 
 	public:
 		Client();
