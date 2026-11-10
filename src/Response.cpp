@@ -1,19 +1,88 @@
 #include "../inc/Response.hpp"
 
-// Redirections
-// Support redirect responses (301/302 + Location header)
-// Use custom error pages from config.
-// Connection:close needed?
+string getFileExtension(string path){
+	size_t lastDot = path.find_last_of('.');
+	if (lastDot == string::npos){
+		return "";
+	}
+	string fileExtension = path.substr(lastDot + 1, path.length() - lastDot + 1);
+	for (size_t i = 0; i < fileExtension.length(); i++)
+		fileExtension[i] = tolower(fileExtension[i]);
+	return fileExtension;
+} 
 
-// Connection close werkt goed for browser requests, maar niet voor interactive nc.
-// Want interactive nc wil een open connection de hele tijd.
-// buffer is te klein. ifstream gebruiken, bij bestaande html files.
+string convertExtension(string path){
+	string extension = getFileExtension(path);
+	if (extension == "png"){
+		return "image/png";
+	}
+	else if (extension == "gif"){
+		return "image/gif";
+	}
+	else if (extension == "jpg" || extension == "jpeg"){
+		return "image/jpeg";
+	}
+	else if (extension == "ico"){
+		return "image/x-icon";
+	}
+	else if (extension == "html" || extension == "htm"){
+		return "text/html";
+	}
+	else if (extension == "css"){
+		return "text/css";
+	}
+	else if (extension == "txt"){
+		return "text/plain";
+	}
+	else if (extension == "js"){
+		return "text/javascript";
+	}
+	else if (extension == "pdf"){
+		return "application/pdf";
+	}
+	else if (extension == "doc"){
+		return "application/msword";
+	}
+	else if (extension == "json"){
+		return "application/json";
+	}
+	return "text/html";
+}
 
-int Response::composeResponse()
+string setContentType(string path, string method){
+	if (method == "GET"){
+		return convertExtension(path);
+	}
+	return "text/html";
+}
+
+int Response::composeResponse(string redirection, string routePath, const ServerConfig& server)
 {
-	statusLine = statusLine + " " + request.getStatusText() + "\r\n";
-	int bytesRead = 0;
-	if (request.getStatusCode() != OK && request.getStatusCode() != PageNotFound)
+	if (request.getStatusCode() == OK && !routePath.empty()){
+		ifstream file(routePath, std::ios::binary);
+		if (!file.is_open()){
+			request.setStatus(PageNotFound);
+			request.setStatusText(PageNotFound);
+		}
+		file.close();
+	}
+	auto it = server.getErrPages().find(request.getStatusCode());
+	if (it != server.getErrPages().end())
+	{
+		routePath = server.getRoot() + it->second;
+		ifstream file(routePath, std::ios::binary);
+		string line;
+		if (file.is_open())
+		{
+			while(getline(file, line))
+			{
+				body += line + '\n';
+			}
+		}
+		file.close();
+	}
+	statusLine += request.getStatusText() + "\r\n";
+	if (body.empty() && !(request.getStatusCode() == NoContent || request.getStatusCode() == MovedPermanently))
 	{
 		body = R"(
 			<!DOCTYPE html>
@@ -39,42 +108,23 @@ int Response::composeResponse()
 					h1 {font-size: 7em;}
 			</style>
 			)";
-		bytesRead = body.size();
-	}
-	else
-	{
-		string path = request.getPath();
-		const char *cPath = path.c_str();
-		int fd = open(cPath, O_RDONLY);
-		char buffer[2048];
-		if (fd >= 0)
-		{
-			bytesRead = read(fd, buffer, sizeof(buffer));
-			if (bytesRead > 0)
-			{
-				string htmlPage(buffer, bytesRead);
-				body = htmlPage;
-			}
-			else if (bytesRead == -1)
-			{
-				::perror("read");
-				close(fd);
-				return 1;
-			}
-			close(fd);
-		}
-		else if (fd == -1)
-		{
-			::perror("open");
-			return 1;
-		}
 	}
 	string sizeOfBody;
 	stringstream ss;
 	ss << body.size();
 	ss >> sizeOfBody;
-	contentLength = contentLength + sizeOfBody + "\r\n";
+	contentLength += sizeOfBody + "\r\n";
+	contentType += setContentType(routePath, request.getMethod()) + "\r\n";
 	string connection = "Connection: close\r\n\r\n";
+	if (request.getStatusCode() == MovedPermanently){
+		location += redirection + "\r\n";
+		fullResponse = statusLine + location + contentLength + connection;
+		return 0;
+	}
+	else if (request.getStatusCode() == NoContent){
+		fullResponse = statusLine + contentLength + connection;
+		return 0;
+	}
 	fullResponse = statusLine + contentType + contentLength + connection + body;
 	return 0;
 }
@@ -82,8 +132,8 @@ int Response::composeResponse()
 void Response::resetResponseVars()
 {
 	request = {};
-	statusLine = "HTTP/1.1";
-	contentType = "Content-Type: text/html\r\n";
+	statusLine = "HTTP/1.1 ";
+	contentType = "Content-Type: ";
 	contentLength = "Content-Length: ";
 	body = {};
 	fullResponse = {};
@@ -110,6 +160,11 @@ void Response::setLenResponse(int length)
 void Response::setBytesSent(int bytes)
 {
 	bytesSent = bytes;
+}
+
+void Response::setBody(string b)
+{
+	body = b;
 }
 
 string Response::getFullResponse() const

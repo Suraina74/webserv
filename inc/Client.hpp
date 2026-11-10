@@ -2,6 +2,9 @@
 #include "../inc/Response.hpp"
 #include "../inc/Config.hpp"
 #include <poll.h>
+#include <chrono>
+
+#define TIMEOUT 60
 
 using namespace std;
 
@@ -10,33 +13,36 @@ class ServerInfo;
 class Client
 {
 	private:
-		int					_fd;
-		const ServerConfig*	_server;
-		Request				_request;
-		Response			_response;
-		string				_responsesString{};
+		int										_fd;
+		const ServerConfig*						_server;
+		Request									_request;
+		Response								_response;
+		string									_responsesString{};
+		chrono::steady_clock::time_point		_last_active; // nc -v 127.0.0.1 4242 to test timeout
 
 	public:
 		Client();
 		Client(int fd, const ServerConfig *server, Request request, Response response);
 		~Client();
 
-		int					getFd();
-		void 				receiveRequest(ServerInfo &eloop);
-		void 				handleRequestLine();
-		void 				handleHeaders(ssize_t n, size_t delimiter);
-		void 				transferEncodingRequest(ServerInfo &eloop);
-		void 				contentLengthRequest(size_t delimiter, ssize_t n, ServerInfo &eloop);
-		void 				actionsRequestLeft(size_t startRequest);
-		int 				sendResponse();
-		string& 			getFullResponse();//check with http_parser branch
+		chrono::steady_clock::time_point		getTimeout();
+		int										getFd();
+		void 									receiveRequest(ServerInfo &eloop);
+		void 									handleRequestLine(ServerInfo &eloop, const ServerConfig& server);
+		void 									handleHeaders(size_t delimiter, ServerInfo &eloop, const ServerConfig& server);
+		void 									transferEncodingRequest(ServerInfo &eloop, const ServerConfig& server);
+		void 									contentLengthRequest(size_t delimiter, ServerInfo &eloop, const ServerConfig& server);
+		void 									actionsRequestLeft(size_t startRequest);
+		int 									sendResponse();
+		string& 								getFullResponse();//check with http_parser branch
 
-
-		void				setResponse();
-		int					getClientFd();
-		const ServerConfig& getClientServer();
-		Request& 			getRequest();
-		Response&			getResponse();
+		int										timer(chrono::steady_clock::time_point time_cur, chrono::steady_clock::time_point time_after_action);
+		void									setTimeout(chrono::steady_clock::time_point newTimeout);
+		void									setResponse();
+		int										getClientFd();
+		const ServerConfig&						getClientServer();
+		Request& 								getRequest();
+		Response&								getResponse();
 };
 
 enum RouteAction
@@ -67,9 +73,9 @@ httpStatus		validateRouteStat(Request& request, const ServerConfig& server, Rout
 bool			checkPathStat(string& pathName, Route& route, struct stat& pathStat);
 string			setRouteAction(Route& route, Request& request, const ServerConfig& server);
 //route action handlers called by processRoute(), each fills client.getResponse()
-void			runCGI(Request &request, const ServerConfig &server, int clientFd, string interpreter);
-void			runUpload(Request &request, const ServerConfig &server, int clientFd);
-void			runRedirect(Request &request, const ServerConfig &server, int clientFd);
+void			runCGI(Request &request, const ServerConfig &server, int clientFd);
+void 			runUpload(Request &request, Route &route);
+void			runRedirect(Request &request);
 void			runAutoIndex(Request &request, const ServerConfig &server, int clientFd);
-void			runDelete(Request &request, const ServerConfig &server, int clientFd);
-void			runStatic(Request &request, const ServerConfig &server, int clientFd);
+void			runDelete(Request &request, Route &route);
+void			runStatic(Request &request, const ServerConfig &server, Route &route, Client &client);

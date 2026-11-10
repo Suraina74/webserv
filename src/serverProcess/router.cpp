@@ -190,24 +190,37 @@ int processRoute(Client& client, ServerInfo& eloop, Route& route)
 				runCGI(request, server, client.getFd(), route.interpreter);//fill response in client.setResponse()
 				break;
 			case R_UPLOAD:
+			// A Client connects to a Server that listens on a specific port, like 8080.
+			// The server has different location, a root, and index, a root, etc.
 			//Upload function
+				runUpload(request, route);
 				break;
 			case R_REDIRECT:
+				runRedirect(request);
 			//Redirect function
 				break;
 			case R_AUTOINDEX:
 			//AutoIndex function: The autoindex handler builds an HTML response with clickable links to the files and subdirectories.
 				break;
 			case R_DELETE:
-			//Delete function
+				runDelete(request, route);
 				break;
 			case R_STATIC:
+				runStatic(request, server, route, client);
+				break;
+			// Files that are in the directory only reach this part.
+			// still need to check file.is_open, because there could be permission issues or the file is deleted. Adjust the status code accordingly.
+			// Prepare body and add to response.
 			//Static function: 1.Read the file at route.fsPath
 			//2.Put its contents into the HTTP response body 3.Set headers such as Content-Type: image/jpeg and Content-Length
-				break;
 			default:
 				break;
 		}
 	}
 	return 0;
 }
+
+
+// index
+// The default file to look for when a directory is requested.
+// If the browser requests /, the server may look for ./www/index.html.
