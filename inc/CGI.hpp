@@ -4,8 +4,10 @@
 #include <vector>
 #include <map>
 #include "Request.hpp"
+#include "Client.hpp"
 
 using namespace std;
+class Client;
 
 class CGI
 {
@@ -25,7 +27,7 @@ class CGI
 	public:
 		CGI();
 		~CGI();
-		CGI(Request &request, const ServerConfig &server, int clientFd, string interpreter);
+		CGI(Request &request, const ServerConfig &server, Client& client, Route& route);
 		void	populateEnv(Request &request, const ServerConfig &server);
 		int		runScript();
 

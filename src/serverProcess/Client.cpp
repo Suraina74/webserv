@@ -5,7 +5,7 @@
 
 Client::Client():_fd(-1), _server(NULL){}
 
-Client::Client(int fd, const ServerConfig *server, Request request, Response response):_fd(fd), _server(server), _request(request),_response(response), _last_active(chrono::steady_clock::now()){}
+Client::Client(int fd, const ServerConfig *server, Request request, Response response, string& clientIp):_fd(fd), _server(server), _request(request),_response(response), _clientIp(clientIp) {}
 
 Client::~Client(){}
 
@@ -14,7 +14,7 @@ int Client::getClientFd()
 	return _fd;
 }
 
-Request& Client::getRequest()
+Request& Client::getRequest() 
 {
 	return _request;
 }
@@ -32,11 +32,6 @@ Response& Client::getResponse()
 string& Client::getFullResponse()
 {
 	return _responsesString;
-}
-
-chrono::steady_clock::time_point	Client::getTimeout()
-{
-	return _last_active;
 }
 
 int	Client::getFd()

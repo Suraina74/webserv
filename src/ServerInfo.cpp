@@ -18,14 +18,14 @@ void ServerInfo::addListenFd(int fd, const ServerConfig *server)
 	_listenCount++;
 }
 
-void ServerInfo::addClient(int fd, const ServerConfig *server)
+void ServerInfo::addClient(int fd, const ServerConfig *server, string& clientIp)
 {
 	pollfd p;
 	p.fd = fd;
 	p.events = POLLIN;
 	p.revents = 0;
 	_pfds.push_back(p);
-	Client newClient = Client(fd, server, Request(), Response());
+	Client newClient = Client(fd, server, Request(), Response(), clientIp);
 	_clients[p.fd] = newClient;
 }
 

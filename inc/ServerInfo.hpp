@@ -24,7 +24,7 @@ class ServerInfo
 		~ServerInfo();
 
 		void					addListenFd(int fd, const ServerConfig *server);
-		void					addClient(int fd, const ServerConfig *server);
+		void					addClient(int fd, const ServerConfig *server, string& clientIp);
 		void					removeClient(size_t index);
 		void					closeAllFds();
 		size_t					getListenCount() const;

@@ -15,6 +15,7 @@ class Client
 	private:
 		int										_fd;
 		const ServerConfig*						_server;
+		string									_clientIp;
 		Request									_request;
 		Response								_response;
 		string									_responsesString{};
@@ -22,7 +23,7 @@ class Client
 
 	public:
 		Client();
-		Client(int fd, const ServerConfig *server, Request request, Response response);
+		Client(int fd, const ServerConfig *server, Request request, Response response, string& clientIp);
 		~Client();
 
 		chrono::steady_clock::time_point		getTimeout();
@@ -73,7 +74,7 @@ httpStatus		validateRouteStat(Request& request, const ServerConfig& server, Rout
 bool			checkPathStat(string& pathName, Route& route, struct stat& pathStat);
 string			setRouteAction(Route& route, Request& request, const ServerConfig& server);
 //route action handlers called by processRoute(), each fills client.getResponse()
-void			runCGI(Request &request, const ServerConfig &server, int clientFd);
+void			runCGI(const Request& request, const ServerConfig& server, const Client& client, Route& route);
 void 			runUpload(Request &request, Route &route);
 void			runRedirect(Request &request);
 void			runAutoIndex(Request &request, const ServerConfig &server, int clientFd);

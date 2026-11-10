@@ -1,7 +1,7 @@
 #include "../../inc/main.hpp"
 #include "../../inc/CGI.hpp"
 
-void runCGI(Request &request, const ServerConfig &server, int clientFd)
+void runCGI(Request& request, const ServerConfig& server, Client& client, Route& route)
 {
 
 }

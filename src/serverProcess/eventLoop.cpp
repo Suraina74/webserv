@@ -1,8 +1,13 @@
 #include "../../inc/main.hpp"
 #include "../../inc/ServerInfo.hpp"
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 void acceptClient(ServerInfo &eloop)
 {
+	struct sockaddr_in clientAddr;
+	socklen_t addrLen = sizeof(clientAddr);
 	//accept() creates/returns a new file descriptor for the newly connected client,
 	//and that descriptor is separate from the listening socket.
 	//listen fds are the first getListenCount() entries of _pfds
@@ -11,15 +16,20 @@ void acceptClient(ServerInfo &eloop)
 		if (eloop.getPfds()[i].revents & POLLIN)
 		{
 			int listenFd = eloop.getPfds()[i].fd;
-			int clientFd = accept(listenFd, NULL, NULL);
+			int clientFd = accept(listenFd, reinterpret_cast<struct sockaddr*>(&clientAddr), &addrLen);
 			if (clientFd == -1)
 			{
 				//one failed accept should not take the whole server down
 				::perror("accept");
 				continue;
 			}
+			char ip[INET_ADDRSTRLEN];
+			if (inet_ntop(AF_INET, &clientAddr.sin_addr, ip, sizeof(ip)) != NULL)
+			{
+			    string clientIp = ip; // e.g. "127.0.0.1"
+				eloop.addClient(clientFd, eloop.getListenServer(listenFd), clientIp);
+			}
 			//the client is served by the server block of the listen fd it connected to
-			eloop.addClient(clientFd, eloop.getListenServer(listenFd));
 		}
 	}
 }
