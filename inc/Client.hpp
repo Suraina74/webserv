@@ -15,7 +15,7 @@ class Client
 	private:
 		int										_fd;
 		const ServerConfig*						_server;
-		string									_clientIp;
+		string									_remoteAddr;
 		Request									_request;
 		Response								_response;
 		string									_responsesString{};
@@ -41,6 +41,7 @@ class Client
 		void									setTimeout(chrono::steady_clock::time_point newTimeout);
 		void									setResponse();
 		int										getClientFd();
+		string&									getClientAddr();
 		const ServerConfig&						getClientServer();
 		Request& 								getRequest();
 		Response&								getResponse();

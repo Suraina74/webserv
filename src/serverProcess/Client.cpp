@@ -5,7 +5,7 @@
 
 Client::Client():_fd(-1), _server(NULL){}
 
-Client::Client(int fd, const ServerConfig *server, Request request, Response response, string& clientIp):_fd(fd), _server(server), _request(request),_response(response), _clientIp(clientIp) {}
+Client::Client(int fd, const ServerConfig *server, Request request, Response response, string& remoteAddr):_fd(fd), _server(server), _request(request),_response(response), _remoteAddr(remoteAddr) {}
 
 Client::~Client(){}
 
@@ -32,6 +32,11 @@ Response& Client::getResponse()
 string& Client::getFullResponse()
 {
 	return _responsesString;
+}
+
+string& Client::getClientAddr()
+{
+	return _remoteAddr;
 }
 
 int	Client::getFd()

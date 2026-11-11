@@ -3,7 +3,8 @@
 
 void runCGI(Request& request, const ServerConfig& server, Client& client, Route& route)
 {
-
+	CGI cgi(request, server, client, route);
+	cgi.runScript();
 }
 
 void runUpload(Request &request, Route &route)

@@ -26,8 +26,8 @@ void acceptClient(ServerInfo &eloop)
 			char ip[INET_ADDRSTRLEN];
 			if (inet_ntop(AF_INET, &clientAddr.sin_addr, ip, sizeof(ip)) != NULL)
 			{
-			    string clientIp = ip; // e.g. "127.0.0.1"
-				eloop.addClient(clientFd, eloop.getListenServer(listenFd), clientIp);
+			    string remoteAddr = ip; // e.g. "127.0.0.1"
+				eloop.addClient(clientFd, eloop.getListenServer(listenFd), remoteAddr);
 			}
 			//the client is served by the server block of the listen fd it connected to
 		}

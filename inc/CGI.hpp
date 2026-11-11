@@ -28,7 +28,7 @@ class CGI
 		CGI();
 		~CGI();
 		CGI(Request &request, const ServerConfig &server, Client& client, Route& route);
-		void	populateEnv(Request &request, const ServerConfig &server);
+		void	populateEnv(Request &request, const ServerConfig &server, Client& client);
 		int		runScript();
 
 		int		getInFd();
@@ -42,3 +42,5 @@ class CGI
 		void	closeIn();	//close(_inFd); _inFd = -1;
 		void	closeOut();	//close(_outFd); _outFd = -1;
 };
+
+string makeAbsolute(const string& path);
