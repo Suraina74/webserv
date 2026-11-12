@@ -1,10 +1,10 @@
 #include "../../inc/main.hpp"
 #include "../../inc/CGI.hpp"
 
-void runCGI(Request& request, const ServerConfig& server, Client& client, Route& route)
+void runCGI(Request& request, const ServerConfig& server, Client& client, Route& route, ServerInfo& eloop)
 {
 	CGI cgi(request, server, client, route);
-	cgi.runScript();
+	cgi.runScript(eloop);
 }
 
 void runUpload(Request &request, Route &route)

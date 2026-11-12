@@ -194,7 +194,7 @@ int processRoute(Client& client, ServerInfo& eloop, Route& route)
 		switch (route.action)
 		{
 			case R_CGI:
-				runCGI(request, server, client, route);//fill response in client.setResponse()
+				runCGI(request, server, client, route, eloop);//fill response in client.setResponse()
 				break;
 			case R_UPLOAD:
 			// A Client connects to a Server that listens on a specific port, like 8080.

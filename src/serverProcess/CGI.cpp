@@ -2,6 +2,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include "../../inc/ServerInfo.hpp"
 
 CGI::CGI():_env(), _interpreter(""), _scriptPath(""), _requestBody(""), _bodySent(0), _output(""), _clientFd(-1), _inFd(-1), _outFd(-1), _pid(-1) {}
 
@@ -45,9 +46,55 @@ void CGI::populateEnv(Request &request, const ServerConfig &server, Client& clie
 	_env["CONTENT_LENGTH"] = request.getBody().empty() ? "0" : to_string(_requestBody.size());
 }
 
-int CGI::runScript()
+int CGI::runScript(ServerInfo& eloop)
 {
-	char* argv[] = {const_cast<char*>(_interpreter.c_str()), const_cast<char*>(_scriptPath.c_str())};
-	char** envp;
-	execve("/usr/bin/python3", argv, envp);
+	//setup argv and envp
+	char* argv[] = {const_cast<char*>(_interpreter.c_str()), const_cast<char*>(_scriptPath.c_str()), nullptr};
+	char** envp = new char*[_env.size() + 1]();
+	int i = 0;
+	for (auto& entry: _env)
+	{
+		string s = entry.first + "=" + entry.second;
+		envp[i] = new char[s.size() + 1];
+		strcpy(envp[i], s.c_str());
+		i++;
+	}
+	envp[i] = nullptr;
+	
+	//setup pipe
+	int inputFd[2];
+	int outputFd[2];
+	if (pipe(inputFd) == -1)//Pipe() always produce two descriptors
+		throw runtime_error("input pipe creation failed");
+	if (pipe(outputFd) == -1)
+	{
+		close(inputFd[0]);
+   		close(inputFd[1]);
+    	throw runtime_error("output pipe creation failed");
+	}
+
+	//fork the process
+	_pid = fork();
+	if (_pid == -1)
+	{
+		close(inputFd[0]);
+		close(inputFd[1]);
+		close(outputFd[0]);
+		close(outputFd[1]);
+		throw runtime_error("fork failed.");
+	}
+
+	if (_pid == 0)
+	{
+		eloop.closeAllFds();
+		close(inputFd[1]);
+		close(outputFd[0]);
+
+		execve("/usr/bin/python3", argv, envp);
+	}
+	else
+	{
+
+	}
+
 }
