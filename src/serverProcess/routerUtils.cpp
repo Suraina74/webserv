@@ -4,19 +4,20 @@
 void runCGI(Request& request, const ServerConfig& server, Client& client, Route& route, ServerInfo& eloop)
 {
 	CGI cgi(request, server, client, route);
-	cgi.runScript(eloop);
+	eloop.populateCgi(client.getClientFd(), cgi);
+	eloop.getClientCgi(client.getClientFd()).setupCgi(eloop);
 }
 
 void runUpload(Request &request, Route &route)
 {
-	if (request.getStatusCode() == OK){
-		if (request.getContentLength() > 0 || request.getChunked() == true){
+	if (request.getStatusCode() == OK)
+	{
+		if (request.getContentLength() > 0 || request.getChunked() == true)
+		{
 			request.extractFileElements();
 			request.setStatusText(request.getStatusCode());
 			if (request.getStatusCode() == OK)
-			{
 				request.addFile(route.loc->getUploadPath());
-			}
 		}
 	}
 }
@@ -55,9 +56,11 @@ void runDelete(Request &request, Route &route)
 void runStatic(Request &request, const ServerConfig &server, Route &route, Client &client)
 {
 	string b{};
-	if (request.getStatusCode() == OK){
+	if (request.getStatusCode() == OK)
+	{
 		ifstream file(route.fsPath, std::ios::binary);
-		if (!file.is_open()){
+		if (!file.is_open())
+		{
 			request.setStatus(PageNotFound);
 			request.setStatusText(PageNotFound);
 		}
@@ -71,27 +74,24 @@ void runStatic(Request &request, const ServerConfig &server, Route &route, Clien
 			string line;
 			if (file.is_open())
 			{
-				while(getline(file, line)){
+				while(getline(file, line))
 					b += line + '\n';
-				}
 			}
 			file.close();
 			client.getResponse().setBody(b);
 			break ;
 		}
 		else if ((route.fsPath == server.getRoot() + it->second) && (request.getStatusCode() == OK))
-		{
 			return ;
-		}
 	}
-	if (request.getStatusCode() == OK){
+	if (request.getStatusCode() == OK)
+	{
 		ifstream file(route.fsPath, std::ios::binary);
 		string line;
 		if (file.is_open())
 		{
-			while(getline(file, line)){
+			while(getline(file, line))
 				b += line + '\n';
-			}
 		}
 		file.close();
 		client.getResponse().setBody(b);

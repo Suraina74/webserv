@@ -3,11 +3,13 @@
 #include <vector>
 #include <map>
 #include <iostream>
-
+#include <memory>
+#include "CGI.hpp"
 using namespace std;
 
 class Client;
 class ServerConfig;
+class CGI;
 
 class ServerInfo
 {
@@ -18,6 +20,7 @@ class ServerInfo
 		size_t							_listenCount;
 		map<int, const ServerConfig*>	_listenServers;	//key = listen fd
 		map<int, Client>				_clients;		//key = client fd
+		map<int, CGI>					_cgis;
 
 	public:
 		ServerInfo();
@@ -31,4 +34,7 @@ class ServerInfo
 		vector<pollfd>&			getPfds();
 		Client&					getClient(int fd);
 		const ServerConfig*		getListenServer(int fd);
+		
+		void					populateCgi(int clientFd, CGI& Cgi);
+		CGI&					getClientCgi(int clientFd);
 };

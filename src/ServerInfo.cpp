@@ -67,3 +67,13 @@ const ServerConfig* ServerInfo::getListenServer(int fd)
 {
 	return (_listenServers.at(fd));
 }
+
+void ServerInfo::populateCgi(int clientFd, CGI& Cgi)
+{
+	_cgis[clientFd] = Cgi;
+}
+
+CGI& ServerInfo::getClientCgi(int clientFd)
+{
+	return _cgis.at(clientFd);
+}

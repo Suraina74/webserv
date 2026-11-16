@@ -9,6 +9,7 @@
 using namespace std;
 class Client;
 
+
 class CGI
 {
 	private:
@@ -29,7 +30,7 @@ class CGI
 		~CGI();
 		CGI(Request &request, const ServerConfig &server, Client& client, Route& route);
 		void	populateEnv(Request &request, const ServerConfig &server, Client& client);
-		int		runScript(ServerInfo& eloop);
+		int		setupCgi(ServerInfo& eloop);
 
 		int		getInFd();
 		int		getOutFd();
