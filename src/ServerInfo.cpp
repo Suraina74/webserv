@@ -77,3 +77,34 @@ CGI& ServerInfo::getClientCgi(int clientFd)
 {
 	return _cgis.at(clientFd);
 }
+
+int ServerInfo::findCgiOwner(int fd)
+{
+	auto it = _cgiFdOwners.find(fd);
+	if (it == _cgiFdOwners.end())
+		return -1;
+	return it->second;
+}
+
+void ServerInfo::registerCgiPipes(int clientFd)
+{
+	CGI curCgi = getClientCgi(clientFd);
+	int inFd = curCgi.getInFd();
+	int outFd = curCgi.getOutFd();
+
+	if (inFd != -1)
+	{
+		_pfds.push_back(pollfd{inFd, POLLOUT, 0});
+		_cgiFdOwners[inFd] = clientFd;
+	}
+	_pfds.push_back(pollfd{inFd, POLLIN, 0});
+
+	_cgiFdOwners[outFd] = clientFd;
+}
+
+void ServerInfo::unregisterCgiPipe(size_t i)
+{
+    int fd = _pfds[i].fd;
+    _cgiFdOwners.erase(fd);
+    _pfds.erase(_pfds.begin() + i);
+}

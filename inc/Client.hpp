@@ -39,7 +39,7 @@ class Client
 
 		int										timer(chrono::steady_clock::time_point time_cur, chrono::steady_clock::time_point time_after_action);
 		void									setTimeout(chrono::steady_clock::time_point newTimeout);
-		void									setResponse();
+		void									setCgiResponse(string response);
 		int										getClientFd();
 		string&									getClientAddr();
 		const ServerConfig&						getClientServer();

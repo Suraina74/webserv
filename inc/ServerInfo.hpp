@@ -21,6 +21,7 @@ class ServerInfo
 		map<int, const ServerConfig*>	_listenServers;	//key = listen fd
 		map<int, Client>				_clients;		//key = client fd
 		map<int, CGI>					_cgis;
+		map<int, int>					_cgiFdOwners;
 
 	public:
 		ServerInfo();
@@ -37,4 +38,7 @@ class ServerInfo
 		
 		void					populateCgi(int clientFd, CGI& Cgi);
 		CGI&					getClientCgi(int clientFd);
+		void					registerCgiPipes(int clientFd);
+		void					unregisterCgiPipe(size_t i);
+		int						findCgiOwner(int fd);
 };

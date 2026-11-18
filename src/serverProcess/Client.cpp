@@ -272,3 +272,8 @@ void Client::setTimeout(chrono::steady_clock::time_point newTimeout)
 {
 	_last_active = newTimeout;
 }
+
+void Client::setCgiResponse(string response)
+{
+	_responsesString = response;
+}

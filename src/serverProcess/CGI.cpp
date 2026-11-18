@@ -59,25 +59,14 @@ void CGI::populateEnv(Request &request, const ServerConfig &server, Client& clie
 
 int CGI::readOutput()
 {
-	char	buffer[4096];
-	ssize_t	byteRead = 0;
-	while (true)
-	{
-		byteRead = read(_outFd, buffer, sizeof(buffer));
-		if (byteRead > 0)
-			_output.append(buffer, byteRead);
-		else if (byteRead == 0)
-			return 0;
-		else
-		{
-			if (errno == EINTR)
-				continue;//ignore and continue to read
-			else if (errno == EAGAIN || errno == EWOULDBLOCK)
-				return 1;//signal to read later
-			else
-				return -1; //read fail
-		}
-	}
+    char buffer[4096];
+    ssize_t count = read(_outFd, buffer, sizeof(buffer));
+
+    if (count <= 0)
+        return count == 0 ? 0 : -1;
+
+    _output.append(buffer, static_cast<size_t>(count));
+    return 1;
 }
 
 int	CGI::writeInput()
@@ -147,7 +136,7 @@ int CGI::setupCgi(ServerInfo& eloop)
 		throw runtime_error("fork failed.");
 	}
 
-	if (_pid == 0)
+	if (_pid == 0)//child process
 	{
 		eloop.closeAllFds();
 		close(inputFd[1]);
@@ -167,7 +156,7 @@ int CGI::setupCgi(ServerInfo& eloop)
 			_exit(127);
 		}
 	}
-	else
+	else //parent process
 	{
 		close(inputFd[0]);
 		close(outputFd[1]);
@@ -194,4 +183,14 @@ int CGI::setupCgi(ServerInfo& eloop)
 		if (fcntl(_outFd, F_SETFL, outFlag | O_NONBLOCK) == -1)
 			throw runtime_error("outFd fcntl F_SETFL failed");
 	}
+}
+
+int CGI::getInFd()
+{
+	return _inFd;
+}
+
+int CGI::getOutFd()
+{
+	return _outFd;
 }
