@@ -57,6 +57,11 @@ int	Client::timer(chrono::steady_clock::time_point time_cur, chrono::steady_cloc
 	return (0);
 }
 
+chrono::steady_clock::time_point	Client::getTimeout()
+{
+	return _last_active;
+}
+
 void Client::actionsRequestLeft(size_t startNextRequest)
 {
 	string reqLeft = _request.getFullRequest().substr(startNextRequest, _request.getFullRequest().length() - startNextRequest);
