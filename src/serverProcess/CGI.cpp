@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
+#include <limits.h>
 #include <cerrno>
 #include "../../inc/ServerInfo.hpp"
 
@@ -98,7 +99,7 @@ int	CGI::writeInput()
     return 0;
 }
 
-int CGI::setupCgi(ServerInfo& eloop)
+void CGI::setupCgi(ServerInfo& eloop)
 {
 	//setup argv and envp
 	char* argv[] = {const_cast<char*>(_interpreter.c_str()), const_cast<char*>(_scriptPath.c_str()), nullptr};
@@ -185,6 +186,11 @@ int CGI::setupCgi(ServerInfo& eloop)
 	}
 }
 
+string&	CGI::getOutput()
+{
+	return _output;
+}
+
 int CGI::getInFd()
 {
 	return _inFd;
@@ -193,4 +199,27 @@ int CGI::getInFd()
 int CGI::getOutFd()
 {
 	return _outFd;
+}
+
+void CGI::closeIn()
+{
+	close(_inFd);
+}
+
+void CGI::closeOut()
+{
+	close(_outFd);
+}
+
+string makeAbsolute(const string& path)
+{
+	if (path[0] == '/')//its already /home
+        return path;
+	char buffer[PATH_MAX];
+	if (getcwd(buffer, sizeof(buffer)) == NULL)
+		throw runtime_error("getcwd fails");
+	string cwd = buffer;
+	if (cwd.back() != '/')
+		cwd += '/';
+	return cwd + path;
 }

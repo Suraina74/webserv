@@ -15,9 +15,9 @@ class Client
 	private:
 		int										_fd;
 		const ServerConfig*						_server;
-		string									_remoteAddr;
 		Request									_request;
 		Response								_response;
+		string									_remoteAddr;
 		string									_responsesString{};
 		chrono::steady_clock::time_point		_last_active; // nc -v 127.0.0.1 4242 to test timeout
 
@@ -73,9 +73,10 @@ int	processRoute(Client& client, ServerInfo& eloop, Route& route);
 const Location*	findLocation(const ServerConfig& server, const Request& request);
 httpStatus		validateRouteStat(Request& request, const ServerConfig& server, Route& route);
 bool			checkPathStat(string& pathName, Route& route, struct stat& pathStat);
-string			setRouteAction(Route& route, Request& request, const ServerConfig& server);
+void			setRouteAction(Route& route, Request& request, const ServerConfig& server);
 //route action handlers called by processRoute(), each fills client.getResponse()
-void			runCGI(const Request& request, const ServerConfig& server, const Client& client, Route& route, ServerInfo& eloop);
+
+void 			runCGI(Request& request, const ServerConfig& server, Client& client, Route& route, ServerInfo& eloop);
 void 			runUpload(Request &request, Route &route);
 void			runRedirect(Request &request);
 void			runAutoIndex(Request &request, const ServerConfig &server, int clientFd);

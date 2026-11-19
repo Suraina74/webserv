@@ -30,7 +30,7 @@ class CGI
 		~CGI();
 		CGI(Request &request, const ServerConfig &server, Client& client, Route& route);
 		void	populateEnv(Request &request, const ServerConfig &server, Client& client);
-		int		setupCgi(ServerInfo& eloop);
+		void		setupCgi(ServerInfo& eloop);
 
 		int		getInFd();
 		int		getOutFd();

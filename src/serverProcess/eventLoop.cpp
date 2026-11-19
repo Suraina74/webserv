@@ -55,7 +55,6 @@ int eventLoop(ServerInfo &eloop)
 			int revents = eloop.getPfds()[i].revents;
 			int clientFd = eloop.findCgiOwner(fd);
 			
-			
 			if (clientFd != -1)
 			{
 			    CGI& curCgi = eloop.getClientCgi(clientFd);
@@ -77,6 +76,7 @@ int eventLoop(ServerInfo &eloop)
 			    }
 			    else if (fd == curCgi.getOutFd())
 			    {
+					Client &client = eloop.getClient(clientFd);	
 			        int result = 1;
 			        if (revents & (POLLERR | POLLNVAL))
 			            result = -1;
@@ -89,68 +89,26 @@ int eventLoop(ServerInfo &eloop)
 			        eloop.unregisterCgiPipe(i);
 			        curCgi.closeOut();
 			        --i;
-				
-			        std::string response =
-			            "HTTP/1.1 502 Bad Gateway\r\n"
-			            "Content-Length: 0\r\n"
-			            "Connection: close\r\n\r\n";
-				
-			        if (result == 0)
-			        {
-			            // CGI output starts with headers, then a blank line, then the body.
-			            const std::string& output = curCgi.getOutput();
-			            std::istringstream stream(output);
-			            std::string status = "200 OK";
-			            std::string headers;
-			            std::string line;
-					
-			            while (std::getline(stream, line))
-			            {
-			                if (!line.empty() && line.back() == '\r')
-			                    line.pop_back();
+
+					if (result == -1)
+					{
+						client.setCgiResponse(
+					    "HTTP/1.1 502 Bad Gateway\r\n"
+					    "Content-Length: 0\r\n"
+					    "Connection: close\r\n"
+					    "\r\n"
+						);
+					}
+
+					if (result == 0)
+						client.setCgiResponse(curCgi.getOutput());
 						
-			                if (line.empty())
-			                {
-			                    std::string body = output.substr(
-			                        static_cast<size_t>(stream.tellg()));
-			                    response = "HTTP/1.1 " + status + "\r\n" + headers
-			                        + "Content-Length: " + std::to_string(body.size())
-			                        + "\r\nConnection: close\r\n\r\n" + body;
-			                    break;
-			                }
-						
-			                size_t colon = line.find(':');
-			                if (colon == std::string::npos || colon == 0)
-			                    break;
-						
-			                std::string name = line.substr(0, colon);
-			                for (char& c : name)
-			                    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-						
-			                if (name == "status")
-			                {
-			                    size_t start = line.find_first_not_of(" \t", colon + 1);
-			                    if (start == std::string::npos)
-			                        break;
-			                    status = line.substr(start);
-			                }
-			                else if (name != "content-length" && name != "transfer-encoding"
-			                         && name != "connection")
-			                {
-			                    headers += line + "\r\n";
-			                }
-			            }
-			        }
-				
-			        eloop.getClient(clientFd).setCgiResponse(response);
-			        for (pollfd& entry : eloop.getPfds())
-			        {
-			            if (entry.fd == clientFd)
-			            {
-			                entry.events = POLLOUT;
-			                break;
-			            }
-			        }
+					for (pollfd& pfd: eloop.getPfds())
+					{
+						if (pfd.fd == clientFd)
+							pfd.events = POLLOUT;
+						break;
+					}
 			    }
 			    continue;
 			}

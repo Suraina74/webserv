@@ -85,7 +85,7 @@ bool checkPathStat(string& pathName, Route& route, struct stat& pathStat)
 	return true;
 }
 
-string setRouteAction(Route& route, Request& request, const ServerConfig& server)
+void setRouteAction(Route& route, Request& request, const ServerConfig& server)
 {
 	const string& requestMethod = request.getMethod();
 	const string& requestPath = request.getPath();
