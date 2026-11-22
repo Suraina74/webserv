@@ -1,8 +1,8 @@
 #pragma once
 #include "Location.hpp"
+#include <netdb.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <netdb.h>
 #include <fcntl.h>
 #include <unistd.h>
 

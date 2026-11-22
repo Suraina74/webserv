@@ -5,7 +5,7 @@
 
 Client::Client():_fd(-1), _server(NULL){}
 
-Client::Client(int fd, const ServerConfig *server, Request request, Response response, string& remoteAddr):_fd(fd), _server(server), _request(request),_response(response), _remoteAddr(remoteAddr) {}
+Client::Client(int fd, const ServerConfig *server, Request request, Response response, string& remoteAddr):_fd(fd), _server(server), _request(request),_response(response), _remoteAddr(remoteAddr), _last_active(chrono::steady_clock::now()) {}
 
 Client::~Client(){}
 
@@ -48,10 +48,9 @@ int	Client::timer(chrono::steady_clock::time_point time_cur, chrono::steady_cloc
 {
 	auto time_to_check = time_cur - time_after_action;
 
-	if (time_to_check > chrono::seconds(TIMEOUT))
+	if (time_to_check > chrono::milliseconds(TIMEOUT))
 	{
 		cout << "max timeout reached, client " << _fd << " kicked out" << endl;
-		//set 408
 		return (1);
 	}
 	return (0);
@@ -271,11 +270,6 @@ int Client::sendResponse()
 		return 2;
 	}
 	return 1;
-}
-
-void Client::setTimeout(chrono::steady_clock::time_point newTimeout)
-{
-	_last_active = newTimeout;
 }
 
 void Client::setCgiResponse(string response)

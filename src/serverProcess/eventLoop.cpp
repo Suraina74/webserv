@@ -114,7 +114,7 @@ int eventLoop(ServerInfo &eloop)
 			}
 
 			Client &client = eloop.getClient(fd);
-			
+
 			if (client.timer(chrono::steady_clock::now(), client.getTimeout()))
 			{
 				eloop.removeClient(i);

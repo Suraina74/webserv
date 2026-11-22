@@ -4,7 +4,7 @@
 #include <poll.h>
 #include <chrono>
 
-#define TIMEOUT 60
+#define TIMEOUT 30000
 
 using namespace std;
 
@@ -38,7 +38,6 @@ class Client
 		string& 								getFullResponse();//check with http_parser branch
 
 		int										timer(chrono::steady_clock::time_point time_cur, chrono::steady_clock::time_point time_after_action);
-		void									setTimeout(chrono::steady_clock::time_point newTimeout);
 		void									setCgiResponse(string response);
 		int										getClientFd();
 		string&									getClientAddr();
