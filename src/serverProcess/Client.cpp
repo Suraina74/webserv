@@ -5,7 +5,7 @@
 
 Client::Client():_fd(-1), _server(NULL){}
 
-Client::Client(int fd, const ServerConfig *server, Request request, Response response):_fd(fd), _server(server), _request(request),_response(response), _last_active(chrono::steady_clock::now()){}
+Client::Client(int fd, const ServerConfig *server, Request request, Response response, string& remoteAddr):_fd(fd), _server(server), _request(request),_response(response), _remoteAddr(remoteAddr) {}
 
 Client::~Client(){}
 
@@ -14,7 +14,7 @@ int Client::getClientFd()
 	return _fd;
 }
 
-Request& Client::getRequest()
+Request& Client::getRequest() 
 {
 	return _request;
 }
@@ -34,9 +34,9 @@ string& Client::getFullResponse()
 	return _responsesString;
 }
 
-chrono::steady_clock::time_point	Client::getTimeout()
+string& Client::getClientAddr()
 {
-	return _last_active;
+	return _remoteAddr;
 }
 
 int	Client::getFd()
@@ -55,6 +55,11 @@ int	Client::timer(chrono::steady_clock::time_point time_cur, chrono::steady_cloc
 		return (1);
 	}
 	return (0);
+}
+
+chrono::steady_clock::time_point	Client::getTimeout()
+{
+	return _last_active;
 }
 
 void Client::actionsRequestLeft(size_t startNextRequest)
@@ -271,4 +276,9 @@ int Client::sendResponse()
 void Client::setTimeout(chrono::steady_clock::time_point newTimeout)
 {
 	_last_active = newTimeout;
+}
+
+void Client::setCgiResponse(string response)
+{
+	_responsesString = response;
 }

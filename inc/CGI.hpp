@@ -4,30 +4,33 @@
 #include <vector>
 #include <map>
 #include "Request.hpp"
+#include "Client.hpp"
 
 using namespace std;
+class Client;
+
 
 class CGI
 {
 	private:
-		map<string, string>	_env; //key = "SERVER_PORT", value = "8080"
-		string				_interpreter; //tells server what language to use
-		string				_scriptPath;
-		string				_requestBody;
-		size_t				_bodySent;
-		string				_output;
-		int					_clientFd;
+		map<string, string>	_env{}; //key = "SERVER_PORT", value = "8080"
+		string				_interpreter{}; //tells server what language to use
+		string				_scriptPath{};
+		string				_requestBody{};
+		size_t				_bodySent{};
+		string				_output{};
+		int					_clientFd{};
 
-		int					_inFd;
-		int					_outFd;
-		pid_t				_pid;
+		int					_inFd{};
+		int					_outFd{};
+		pid_t				_pid{};
 
 	public:
 		CGI();
 		~CGI();
-		CGI(Request &request, const ServerConfig &server, int clientFd);
-		void	populateEnv(Request &request, const ServerConfig &server);
-		int		runScript();
+		CGI(Request &request, const ServerConfig &server, Client& client, Route& route);
+		void	populateEnv(Request &request, const ServerConfig &server, Client& client);
+		void		setupCgi(ServerInfo& eloop);
 
 		int		getInFd();
 		int		getOutFd();
@@ -40,3 +43,5 @@ class CGI
 		void	closeIn();	//close(_inFd); _inFd = -1;
 		void	closeOut();	//close(_outFd); _outFd = -1;
 };
+
+string makeAbsolute(const string& path);

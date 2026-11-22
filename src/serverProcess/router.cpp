@@ -26,7 +26,6 @@ const Location*	findLocation(const ServerConfig& server, const Request& request)
 
 httpStatus validateRouteStat(Request& request, const ServerConfig& server, Route &route)
 {
-	//reject paths that could escape the root: must start with '/' and contain no ".." segment
 	const string requestPath = request.getPath();
 	if (requestPath.empty() || requestPath[0] != '/' || hasDotDotSegment(requestPath))
 		return (route.status = BadRequest);
@@ -55,8 +54,15 @@ httpStatus validateRouteStat(Request& request, const ServerConfig& server, Route
 	string root = route.loc->getRoot();
 	if (root.empty())//make sure if loc root is empty give loc the server root
 		root = server.getRoot();
+	else if (!root.empty())
+	{
+		string serverRoot = server.getRoot();
+		string prefix = serverRoot + '/';
+		if (root.compare(0, prefix.size(), prefix) == 0)
+		    root.erase(0, prefix.size());
+	}
 	//if request path is '/image/cats.png' location path is '/image', suffix is '/cats.png'
-	string suffix = request.getPath().substr(route.loc->getPath().size());
+	string suffix = requestPath.substr(route.loc->getPath().size());
 	if (!suffix.empty() && suffix[0] == '/')
 		suffix.erase(0, 1);
 	route.fsPath = root + '/' + suffix;
@@ -92,11 +98,9 @@ void setRouteAction(Route& route, Request& request, const ServerConfig& server)
 		return;
 	}
 	//CGI: extension of the last path segment only, e.g. /cgi-bin/test.py -> .py
-	size_t slashPos = requestPath.rfind('/');
-	size_t dotPos = requestPath.rfind('.');
-	if (dotPos != string::npos && (slashPos == string::npos || dotPos > slashPos))
+	if (requestPath.find(".py") != string::npos || requestPath.find(".py/") != string::npos)
 	{
-		string fileExtension = requestPath.substr(dotPos);
+		string fileExtension = ".py";
 		if (route.loc->getCGIs().count(fileExtension) != 0)
 		{
 			if (requestMethod != "GET" && requestMethod != "POST")
@@ -108,7 +112,7 @@ void setRouteAction(Route& route, Request& request, const ServerConfig& server)
 			if (access(route.interpreter.c_str(), X_OK) == -1)
 			{
 				route.status = InternalServerError;//config error, not client's fault
-				return;
+				return ;
 			}
 			route.action = R_CGI;//still need to check fsPathStat when constructing CGI obj
 			return;
@@ -143,8 +147,11 @@ void setRouteAction(Route& route, Request& request, const ServerConfig& server)
 	}
 	if (S_ISDIR(fsPathStat.st_mode))
 	{
-		//condition ? value_if_true : value_if_false
-		const string& index = route.loc->getIndex().empty() ? server.getIndex() : route.loc->getIndex();
+		string index;
+		if (route.loc->getIndex().empty())
+			index = server.getIndex();
+		else 
+			index = route.loc->getIndex();
 		if (!index.empty())
 		{
 			string indexPath = route.fsPath + '/' + index;
@@ -187,7 +194,7 @@ int processRoute(Client& client, ServerInfo& eloop, Route& route)
 		switch (route.action)
 		{
 			case R_CGI:
-				runCGI(request, server, client.getFd());//fill response in client.setResponse()
+				runCGI(request, server, client, route, eloop);//fill response in client.setResponse()
 				break;
 			case R_UPLOAD:
 			// A Client connects to a Server that listens on a specific port, like 8080.

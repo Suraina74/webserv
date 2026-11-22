@@ -1,4 +1,5 @@
 #include "Client.hpp"
+#include "ServerInfo.hpp"
 #include <cstring>
 #include <sys/socket.h>
 #include <unistd.h>

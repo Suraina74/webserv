@@ -174,3 +174,11 @@ string Request::getQuery() const
 {
 	return queryString;
 }
+
+string	Request::getContentType() const
+{
+	auto it = headerMap.find("content-type");
+	if (it != headerMap.end())
+		return it->second;
+	return "";
+}

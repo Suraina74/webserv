@@ -18,14 +18,14 @@ void ServerInfo::addListenFd(int fd, const ServerConfig *server)
 	_listenCount++;
 }
 
-void ServerInfo::addClient(int fd, const ServerConfig *server)
+void ServerInfo::addClient(int fd, const ServerConfig *server, string& clientIp)
 {
 	pollfd p;
 	p.fd = fd;
 	p.events = POLLIN;
 	p.revents = 0;
 	_pfds.push_back(p);
-	Client newClient = Client(fd, server, Request(), Response());
+	Client newClient = Client(fd, server, Request(), Response(), clientIp);
 	_clients[p.fd] = newClient;
 }
 
@@ -66,4 +66,45 @@ Client& ServerInfo::getClient(int fd)
 const ServerConfig* ServerInfo::getListenServer(int fd)
 {
 	return (_listenServers.at(fd));
+}
+
+void ServerInfo::populateCgi(int clientFd, CGI& Cgi)
+{
+	_cgis[clientFd] = Cgi;
+}
+
+CGI& ServerInfo::getClientCgi(int clientFd)
+{
+	return _cgis.at(clientFd);
+}
+
+int ServerInfo::findCgiOwner(int fd)
+{
+	auto it = _cgiFdOwners.find(fd);
+	if (it == _cgiFdOwners.end())
+		return -1;
+	return it->second;
+}
+
+void ServerInfo::registerCgiPipes(int clientFd)
+{
+	CGI curCgi = getClientCgi(clientFd);
+	int inFd = curCgi.getInFd();
+	int outFd = curCgi.getOutFd();
+
+	if (inFd != -1)
+	{
+		_pfds.push_back(pollfd{inFd, POLLOUT, 0});
+		_cgiFdOwners[inFd] = clientFd;
+	}
+	_pfds.push_back(pollfd{inFd, POLLIN, 0});
+
+	_cgiFdOwners[outFd] = clientFd;
+}
+
+void ServerInfo::unregisterCgiPipe(size_t i)
+{
+    int fd = _pfds[i].fd;
+    _cgiFdOwners.erase(fd);
+    _pfds.erase(_pfds.begin() + i);
 }

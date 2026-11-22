@@ -15,7 +15,7 @@ class Location
 		string					_index{};
 		string					_uploadPath{};
 		string					_redirect{};
-		map<string, string>  	_cgis{};
+		map<string, string>  	_cgiLoc{};
 		bool					_uploadEnabled{};
 		bool					_directoryListing{};
 
