@@ -88,7 +88,7 @@ int ServerInfo::findCgiOwner(int fd)
 
 void ServerInfo::registerCgiPipes(int clientFd)
 {
-	CGI curCgi = getClientCgi(clientFd);
+	CGI& curCgi = getClientCgi(clientFd);
 	int inFd = curCgi.getInFd();
 	int outFd = curCgi.getOutFd();
 

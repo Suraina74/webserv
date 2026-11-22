@@ -22,7 +22,10 @@ CGI::~CGI()
 
 CGI::CGI(Request &request, const ServerConfig &server, Client& client, Route& route): CGI()
 {
-	_scriptPath = request.getPath();
+	_scriptPath = route.fsPath;
+	size_t pyPos = _scriptPath.find(".py/");
+	if (pyPos != string::npos)
+		_scriptPath = _scriptPath.substr(0, pyPos + 3);
 	_requestBody = request.getBody();
 	_clientFd = client.getClientFd();
 	_interpreter = route.interpreter;
@@ -34,16 +37,16 @@ void CGI::populateEnv(Request &request, const ServerConfig &server, Client& clie
 	_env["GATEWAY_INTERFACE"] = "CGI/1.1";
 	//contains extra path info after the script name and before '?', '&' for example: 
 	//PATH_INFO = /users/42 when request is /cgi-bin/app.py/users/42?mode=edit
-	size_t scriptPos = _scriptPath.find(".py/");
+	size_t scriptPos = request.getPath().find(".py/");
 	if (scriptPos != string::npos)
 	{
-		_env["SCRIPT_NAME"] = _scriptPath.substr(0, scriptPos + 3);
-		_env["PATH_INFO"] = _scriptPath.substr(scriptPos + 3);
+		_env["SCRIPT_NAME"] = request.getPath().substr(0, scriptPos + 3);
+		_env["PATH_INFO"] = request.getPath().substr(scriptPos + 3);
 		_env["PATH_TRANSLATED"] = makeAbsolute(server.getRoot() + _env["PATH_INFO"]);
 	}
 	else
 	{
-		_env["SCRIPT_NAME"] = _scriptPath;
+		_env["SCRIPT_NAME"] = request.getPath();
 		_env["PATH_INFO"] = "";
 		_env["PATH_TRANSLATED"] = "";
 	}

@@ -18,9 +18,7 @@ void Config::parseLocPath(string& val, Location& loc, int lineNum)
 		val.pop_back();
 
 	if (val.find("//") != string::npos || hasDotDotSegment(val))
-	{
 		throw runtime_error("Line " + to_string(lineNum) + ": invalid location path.");
-	}
 
 	loc.setPath(val);
 }

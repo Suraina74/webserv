@@ -54,13 +54,6 @@ httpStatus validateRouteStat(Request& request, const ServerConfig& server, Route
 	string root = route.loc->getRoot();
 	if (root.empty())//make sure if loc root is empty give loc the server root
 		root = server.getRoot();
-	else if (!root.empty())
-	{
-		string serverRoot = server.getRoot();
-		string prefix = serverRoot + '/';
-		if (root.compare(0, prefix.size(), prefix) == 0)
-		    root.erase(0, prefix.size());
-	}
 	//if request path is '/image/cats.png' location path is '/image', suffix is '/cats.png'
 	string suffix = requestPath.substr(route.loc->getPath().size());
 	if (!suffix.empty() && suffix[0] == '/')
