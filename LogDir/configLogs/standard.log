@@ -1,0 +1,76 @@
+Server 1
+  Port: 4242
+  Host: 127.0.0.1
+  Name: 
+  Root: www
+  Index: home.html
+  Body size: 1000000
+  Error 404: /errors/404.html
+  Error 500: /errors/500.html
+  Locations: 6
+    Location 1: /
+      Methods: GET POST DELETE
+      Root: www
+      Index: 
+      Redirect: 
+      Upload enabled: off
+      Upload path: 
+      Directory listing: on
+    Location 2: /images
+      Methods: GET
+      Root: www/images
+      Index: 
+      Redirect: 
+      Upload enabled: off
+      Upload path: 
+      Directory listing: on
+    Location 3: /upload
+      Methods: POST
+      Root: 
+      Index: 
+      Redirect: 
+      Upload enabled: on
+      Upload path: www/uploads
+      Directory listing: off
+    Location 4: /files
+      Methods: GET DELETE
+      Root: www/files
+      Index: home.html
+      Redirect: 
+      Upload enabled: off
+      Upload path: 
+      Directory listing: off
+    Location 5: /old-page
+      Methods: GET
+      Root: 
+      Index: 
+      Redirect: /new-page
+      Upload enabled: off
+      Upload path: 
+      Directory listing: off
+    Location 6: /cgi-bin
+      Methods: GET POST
+      Root: www/cgi-bin
+      Index: 
+      Redirect: 
+      Upload enabled: off
+      Upload path: 
+      Directory listing: off
+      CGI .py: /usr/bin/python3
+Server 2
+  Port: 8081
+  Host: 127.0.0.1
+  Name: 
+  Root: www
+  Index: home.html
+  Body size: 500000
+  Error 404: /404.html
+  Locations: 1
+    Location 1: /
+      Methods: GET
+      Root: www/second
+      Index: home.html
+      Redirect: 
+      Upload enabled: off
+      Upload path: 
+      Directory listing: off

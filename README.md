@@ -60,7 +60,7 @@ Config
     ├── ...
     └── Locations
 ```
-In ./config/standard.config we included a complete server config example.
+In ./evaluation/config/standard.config we included a complete server config example.
 the outer server{...} represents one website/server configuration. There could be multiple servers in a config file. 
 - Listen tells your server which port to listen on. 
 - Host specifies the interface/address the server should bind to.
