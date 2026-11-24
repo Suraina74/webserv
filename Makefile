@@ -43,6 +43,8 @@ clean:
 
 fclean: clean
 	$(RM) -rf $(NAME) objs
+	@if [ -d LogDir ]; then find LogDir -type f -name '*.log' -delete; fi
+	@if [ -d LogDir ]; then find LogDir -type f -name  '*.data' -delete; fi
 
 re: fclean all
 

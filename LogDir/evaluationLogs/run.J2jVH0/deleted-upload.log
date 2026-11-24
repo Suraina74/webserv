@@ -1,0 +1,26 @@
+Expected HTTP 404
+Expected file:evaluation/html/site/not-found.html
+*   Trying 127.0.0.1:18080...
+* Connected to 127.0.0.1 (127.0.0.1) port 18080 (#0)
+> GET /uploads/webserv-run.J2jVH0.txt HTTP/1.1
+> Host: 127.0.0.1:18080
+> User-Agent: curl/7.81.0
+> Accept: */*
+> 
+* Mark bundle as not supporting multiuse
+< HTTP/1.1 404 Page Not Found
+< Content-Type: text/html
+< Content-Length: 127
+< Connection: close
+< 
+{ [127 bytes data]
+* Closing connection 0
+
+Received HTTP 404
+
+--- Response body ---
+<!doctype html>
+<html lang="en">
+<title>Webserve evaluation custom 404</title>
+<h1>Webserve evaluation custom 404</h1>
+</html>

@@ -221,12 +221,15 @@ void Request::extractChunkedBody(){
 		statusCode = BadRequest;
         return;
 	}
-	endBody += 2;
+	endBody += 5;
 	string chunkedBody = fullRequest.substr(startBody, endBody - startBody);
-	int start = 0;
-	string chunk{};
+	size_t start = 0;
 	while (1){
-		int end = chunkedBody.find("\r\n", start);
+		const size_t end = chunkedBody.find("\r\n", start);
+		if (end == string::npos || end == start){
+			statusCode = BadRequest;
+			return;
+		}
 		string chunkSizeString = chunkedBody.substr(start, end - start);
 		if (checkIfHex(chunkSizeString) == false){
 			statusCode = BadRequest;
@@ -234,25 +237,19 @@ void Request::extractChunkedBody(){
 		}
 		stringstream ss(chunkSizeString);
 		size_t chunkSize{};
-		ss >> hex >> chunkSize;
-		ss.str("");
-		ss.clear();
+		if (!(ss >> hex >> chunkSize)){
+			statusCode = BadRequest;
+			return;
+		}
 		if (chunkSize != 0){
-			// chunk is bigger than what is left in body.
-			size_t lenBodyWithoutChunkSize = chunkedBody.length() - (end + 2);
-			if (chunkSize > lenBodyWithoutChunkSize){
-				stateOfParser = INCOMPLETE;
-				break;
-			}
-			size_t endOfChunk = end + 2 + chunkSize;
-			// check if chunk does ends with /r/n, which it should
-			if (chunkedBody[endOfChunk + 1] != '\r' && chunkedBody[endOfChunk + 2] != '\n'){
+			const size_t dataStart = end + 2;
+			if (chunkSize > chunkedBody.size() - dataStart ||
+				chunkedBody.compare(dataStart + chunkSize, 2, "\r\n") != 0){
 				statusCode = BadRequest;
-				break;
+				return;
 			}
-			chunk = chunkedBody.substr((end + 2), chunkSize);
-			Body += chunk;
-			start = end + 2 + chunkSize + 2;
+			Body.append(chunkedBody, dataStart, chunkSize);
+			start = dataStart + chunkSize + 2;
 		}
 		else{
 			stateOfParser = COMPLETE;

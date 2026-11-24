@@ -1,0 +1,11 @@
+Before Siege (RSS in KiB)
+    PID   RSS COMMAND
+ 100929  4224 webserv
+
+After Siege run 1 (RSS in KiB)
+    PID   RSS COMMAND
+ 100929  4236 webserv
+
+After Siege run 2 (RSS in KiB)
+    PID   RSS COMMAND
+ 100929  4236 webserv

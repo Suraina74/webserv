@@ -1,0 +1,49 @@
+Expected HTTP 200
+Expected file:LogDir/evaluationLogs/run.J2jVH0/cgi-post.expected
+*   Trying 127.0.0.1:18080...
+* Connected to 127.0.0.1 (127.0.0.1) port 18080 (#0)
+> POST /cgi-bin/echo.py?message=hello HTTP/1.1
+> Host: 127.0.0.1:18080
+> User-Agent: curl/7.81.0
+> Accept: */*
+> Content-Type: multipart/form-data; boundary=webserv-eval
+> Transfer-Encoding: chunked
+> 
+} [116 bytes data]
+* Mark bundle as not supporting multiuse
+< HTTP/1.1 400 Bad Request
+< Content-Type: text/html
+< Content-Length: 509
+< Connection: close
+< 
+{ [509 bytes data]
+* Closing connection 0
+
+Received HTTP 400
+
+--- Response body ---
+
+			<!DOCTYPE html>
+			<html lang="en">
+			<head>
+				<meta charset="UTF-8">
+				<meta name="viewport" content="width=device-width, initial-scale=1.0">
+				<title>Document</title>
+			</head>
+			<body>
+				<h1>400 Bad Request ^⩊^</h1>
+			</body>
+			</html>
+			<style>
+				body {
+					box-sizing: border-box;
+					margin: 0;
+					font-family: Arial, Helvetica, sans-serif;
+					background-color: rgb(255, 233, 244);
+					color: hotpink;
+					text-align: center;
+				}
+					h1 {font-size: 7em;}
+			</style>
+			
+expected HTTP 200, got 400

@@ -15,10 +15,10 @@ Server 1
       Upload path: 
       Directory listing: on
     Location 2: /old
-      Methods:
+      Methods: GET
       Root: 
       Index: 
-      Redirect: /new
+      Redirect: /
       Upload enabled: off
       Upload path: 
       Directory listing: off
@@ -31,7 +31,7 @@ Server 1
       Upload path: 
       Directory listing: off
     Location 4: /temporary
-      Methods:
+      Methods: GET
       Root: 
       Index: 
       Redirect: /home

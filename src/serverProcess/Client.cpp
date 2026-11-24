@@ -137,7 +137,7 @@ void Client::contentLengthRequest(size_t delimiter, ServerInfo &eloop, const Ser
 	}
 }
 
-void Client::handleHeaders(size_t delimiter, ServerInfo &eloop, const ServerConfig& server)
+void Client::handleHeaders(size_t delimiter, const ServerConfig& server)
 {
 	if (delimiter == string::npos)
 	{
@@ -149,10 +149,8 @@ void Client::handleHeaders(size_t delimiter, ServerInfo &eloop, const ServerConf
 		// delimiter found
 		if ((_request.parseUntilHeaders(_request.getFullRequest())) == false)
 		{
-			Route route{};
-			processRoute(*this, eloop, route);
 			_response.setRequest(_request);
-			_response.composeResponse(route.redirectTo, {}, server);
+			_response.composeResponse({}, {}, server);
 			_responsesString += _response.getFullResponse();
 			_request.setParserState(COMPLETE);
 			return;
@@ -162,14 +160,12 @@ void Client::handleHeaders(size_t delimiter, ServerInfo &eloop, const ServerConf
 	}
 }
 
-void Client::handleRequestLine(ServerInfo &eloop, const ServerConfig& server)
+void Client::handleRequestLine(const ServerConfig& server)
 {
 	if ((_request.parseRequestLine(_request.getFullRequest())) == false)
 	{
-		Route route{};
-		processRoute(*this, eloop, route);
 		_response.setRequest(_request);
-		_response.composeResponse(route.redirectTo, {}, server);
+		_response.composeResponse({}, {}, server);
 		_responsesString += _response.getFullResponse();
 		_request.setParserState(COMPLETE);
 		return;
@@ -215,14 +211,14 @@ void Client::receiveRequest(ServerInfo &eloop)
 	{
 		if (_request.getParserState() == REQUESTLINE)
 		{
-			handleRequestLine(eloop, server);
+			handleRequestLine(server);
 			if (_request.getParserState() == REQUESTLINE)
 				return;
 		}
 		size_t delimiter = _request.getFullRequest().find("\r\n\r\n");
 		if (_request.getParserState() == HEADERS)
 		{
-			handleHeaders(delimiter, eloop, server);
+			handleHeaders(delimiter, server);
 			if (_request.getParserState() == HEADERS)
 				return;
 		}

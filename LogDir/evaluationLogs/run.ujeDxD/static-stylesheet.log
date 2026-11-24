@@ -1,0 +1,25 @@
+Expected HTTP 200
+Expected file:evaluation/html/site/style.css
+*   Trying 127.0.0.1:18080...
+* Connected to 127.0.0.1 (127.0.0.1) port 18080 (#0)
+> GET /style.css HTTP/1.1
+> Host: 127.0.0.1:18080
+> User-Agent: curl/7.81.0
+> Accept: */*
+> 
+* Mark bundle as not supporting multiuse
+< HTTP/1.1 200 OK
+< Content-Type: text/css
+< Content-Length: 56
+< Connection: close
+< 
+{ [56 bytes data]
+* Closing connection 0
+
+Received HTTP 200
+
+--- Response body ---
+body {
+    font-family: sans-serif;
+    margin: 2rem;
+}

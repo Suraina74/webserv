@@ -1,0 +1,102 @@
+Server 1
+  Port: 18080
+  Host: 127.0.0.1
+  Name: 
+  Root: evaluation/html/site
+  Index: index.html
+  Body size: 1024
+  Error 404: /not-found.html
+  Locations: 8
+    Location 1: /
+      Methods: GET
+      Root: 
+      Index: 
+      Redirect: 
+      Upload enabled: off
+      Upload path: 
+      Directory listing: off
+    Location 2: /other
+      Methods: GET
+      Root: evaluation/html/other
+      Index: second.html
+      Redirect: 
+      Upload enabled: off
+      Upload path: 
+      Directory listing: off
+    Location 3: /browse
+      Methods: GET
+      Root: evaluation/html/other
+      Index: 
+      Redirect: 
+      Upload enabled: off
+      Upload path: 
+      Directory listing: on
+    Location 4: /private
+      Methods: GET
+      Root: evaluation/html/other
+      Index: 
+      Redirect: 
+      Upload enabled: off
+      Upload path: 
+      Directory listing: off
+    Location 5: /old-page
+      Methods: GET
+      Root: 
+      Index: 
+      Redirect: /index.html
+      Upload enabled: off
+      Upload path: 
+      Directory listing: off
+    Location 6: /uploads
+      Methods: GET POST DELETE
+      Root: evaluation/html/uploads
+      Index: 
+      Redirect: 
+      Upload enabled: on
+      Upload path: evaluation/html/uploads
+      Directory listing: off
+    Location 7: /read-only
+      Methods: GET
+      Root: evaluation/html/uploads
+      Index: 
+      Redirect: 
+      Upload enabled: off
+      Upload path: 
+      Directory listing: off
+    Location 8: /cgi-bin
+      Methods: GET POST
+      Root: evaluation/cgi
+      Index: 
+      Redirect: 
+      Upload enabled: off
+      Upload path: 
+      Directory listing: off
+      CGI .py: /usr/bin/python3
+Server 2
+  Port: 18081
+  Host: 127.0.0.2
+  Name: 
+  Root: evaluation/html/other
+  Index: second.html
+  Body size: 1048576
+  Locations: 1
+    Location 1: /
+      Methods: GET
+      Root: 
+      Index: 
+      Redirect: 
+      Upload enabled: off
+      Upload path: 
+      Directory listing: off
+Traceback (most recent call last):
+  File "/home/wxi/CodamProjects/Rank5/Webserv/evaluation/cgi/fail.py", line 1, in <module>
+    raise RuntimeError("Intentional Webserve evaluation CGI failure")
+RuntimeError: Intentional Webserve evaluation CGI failure
+Traceback (most recent call last):
+  File "/home/wxi/CodamProjects/Rank5/Webserv/evaluation/cgi/relative.py", line 4, in <module>
+    message = Path("message.data").read_bytes()
+  File "/usr/lib/python3.10/pathlib.py", line 1126, in read_bytes
+    with self.open(mode='rb') as f:
+  File "/usr/lib/python3.10/pathlib.py", line 1119, in open
+    return self._accessor.open(self, mode, buffering, encoding, errors,
+FileNotFoundError: [Errno 2] No such file or directory: 'message.data'

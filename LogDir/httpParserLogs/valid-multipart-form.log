@@ -1,0 +1,47 @@
+Expected HTTP status 422
+
+--- Request ---
+POST /uploads HTTP/1.1
+Host: 127.0.0.1:4242
+Content-Type: multipart/form-data; boundary=webserv-parser-test
+Content-Length: 105
+Connection: close
+
+--webserv-parser-test
+Content-Disposition: form-data; name="message"
+
+hello
+--webserv-parser-test--
+
+--- Response ---
+HTTP/1.1 422 Unprocessable Content
+Content-Type: text/html
+Content-Length: 519
+Connection: close
+
+
+			<!DOCTYPE html>
+			<html lang="en">
+			<head>
+				<meta charset="UTF-8">
+				<meta name="viewport" content="width=device-width, initial-scale=1.0">
+				<title>Document</title>
+			</head>
+			<body>
+				<h1>422 Unprocessable Content ^⩊^</h1>
+			</body>
+			</html>
+			<style>
+				body {
+					box-sizing: border-box;
+					margin: 0;
+					font-family: Arial, Helvetica, sans-serif;
+					background-color: rgb(255, 233, 244);
+					color: hotpink;
+					text-align: center;
+				}
+					h1 {font-size: 7em;}
+			</style>
+			
+
+Result: 422

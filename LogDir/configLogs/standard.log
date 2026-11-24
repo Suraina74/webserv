@@ -44,7 +44,7 @@ Server 1
       Methods: GET
       Root: 
       Index: 
-      Redirect: /new-page
+      Redirect: /
       Upload enabled: off
       Upload path: 
       Directory listing: off
@@ -61,15 +61,14 @@ Server 2
   Port: 8081
   Host: 127.0.0.1
   Name: 
-  Root: www
-  Index: home.html
+  Root: evaluation/html/other
+  Index: second.html
   Body size: 500000
-  Error 404: /404.html
   Locations: 1
     Location 1: /
       Methods: GET
-      Root: www/second
-      Index: home.html
+      Root: 
+      Index: 
       Redirect: 
       Upload enabled: off
       Upload path: 

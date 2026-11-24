@@ -15,7 +15,7 @@ void runUpload(Request &request, Route &route)
 		if (request.getContentLength() > 0 || request.getChunked() == true)
 		{
 			request.extractFileElements();
-			request.setStatusText(request.getStatusCode());
+			request.setStatus(request.getStatusCode());
 			if (request.getStatusCode() == OK)
 				request.addFile(route.loc->getUploadPath());
 		}

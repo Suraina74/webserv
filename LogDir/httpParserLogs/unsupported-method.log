@@ -1,0 +1,40 @@
+Expected HTTP status 501
+
+--- Request ---
+PUT / HTTP/1.1
+Host: 127.0.0.1:4242
+Connection: close
+
+
+--- Response ---
+HTTP/1.1 501 Not Implemented
+Content-Type: text/html
+Content-Length: 513
+Connection: close
+
+
+			<!DOCTYPE html>
+			<html lang="en">
+			<head>
+				<meta charset="UTF-8">
+				<meta name="viewport" content="width=device-width, initial-scale=1.0">
+				<title>Document</title>
+			</head>
+			<body>
+				<h1>501 Not Implemented ^⩊^</h1>
+			</body>
+			</html>
+			<style>
+				body {
+					box-sizing: border-box;
+					margin: 0;
+					font-family: Arial, Helvetica, sans-serif;
+					background-color: rgb(255, 233, 244);
+					color: hotpink;
+					text-align: center;
+				}
+					h1 {font-size: 7em;}
+			</style>
+			
+
+Result: 501
