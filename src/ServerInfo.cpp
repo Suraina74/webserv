@@ -97,8 +97,7 @@ void ServerInfo::registerCgiPipes(int clientFd)
 		_pfds.push_back(pollfd{inFd, POLLOUT, 0});
 		_cgiFdOwners[inFd] = clientFd;
 	}
-	_pfds.push_back(pollfd{inFd, POLLIN, 0});
-
+	_pfds.push_back(pollfd{outFd, POLLIN, 0});
 	_cgiFdOwners[outFd] = clientFd;
 }
 

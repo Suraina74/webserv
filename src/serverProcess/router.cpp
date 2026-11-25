@@ -200,6 +200,8 @@ int processRoute(Client& client, ServerInfo& eloop, Route& route)
 			//Redirect function
 				break;
 			case R_AUTOINDEX:
+				runAutoIndex(request, route, client);
+    			route.fsPath.clear();
 			//AutoIndex function: The autoindex handler builds an HTML response with clickable links to the files and subdirectories.
 				break;
 			case R_DELETE:

@@ -108,13 +108,18 @@ int eventLoop(ServerInfo &eloop)
 					}
 
 					if (result == 0)
-						client.setCgiResponse(curCgi.getOutput());
+					{
+						client.setCgiResponse(curCgi.buildHttpResponse());
+						client.getRequest().setParserState(COMPLETE);
+					}
 						
 					for (pollfd& pfd: eloop.getPfds())
 					{
 						if (pfd.fd == clientFd)
+						{
 							pfd.events = POLLOUT;
-						break;
+							break;
+						}
 					}
 			    }
 			    continue;
@@ -144,15 +149,15 @@ int eventLoop(ServerInfo &eloop)
 					eloop.getPfds()[i].events = POLLIN;
 					continue;
 				}
+				else if (receivStatus == WAITING_CGI)
+    				eloop.getPfds()[i].events = 0;
 				else if (receivStatus == COMPLETE)
-				{
 					eloop.getPfds()[i].events = POLLOUT;
-				}
 			}
 			else if (revents & POLLOUT)
 			{
 				int sendStatus = client.sendResponse();
-				if (sendStatus == 0 || sendStatus == -1)
+				if (sendStatus == 0 || sendStatus == -1  || sendStatus == 2)
 				{
 					eloop.removeClient(i);
 					i--;

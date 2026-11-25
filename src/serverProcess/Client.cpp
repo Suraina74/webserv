@@ -85,6 +85,11 @@ void Client::transferEncodingRequest(ServerInfo &eloop, const ServerConfig& serv
 		}
 		Route route{};
 		processRoute(*this, eloop, route);
+		if (route.action == R_CGI)
+		{
+			_request.setParserState(WAITING_CGI);
+    		return;
+		}
 		_response.setRequest(_request);
 		_response.composeResponse(route.redirectTo, route.fsPath, server);
 		_responsesString += _response.getFullResponse();
@@ -122,6 +127,11 @@ void Client::contentLengthRequest(size_t delimiter, ServerInfo &eloop, const Ser
 		_request.parseBody();
 		Route route{};
 		processRoute(*this, eloop, route);
+		if (route.action == R_CGI)
+		{
+			_request.setParserState(WAITING_CGI);
+    		return;
+		}
 		_response.setRequest(_request);
 		_response.composeResponse(route.redirectTo, route.fsPath, server);
 		_responsesString += _response.getFullResponse();
@@ -162,6 +172,11 @@ void Client::handleHeaders(size_t delimiter, const ServerConfig& server)
 
 void Client::handleRequestLine(const ServerConfig& server)
 {
+	//Codex FIX: It checks whether the request-line error is anything other than 414 URI Too Long and 
+	//the end of the headers (\r\n\r\n) hasn’t arrived yet. If both are true, return lets 
+	//the server wait for more bytes. A 414 is sent immediately.
+	if (_request.getStatusCode() != URITooLong && _request.getFullRequest().find("\r\n\r\n") == string::npos)
+	    return;
 	if ((_request.parseRequestLine(_request.getFullRequest())) == false)
 	{
 		_response.setRequest(_request);
@@ -231,7 +246,7 @@ void Client::receiveRequest(ServerInfo &eloop)
 			if (_request.getParserState() == BODY)
 				return;
 		}
-		if (_request.getParserState() == COMPLETE)
+		if (_request.getParserState() == COMPLETE || _request.getParserState() == WAITING_CGI)
 			return;
 	}
 	return;

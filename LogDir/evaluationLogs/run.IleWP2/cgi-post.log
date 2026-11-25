@@ -1,0 +1,24 @@
+Expected HTTP 200
+Expected file:LogDir/evaluationLogs/run.IleWP2/cgi-post.expected
+*   Trying 127.0.0.1:18080...
+* Connected to 127.0.0.1 (127.0.0.1) port 18080 (#0)
+> POST /cgi-bin/echo.py?message=hello HTTP/1.1
+> Host: 127.0.0.1:18080
+> User-Agent: curl/7.81.0
+> Accept: */*
+> Content-Type: multipart/form-data; boundary=webserv-eval
+> Content-Length: 105
+> 
+} [105 bytes data]
+* Mark bundle as not supporting multiuse
+< HTTP/1.1 502 Bad Gateway
+< Content-Length: 0
+< Connection: close
+< 
+* Closing connection 0
+
+Received HTTP 502
+
+--- Response body ---
+
+expected HTTP 200, got 502

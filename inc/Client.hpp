@@ -78,6 +78,6 @@ void			setRouteAction(Route& route, Request& request, const ServerConfig& server
 void 			runCGI(Request& request, const ServerConfig& server, Client& client, Route& route, ServerInfo& eloop);
 void 			runUpload(Request &request, Route &route);
 void			runRedirect(Request &request);
-void			runAutoIndex(Request &request, const ServerConfig &server, int clientFd);
+void			runAutoIndex(Request &request,  Route& route, Client& client);
 void			runDelete(Request &request, Route &route);
 void			runStatic(Request &request, const ServerConfig &server, Route &route, Client &client);

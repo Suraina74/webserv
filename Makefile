@@ -32,11 +32,11 @@ OBJ = $(SRC:%.cpp=objs/%.o)
 all: $(NAME)
 
 $(NAME): $(OBJ)
-	$(CC) $(FLAGS) $(OBJ) -o $(NAME) || { $(MAKE) fclean; exit 1; }
+	$(CC) $(FLAGS) $(OBJ) -o $(NAME)
 
 objs/%.o: %.cpp
 	@mkdir -p $(dir $@)
-	$(CC) $(FLAGS) -c $< -o $@ || { $(MAKE) fclean; exit 1; }
+	$(CC) $(FLAGS) -c $< -o $@
 
 clean:
 	$(RM) $(OBJ)
@@ -45,6 +45,8 @@ fclean: clean
 	$(RM) -rf $(NAME) objs
 	@if [ -d LogDir ]; then find LogDir -type f -name '*.log' -delete; fi
 	@if [ -d LogDir ]; then find LogDir -type f -name  '*.data' -delete; fi
+	@if [ -d LogDir ]; then find LogDir -type f -name  '*.expected' -delete; fi
+	@if [ -d LogDir ]; then find LogDir -type f -name  '*.conf' -delete; fi
 
 re: fclean all
 

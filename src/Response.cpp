@@ -82,7 +82,7 @@ int Response::composeResponse(string redirection, string routePath, const Server
 		file.close();
 	}
 	statusLine += request.getStatusText() + "\r\n";
-	if (body.empty() && !(request.getStatusCode() == NoContent || request.getStatusCode() == MovedPermanently))
+	if (body.empty() && (request.getStatusCode() == Created || request.getStatusCode() >= BadRequest))
 	{
 		body = R"(
 			<!DOCTYPE html>

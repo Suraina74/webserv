@@ -1,11 +1,14 @@
 #include "../../inc/main.hpp"
 #include "../../inc/CGI.hpp"
+#include <dirent.h>
+#include <memory>
 
 void runCGI(Request& request, const ServerConfig& server, Client& client, Route& route, ServerInfo& eloop)
 {
 	CGI cgi(request, server, client, route);
 	eloop.populateCgi(client.getClientFd(), cgi);
 	eloop.getClientCgi(client.getClientFd()).setupCgi(eloop);
+	eloop.registerCgiPipes(client.getClientFd());
 }
 
 void runUpload(Request &request, Route &route)
@@ -28,12 +31,82 @@ void runRedirect(Request &request)
 	request.setStatusText(request.getStatusCode());
 }
 
-void runAutoIndex(Request &request, const ServerConfig &server, int clientFd)
+static string escapeHtml(const string &text)
 {
-	(void)request;
-	(void)server;
-	(void)clientFd;
+	string escaped;
+	for (char character : text)
+	{
+		switch (character)
+		{
+			case '&': escaped += "&amp;"; break;
+			case '<': escaped += "&lt;"; break;
+			case '>': escaped += "&gt;"; break;
+			case '"': escaped += "&quot;"; break;
+			default: escaped += character; break;
+		}
+	}
+	return escaped;
+}
 
+static string encodePathSegment(const string &name)
+{
+	const char hex[] = "0123456789ABCDEF";
+	string encoded;
+	for (unsigned char character : name)
+	{
+		if ((character >= 'a' && character <= 'z')
+			|| (character >= 'A' && character <= 'Z')
+			|| (character >= '0' && character <= '9')
+			|| character == '-' || character == '_' || character == '.' || character == '~')
+			encoded += character;
+		else
+		{
+			encoded += '%';
+			encoded += hex[character >> 4];
+			encoded += hex[character & 15];
+		}
+	}
+	return encoded;
+}
+
+void runAutoIndex(Request &request, Route &route, Client &client)//Codex fix
+{
+	std::unique_ptr<DIR, int (*)(DIR *)> directory(opendir(route.fsPath.c_str()), closedir);
+	if (!directory)
+	{
+		request.setStatus(errno == EACCES ? Forbidden : InternalServerError);
+		return;
+	}
+
+	const string requestPath = request.getPath();
+	string base = "./";
+	if (requestPath.back() != '/')
+		base += requestPath.substr(requestPath.rfind('/') + 1) + '/';
+
+	string body = "<!doctype html><html><head><meta charset=\"utf-8\">"
+		"<title>Directory listing</title></head><body><ul>\n";
+	while (true)
+	{
+		errno = 0;
+		const dirent *entry = readdir(directory.get());
+		if (!entry)
+		{
+			if (errno != 0)
+			{
+				request.setStatus(InternalServerError);
+				return;
+			}
+			break;
+		}
+
+		const string name = entry->d_name;
+		if (name == "." || name == "..")
+			continue;
+		const string href = escapeHtml(base + encodePathSegment(name));
+		body += "<li><a href=\"" + href + "\">" + escapeHtml(name) + "</a></li>\n";
+	}
+	body += "</ul></body></html>\n";
+	client.getResponse().setBody(body);
 }
 
 void runDelete(Request &request, Route &route)

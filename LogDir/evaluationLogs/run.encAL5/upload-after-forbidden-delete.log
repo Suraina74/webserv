@@ -1,0 +1,22 @@
+Expected HTTP 200
+Expected file:LogDir/evaluationLogs/run.encAL5/upload-input.data
+*   Trying 127.0.0.1:18080...
+* Connected to 127.0.0.1 (127.0.0.1) port 18080 (#0)
+> GET /uploads/webserv-run.encAL5.txt HTTP/1.1
+> Host: 127.0.0.1:18080
+> User-Agent: curl/7.81.0
+> Accept: */*
+> 
+* Mark bundle as not supporting multiuse
+< HTTP/1.1 200 OK
+< Content-Type: text/plain
+< Content-Length: 27
+< Connection: close
+< 
+{ [27 bytes data]
+* Closing connection 0
+
+Received HTTP 200
+
+--- Response body ---
+Webserve evaluation upload

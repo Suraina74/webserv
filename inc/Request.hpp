@@ -43,7 +43,8 @@ enum parserState
 	BODY = 2,
 	COMPLETE = 3,
 	INCOMPLETE = 4,
-	ERROR = 5
+	WAITING_CGI = 5,
+	ERROR = 6
 };
 
 class Request

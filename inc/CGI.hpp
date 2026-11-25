@@ -34,11 +34,9 @@ class CGI
 
 		int		getInFd();
 		int		getOutFd();
-		int		getClientFd();
-		pid_t	getPid();
-		string&	getOutput();
 		int		writeInput();
 		int		readOutput();
+		string	buildHttpResponse();
 
 		void	closeIn();	//close(_inFd); _inFd = -1;
 		void	closeOut();	//close(_outFd); _outFd = -1;

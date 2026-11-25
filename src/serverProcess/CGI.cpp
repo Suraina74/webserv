@@ -75,37 +75,32 @@ int CGI::readOutput()
 
 int	CGI::writeInput()
 {
-	ssize_t bytewritten = 0;
-	while (_bodySent < _requestBody.size())
-	{
-		bytewritten = write(_inFd, _requestBody.data() + _bodySent, _requestBody.size() - _bodySent);
-		if (bytewritten > 0)
-			_bodySent += bytewritten;
-		else if (bytewritten == -1)
-		{
-			if (errno == EINTR)
-				continue;
-			else if (errno == EAGAIN || errno == EWOULDBLOCK)
-				return 1;
-			else
-				return -1;
-		}
-		else
-			return -1;
-	}
-	if (_inFd != -1)
-    {
-        close(_inFd);
-        _inFd = -1;
-    }
+	if (_bodySent == _requestBody.size())
+		return 0;
+	
+	ssize_t bytewritten = write(_inFd, _requestBody.data() + _bodySent, _requestBody.size() - _bodySent);
 
-    return 0;
+	if (bytewritten == -1)
+	{
+		throw runtime_error("write failed");
+		return 1; 
+	}
+	_bodySent += static_cast<size_t>(bytewritten);
+
+    return _bodySent == _requestBody.size() ? 0:1;
 }
 
 void CGI::setupCgi(ServerInfo& eloop)
 {
 	//setup argv and envp
-	char* argv[] = {const_cast<char*>(_interpreter.c_str()), const_cast<char*>(_scriptPath.c_str()), nullptr};
+	const string scriptPath = makeAbsolute(_scriptPath);
+	const string interpreter = makeAbsolute(_interpreter);
+	const string scriptDir = scriptPath.substr(0, scriptPath.rfind('/') + 1);
+	char* argv[] = {
+		const_cast<char*>(interpreter.c_str()),
+		const_cast<char*>(scriptPath.c_str()),
+		nullptr
+	};
 	char** envp = new char*[_env.size() + 1]();
 	int i = 0;
 	for (auto& entry: _env)
@@ -154,7 +149,13 @@ void CGI::setupCgi(ServerInfo& eloop)
 		close(inputFd[0]);
 		close(outputFd[1]);
 
-		if (execve(_interpreter.c_str(), argv, envp) == -1)
+		if (chdir(scriptDir.c_str()) == -1)
+		{
+		    perror("chdir failed");
+		    _exit(1);
+		}
+
+		if (execve(interpreter.c_str(), argv, envp) == -1)
 		{
 			perror("execve failed");
 			_exit(127);
@@ -189,11 +190,6 @@ void CGI::setupCgi(ServerInfo& eloop)
 	}
 }
 
-string&	CGI::getOutput()
-{
-	return _output;
-}
-
 int CGI::getInFd()
 {
 	return _inFd;
@@ -216,7 +212,7 @@ void CGI::closeOut()
 
 string makeAbsolute(const string& path)
 {
-	if (path[0] == '/')//its already /home
+	if (path[0] == '/')//its already /home, so it returns the path as it is
         return path;
 	char buffer[PATH_MAX];
 	if (getcwd(buffer, sizeof(buffer)) == NULL)
@@ -225,4 +221,35 @@ string makeAbsolute(const string& path)
 	if (cwd.back() != '/')
 		cwd += '/';
 	return cwd + path;
+}
+
+string CGI::buildHttpResponse()
+{
+	string prefix = "Content-Type: ";
+	size_t headersEnd = _output.find("\r\n\r\n");
+	size_t firstLineEnd = _output.find("\r\n");
+
+	/*
+	1. headersEnd == string::npos means .find("\r\n\r\n") 
+	couldn’t find the blank line separating the CGI headers from the body.
+	2. _output.compare(0, prefix.size(), prefix) != 0 means the output doesn’t start with the exact prefix "Content-Type: ". 
+	The 0 says to start comparing at the first character, and compare() returns 0 when the text matches.
+	3. firstLineEnd <= prefix.size() means there’s no room for a value after the prefix. For example, 
+	"Content-Type: \r\n" matches the prefix, but the line ends exactly where text/plain would start.
+	*/
+	if (headersEnd == string::npos || _output.compare(0, prefix.size(), prefix) != 0 ||
+        firstLineEnd <= prefix.size())
+    {
+        return "HTTP/1.1 502 Bad Gateway\r\n"
+               "Content-Length: 0\r\n"
+               "Connection: close\r\n\r\n";
+    }
+
+    string contentType = _output.substr(prefix.size(), firstLineEnd - prefix.size());
+    string body = _output.substr(headersEnd + 4);
+
+    return "HTTP/1.1 200 OK\r\n"
+           "Content-Type: " + contentType + "\r\n" +
+           "Content-Length: " + to_string(body.size()) + "\r\n" +
+           "Connection: close\r\n\r\n" + body;
 }
