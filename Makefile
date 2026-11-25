@@ -2,30 +2,25 @@ NAME = webserv
 CC = c++
 FLAGS = -Wall -Wextra -Werror -g -std=c++11
 
-# 		src/serverProcess/CGI.cpp \
-		src/serverProcess/router.cpp \
-# 		src/serverProcess/routerUtils.cpp \ 
-SRC =	src/main.cpp \
-		src/serverProcess/serverManager.cpp \
-		src/serverProcess/eventLoop.cpp \
-		src/serverProcess/Client.cpp \
-		src/serverProcess/router.cpp \
-		src/serverProcess/routerUtils.cpp \
-		src/serverProcess/CGI.cpp \
-		src/Request.cpp \
-		src/parseRL.cpp \
-		src/parseHeaders.cpp \
-		src/parseBody.cpp \
-		src/fileOperations.cpp \
-		src/Response.cpp \
-		src/ServerInfo.cpp \
-		src/configParser/Config.cpp \
-		src/configParser/ConfigLocationAttri.cpp \
-		src/configParser/Location.cpp \
-		src/configParser/ConfigUtils.cpp \
-		src/configParser/ServerConfig.cpp \
-		src/configParser/ConfigServerAttri.cpp \
-# 		src/CGI.cpp \
+SRC = src/main.cpp
+SRC += src/serverProcess/ServerInfo.cpp
+SRC += src/serverProcess/eventLoop.cpp
+SRC += src/serverProcess/Client.cpp
+SRC += src/serverProcess/router.cpp
+SRC += src/serverProcess/routerUtils.cpp
+SRC += src/serverProcess/CGI.cpp
+SRC += src/HttpParser/Request.cpp
+SRC += src/HttpParser/parseRL.cpp
+SRC += src/HttpParser/parseHeaders.cpp
+SRC += src/HttpParser/parseBody.cpp
+SRC += src/HttpParser/fileOperations.cpp
+SRC += src/HttpParser/Response.cpp
+SRC += src/configParser/Config.cpp
+SRC += src/configParser/ConfigLocationAttri.cpp
+SRC += src/configParser/Location.cpp
+SRC += src/configParser/ConfigUtils.cpp
+SRC += src/configParser/ServerConfig.cpp
+SRC += src/configParser/ConfigServerAttri.cpp
 
 OBJ = $(SRC:%.cpp=objs/%.o)
 

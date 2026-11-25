@@ -1,0 +1,115 @@
+#include "../../inc/Request.hpp"
+
+// Nog wel kijken welke html pages allowed zijn volgens config file.
+// Nog wel kijken welke methods allowed zijn per html page volgens config file.
+// If server does not implement a method at all -> 501 Not Implemented
+// If server does implement the method, but according to the config file the method is not allowed for a specific HTML page. Then 405 Method Not Allowed.
+
+bool Request::validateRequestLine()
+{
+	// if ((Method == "GET" || Method == "POST") && Path != "www/index.html" && Path != "www/uploads.html")
+	// {
+	// 	Path = "www/404.html";
+	// 	statusCode = PageNotFound;
+	// 	return false;
+	// }
+
+	if (allowedCharsInString(Method) == false || Method.empty())
+	{
+		statusCode = BadRequest;
+		return false;
+	}
+	if (Method != "GET" && Method != "DELETE" && Method != "POST")
+	{
+		statusCode = NotImplemented;
+		return false;
+	}
+	if (Protocol != "HTTP/1.1")
+	{
+		statusCode = HTTPVersionNotSupported;
+		return false;
+	}
+	return true;
+}
+
+bool Request::parseRequestLine(string rstring)
+{
+	size_t endOfRequestLine = rstring.find("\r\n"); // CRLF is: carriage return(\r) line feed (\n)
+	if (endOfRequestLine == string::npos)
+	{
+		if (rstring.size() > MAX_REQUEST_LINE)//Codex fix: line 40 - 47, silented line 63 - 66
+    	{
+    	    statusCode = URITooLong;
+    	    statusText = setStatusText(statusCode);
+    	    return false;
+    	}
+    	stateOfParser = INCOMPLETE;
+    	return true;
+	}
+	requestLine = rstring.substr(0, endOfRequestLine);
+	// Check if max request line size is given in config file, anders wordt datgene waarmee moet worden compared die value van de config file.
+	size_t lenRL = requestLine.length();
+	if (lenRL >= MAX_REQUEST_LINE)
+	{
+		statusCode = URITooLong;
+		statusText = setStatusText(statusCode);
+		return false;
+	}
+	stringstream ss(requestLine);
+	string word;
+	int amountWords = 0;
+	while (ss >> word)
+		amountWords++;
+	// if (amountWords < 3){
+	// 	stateOfParser = INCOMPLETE;
+	// 	return true;
+	// }
+	if (amountWords != 3)
+	{
+		statusCode = BadRequest;
+		statusText = setStatusText(statusCode);
+		return false;
+	}
+	int spaces = 0;
+	for (size_t i = 0; i < requestLine.size(); i++)
+	{
+		if(isspace(requestLine[i]))
+		{
+			if (requestLine[i] != ' ')
+			{
+				statusCode = BadRequest;
+				statusText = setStatusText(statusCode);
+				return false;
+			}
+			spaces++;
+		}
+	}
+	if (spaces != 2)
+	{
+		statusCode = BadRequest;
+		statusText = setStatusText(statusCode);
+		return false;
+	}
+	ss.str("");
+	ss.clear();
+	ss.str(requestLine);
+	ss >> Method >> Path >> Protocol;
+	// Change by Wenxuan
+	size_t queryPos = Path.find('?');
+	if (queryPos != string::npos)
+	{
+		queryString = Path.substr(queryPos + 1);
+		Path = Path.substr(0, queryPos);
+	}
+	//
+	// Path = "www" + Path;
+	// if (Path == "www/")
+	// {
+	// 	Path = "www/index.html";
+	// }
+	if (validateRequestLine() == false){
+		statusText = setStatusText(statusCode);
+		return false;
+	}
+	return true;
+}

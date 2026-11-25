@@ -31,7 +31,7 @@ void runRedirect(Request &request)
 	request.setStatusText(request.getStatusCode());
 }
 
-static string escapeHtml(const string &text)
+static string escapeHtml(const string &text)//Codex fix
 {
 	string escaped;
 	for (char character : text)
@@ -48,7 +48,7 @@ static string escapeHtml(const string &text)
 	return escaped;
 }
 
-static string encodePathSegment(const string &name)
+static string encodePathSegment(const string &name)//Codex fix
 {
 	const char hex[] = "0123456789ABCDEF";
 	string encoded;
