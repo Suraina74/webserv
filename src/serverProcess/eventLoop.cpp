@@ -3,6 +3,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <fcntl.h>
 
 void acceptClient(ServerInfo &eloop)
 {
@@ -21,6 +22,12 @@ void acceptClient(ServerInfo &eloop)
 			{
 				//one failed accept should not take the whole server down
 				::perror("accept");
+				continue;
+			}
+			int fdFlag = fcntl(clientFd, F_GETFL);
+			if (fdFlag == -1 || fcntl(clientFd, F_SETFL,fdFlag | O_NONBLOCK) == -1)
+			{
+				close(clientFd);
 				continue;
 			}
 			char ip[INET_ADDRSTRLEN];
@@ -135,7 +142,6 @@ int eventLoop(ServerInfo &eloop)
 				else if (receivStatus == REQUESTLINE || receivStatus == HEADERS || receivStatus == BODY)
 				{
 					eloop.getPfds()[i].events = POLLIN;
-					i--;
 					continue;
 				}
 				else if (receivStatus == COMPLETE)

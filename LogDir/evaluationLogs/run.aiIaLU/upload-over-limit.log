@@ -1,0 +1,48 @@
+Expected HTTP 413
+*   Trying 127.0.0.1:18080...
+* Connected to 127.0.0.1 (127.0.0.1) port 18080 (#0)
+> POST /uploads/ HTTP/1.1
+> Host: 127.0.0.1:18080
+> User-Agent: curl/7.81.0
+> Accept: */*
+> Content-Length: 2255
+> Content-Type: multipart/form-data; boundary=------------------------4975cc675966e5de
+> 
+} [2255 bytes data]
+* We are completely uploaded and fine
+* Mark bundle as not supporting multiuse
+< HTTP/1.1 413 Content Too Large
+< Content-Type: text/html
+< Content-Length: 515
+< Connection: close
+< 
+{ [515 bytes data]
+* Closing connection 0
+
+Received HTTP 413
+
+--- Response body ---
+
+			<!DOCTYPE html>
+			<html lang="en">
+			<head>
+				<meta charset="UTF-8">
+				<meta name="viewport" content="width=device-width, initial-scale=1.0">
+				<title>Document</title>
+			</head>
+			<body>
+				<h1>413 Content Too Large ^⩊^</h1>
+			</body>
+			</html>
+			<style>
+				body {
+					box-sizing: border-box;
+					margin: 0;
+					font-family: Arial, Helvetica, sans-serif;
+					background-color: rgb(255, 233, 244);
+					color: hotpink;
+					text-align: center;
+				}
+					h1 {font-size: 7em;}
+			</style>
+			

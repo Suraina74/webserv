@@ -37,9 +37,14 @@ bool Request::parseRequestLine(string rstring)
 	size_t endOfRequestLine = rstring.find("\r\n"); // CRLF is: carriage return(\r) line feed (\n)
 	if (endOfRequestLine == string::npos)
 	{
-		statusCode = BadRequest;
-		statusText = setStatusText(statusCode);
-		return false;
+		if (rstring.size() > MAX_REQUEST_LINE)//Codex fix: line 40 - 47, silented line 63 - 66
+    	{
+    	    statusCode = URITooLong;
+    	    statusText = setStatusText(statusCode);
+    	    return false;
+    	}
+    	stateOfParser = INCOMPLETE;
+    	return true;
 	}
 	requestLine = rstring.substr(0, endOfRequestLine);
 	// Check if max request line size is given in config file, anders wordt datgene waarmee moet worden compared die value van de config file.
@@ -55,11 +60,11 @@ bool Request::parseRequestLine(string rstring)
 	int amountWords = 0;
 	while (ss >> word)
 		amountWords++;
-	if (amountWords < 3){
-		stateOfParser = INCOMPLETE;
-		return true;
-	}
-	if (amountWords > 3)
+	// if (amountWords < 3){
+	// 	stateOfParser = INCOMPLETE;
+	// 	return true;
+	// }
+	if (amountWords != 3)
 	{
 		statusCode = BadRequest;
 		statusText = setStatusText(statusCode);
